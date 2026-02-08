@@ -1,6 +1,6 @@
 
 export const T = {
-  appName: "মেশ ম্যানেজমেন্ট",
+  appName: "মেস ম্যানেজমেন্ট",
   dashboard: "ড্যাশবোর্ড",
   members: "সদস্য",
   meals: "মিল এন্ট্রি",
