@@ -1,8 +1,6 @@
 
-import { MessSystemDB, User, Role, Meal, Bazar, ExtraCost, Payment, MonthlyRole, Room, UtilityExpense, MonthlyUtilityOverride, CalcMode, MonthlyRoomOverride, LocalUtilityExpense } from './types';
-
-const MASTER_KEY = 'MESS_MASTER_INDEX'; // লিস্ট অফ মেস আইডি
-const MESS_PREFIX = 'MESS_DB_';
+import { MessSystemDB, User, Role, CalcMode } from './types';
+import { supabase } from './supabase';
 
 export const INITIAL_DB: MessSystemDB = {
   users: [],
@@ -19,41 +17,30 @@ export const INITIAL_DB: MessSystemDB = {
   theme: 'dark'
 };
 
-// মেস লিস্ট থেকে ডাটাবেস খুঁজে বের করা
-export const getDB = (messId?: string): MessSystemDB => {
-  const activeMessId = messId || localStorage.getItem('ACTIVE_MESS_ID');
-  if (!activeMessId) return INITIAL_DB;
+// সুপারবেস থেকে ডাটাবেস লোড করা
+export const fetchMessDB = async (messId: string): Promise<MessSystemDB> => {
+  const { data, error } = await supabase
+    .from('messes')
+    .select('db_json')
+    .eq('id', messId)
+    .single();
 
-  const data = localStorage.getItem(MESS_PREFIX + activeMessId);
-  if (!data) return INITIAL_DB;
-
-  try {
-    const parsed = JSON.parse(data);
-    return {
-      ...INITIAL_DB,
-      ...parsed,
-      rooms: parsed.rooms?.map((r: any) => ({ ...r, splitType: r.splitType || 'EQUAL' })) || [],
-      monthlyRoomOverrides: parsed.monthlyRoomOverrides || [],
-      utilities: parsed.utilities?.map((u: any) => ({ ...u, defaultCalcMode: u.defaultCalcMode || CalcMode.EQUAL })) || [],
-      localUtilities: parsed.localUtilities || [],
-      monthlyUtilityOverrides: parsed.monthlyUtilityOverrides || []
-    };
-  } catch (e) {
+  if (error || !data) {
+    console.error('Error fetching mess DB:', error);
     return INITIAL_DB;
   }
+  return data.db_json as MessSystemDB;
 };
 
-export const saveDB = (db: MessSystemDB, messId?: string) => {
-  const activeMessId = messId || localStorage.getItem('ACTIVE_MESS_ID');
-  if (activeMessId) {
-    localStorage.setItem(MESS_PREFIX + activeMessId, JSON.stringify(db));
-    
-    // মাস্টার ইনডেক্সে মেস আইডি সেভ রাখা
-    const master = JSON.parse(localStorage.getItem(MASTER_KEY) || '[]');
-    if (!master.includes(activeMessId)) {
-      master.push(activeMessId);
-      localStorage.setItem(MASTER_KEY, JSON.stringify(master));
-    }
+// সুপারবেস-এ ডাটাবেস সেভ করা
+export const syncDBToSupabase = async (db: MessSystemDB, messId: string) => {
+  const { error } = await supabase
+    .from('messes')
+    .update({ db_json: db })
+    .eq('id', messId);
+
+  if (error) {
+    console.error('Error syncing DB to Supabase:', error);
   }
 };
 

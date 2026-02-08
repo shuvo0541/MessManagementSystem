@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { getDB, saveDB, getCurrentMonthStr, getUserRoleInMonth } from './db';
+import { fetchMessDB, syncDBToSupabase, getCurrentMonthStr, getUserRoleInMonth, INITIAL_DB } from './db';
 import { User, Role, MessSystemDB } from './types';
 import { T } from './translations';
 import Login from './pages/Login';
@@ -14,46 +14,67 @@ import MealBazarLedger from './pages/MealBazarLedger';
 import Analytics from './pages/Analytics';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import { supabase } from './supabase';
+import { Loader2 } from 'lucide-react';
 
 const App: React.FC = () => {
-  const [db, setDb] = useState<MessSystemDB>(() => getDB());
+  const [db, setDb] = useState<MessSystemDB>(INITIAL_DB);
   const [user, setUser] = useState<User | null>(null);
+  const [messId, setMessId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const [view, setView] = useState('dashboard');
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthStr());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
-    document.documentElement.classList.add('dark');
-    const session = sessionStorage.getItem('user');
-    if (session) {
-      const parsedUser = JSON.parse(session);
-      const freshUser = db.users.find(u => u.id === parsedUser.id);
-      if (freshUser) {
-        setUser(freshUser);
-      } else {
-        setUser(parsedUser);
+    const initApp = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (session) {
+        const activeMessId = localStorage.getItem('ACTIVE_MESS_ID');
+        if (activeMessId) {
+          const remoteDB = await fetchMessDB(activeMessId);
+          setDb(remoteDB);
+          setMessId(activeMessId);
+          
+          const sessionUser = JSON.parse(sessionStorage.getItem('user') || '{}');
+          const freshUser = remoteDB.users.find(u => u.id === sessionUser.id || u.username === sessionUser.username);
+          if (freshUser) setUser(freshUser);
+        }
       }
-    }
-  }, [db.users]);
+      setLoading(false);
+    };
+
+    initApp();
+  }, []);
 
   const updateDB = (updates: Partial<MessSystemDB>) => {
     setDb(prev => {
       const next = { ...prev, ...updates };
-      saveDB(next);
+      if (messId) {
+        syncDBToSupabase(next, messId);
+      }
       return next;
     });
   };
 
-  const handleLoginSuccess = (loggedInUser: User) => {
-    const freshDB = getDB();
-    setDb(freshDB);
+  const handleLoginSuccess = async (loggedInUser: User, activeMessId: string) => {
+    setLoading(true);
+    const remoteDB = await fetchMessDB(activeMessId);
+    setDb(remoteDB);
+    setMessId(activeMessId);
     setUser(loggedInUser);
+    localStorage.setItem('ACTIVE_MESS_ID', activeMessId);
     sessionStorage.setItem('user', JSON.stringify(loggedInUser));
+    setLoading(false);
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
     sessionStorage.removeItem('user');
+    localStorage.removeItem('ACTIVE_MESS_ID');
     setUser(null);
+    setMessId(null);
     setView('dashboard');
   };
 
@@ -61,6 +82,15 @@ const App: React.FC = () => {
     if (!user) return Role.MEMBER;
     return getUserRoleInMonth(db, user.id, selectedMonth);
   }, [user, selectedMonth, db]);
+
+  if (loading) {
+    return (
+      <div className="h-screen bg-gray-950 flex flex-col items-center justify-center gap-4">
+        <Loader2 className="animate-spin text-blue-500" size={48} />
+        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">আপনার ডাটা লোড হচ্ছে...</p>
+      </div>
+    );
+  }
 
   if (!user) {
     return <Login onLogin={handleLoginSuccess} />;

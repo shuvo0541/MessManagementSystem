@@ -16,83 +16,20 @@
             -moz-osx-font-smoothing: grayscale;
             background-color: #030712; /* gray-950 */
         }
-
-        /* -----------------------------------------------------------
-           প্রিন্ট অপ্টিমাইজেশন - PDF এবং প্রিন্টের জন্য ফিক্স
-           ----------------------------------------------------------- */
         @media print {
-            @page {
-                size: A4;
-                margin: 15mm;
-            }
-
-            /* সব লেআউট কন্টেইনার ফিক্স করা যাতে স্ক্রল বা হাইট লিমিট না থাকে */
-            html, body, #root, .flex, main {
-                height: auto !important;
-                overflow: visible !important;
-                display: block !important;
-                position: static !important;
-                background: white !important;
-                color: black !important;
-            }
-
-            .no-print {
-                display: none !important;
-            }
-
-            /* রিপোর্ট কন্টেইনার প্রিন্ট স্টাইল */
-            #report-container {
-                position: static !important;
-                width: 100% !important;
-                margin: 0 !important;
-                padding: 0 !important;
-                border: none !important;
-                box-shadow: none !important;
-                background: white !important;
-                color: black !important;
-            }
-
-            /* ফন্ট ফিক্স: ইউনিকোড ফন্ট প্রিন্টে নিশ্চিত করা */
-            * {
-                font-family: 'Hind Siliguri', sans-serif !important;
-                -webkit-print-color-adjust: exact !important;
-                print-color-adjust: exact !important;
-                color: black !important;
-            }
-
-            /* ডার্ক মোডের কালারগুলো প্রিন্টে লাইট করা */
-            .text-white, .text-gray-100, .text-gray-300, .text-gray-400 {
-                color: #111827 !important;
-            }
-
-            .bg-gray-900, .bg-gray-800, .bg-gray-950 {
-                background-color: white !important;
-            }
-
-            .border-gray-800, .border-gray-700 {
-                border-color: #e5e7eb !important;
-            }
-
-            /* হাইলাইট টেক্সট প্রিন্ট ফিক্স */
-            .print-text-blue { color: #1e40af !important; }
-            .print-text-green { color: #15803d !important; }
-            
-            table { 
-                width: 100% !important; 
-                border-collapse: collapse !important; 
-                margin-top: 20px;
-            }
-            th, td { 
-                border-bottom: 1px solid #d1d5db !important; 
-                padding: 12px 8px !important; 
-                background: transparent !important;
-            }
-            
-            /* পেজ ব্রেক ম্যানেজমেন্ট */
+            @page { size: A4; margin: 15mm; }
+            html, body, #root, .flex, main { height: auto !important; overflow: visible !important; display: block !important; position: static !important; background: white !important; color: black !important; }
+            .no-print { display: none !important; }
+            #report-container { position: static !important; width: 100% !important; margin: 0 !important; padding: 0 !important; border: none !important; box-shadow: none !important; background: white !important; color: black !important; }
+            * { font-family: 'Hind Siliguri', sans-serif !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color: black !important; }
+            .text-white, .text-gray-100, .text-gray-300, .text-gray-400 { color: #111827 !important; }
+            .bg-gray-900, .bg-gray-800, .bg-gray-950 { background-color: white !important; }
+            .border-gray-800, .border-gray-700 { border-color: #e5e7eb !important; }
+            table { width: 100% !important; border-collapse: collapse !important; margin-top: 20px; }
+            th, td { border-bottom: 1px solid #d1d5db !important; padding: 12px 8px !important; background: transparent !important; }
             tr { page-break-inside: avoid; }
             thead { display: table-header-group; }
         }
-        
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #1f2937; border-radius: 20px; }
@@ -106,6 +43,7 @@
     "react/": "https://esm.sh/react@^19.2.4/",
     "react": "https://esm.sh/react@^19.2.4",
     "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.1",
     "@google/genai": "https://esm.sh/@google/genai@^1.40.0"
   }
 }
