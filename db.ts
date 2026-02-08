@@ -1,0 +1,218 @@
+
+import { MessSystemDB, User, Role, Meal, Bazar, ExtraCost, Payment, MonthlyRole, Room, UtilityExpense, MonthlyUtilityOverride, CalcMode, MonthlyRoomOverride, LocalUtilityExpense } from './types';
+
+const MASTER_KEY = 'MESS_MASTER_INDEX'; // লিস্ট অফ মেস আইডি
+const MESS_PREFIX = 'MESS_DB_';
+
+export const INITIAL_DB: MessSystemDB = {
+  users: [],
+  rooms: [],
+  monthlyRoomOverrides: [],
+  utilities: [],
+  localUtilities: [],
+  monthlyUtilityOverrides: [],
+  monthlyRoles: [],
+  meals: [],
+  bazars: [],
+  extraCosts: [],
+  payments: [],
+  theme: 'dark'
+};
+
+// মেস লিস্ট থেকে ডাটাবেস খুঁজে বের করা
+export const getDB = (messId?: string): MessSystemDB => {
+  const activeMessId = messId || localStorage.getItem('ACTIVE_MESS_ID');
+  if (!activeMessId) return INITIAL_DB;
+
+  const data = localStorage.getItem(MESS_PREFIX + activeMessId);
+  if (!data) return INITIAL_DB;
+
+  try {
+    const parsed = JSON.parse(data);
+    return {
+      ...INITIAL_DB,
+      ...parsed,
+      rooms: parsed.rooms?.map((r: any) => ({ ...r, splitType: r.splitType || 'EQUAL' })) || [],
+      monthlyRoomOverrides: parsed.monthlyRoomOverrides || [],
+      utilities: parsed.utilities?.map((u: any) => ({ ...u, defaultCalcMode: u.defaultCalcMode || CalcMode.EQUAL })) || [],
+      localUtilities: parsed.localUtilities || [],
+      monthlyUtilityOverrides: parsed.monthlyUtilityOverrides || []
+    };
+  } catch (e) {
+    return INITIAL_DB;
+  }
+};
+
+export const saveDB = (db: MessSystemDB, messId?: string) => {
+  const activeMessId = messId || localStorage.getItem('ACTIVE_MESS_ID');
+  if (activeMessId) {
+    localStorage.setItem(MESS_PREFIX + activeMessId, JSON.stringify(db));
+    
+    // মাস্টার ইনডেক্সে মেস আইডি সেভ রাখা
+    const master = JSON.parse(localStorage.getItem(MASTER_KEY) || '[]');
+    if (!master.includes(activeMessId)) {
+      master.push(activeMessId);
+      localStorage.setItem(MASTER_KEY, JSON.stringify(master));
+    }
+  }
+};
+
+export const getLocalDateStr = (date = new Date()) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
+
+export const getCurrentMonthStr = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+};
+
+export const getPreviousMonthStr = (monthStr: string) => {
+  const [year, month] = monthStr.split('-').map(Number);
+  const date = new Date(year, month - 2, 1);
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+};
+
+export const getCalculations = (db: MessSystemDB, month: string, depth = 0): any => {
+  const allNonAdminUsers = db.users.filter(u => !u.isAdmin);
+  const activeResidents = db.users.filter(u => 
+    !u.isAdmin && 
+    !u.isPermanentlyOff && 
+    !(u.monthlyOff || []).includes(month)
+  );
+  
+  const activeResidentIds = new Set(activeResidents.map(u => u.id));
+  const allNonAdminIds = new Set(allNonAdminUsers.map(u => u.id));
+  
+  const monthBazars = db.bazars.filter(b => b.date.startsWith(month) && allNonAdminIds.has(b.userId));
+  const monthMeals = db.meals.filter(m => m.date.startsWith(month) && activeResidentIds.has(m.userId));
+  const monthPayments = db.payments.filter(p => p.month === month && allNonAdminIds.has(p.userId));
+  
+  const utilityShares: Record<string, number> = {}; 
+  activeResidents.forEach(u => utilityShares[u.id] = 0);
+
+  db.utilities.forEach(master => {
+    const override = db.monthlyUtilityOverrides.find(ov => ov.utilityId === master.id && ov.month === month);
+    const amount = override ? override.amount : master.amount;
+    const mode = override ? override.calcMode : master.defaultCalcMode;
+    const values = override ? override.calcValues : {};
+    calculateUtilityShares(amount, mode, values, activeResidentIds, activeResidents, utilityShares);
+  });
+
+  (db.localUtilities || []).filter(lu => lu.month === month).forEach(local => {
+    calculateUtilityShares(local.amount, local.calcMode, local.calcValues, activeResidentIds, activeResidents, utilityShares);
+  });
+  
+  const totalBazar = monthBazars.reduce((sum, b) => sum + b.amount, 0);
+  const totalMeals = monthMeals.reduce((sum, m) => sum + m.breakfast + m.lunch + m.dinner + m.guest, 0);
+  const mealRate = totalMeals > 0 ? (totalBazar / totalMeals) : 0;
+  
+  const prevMonth = getPreviousMonthStr(month);
+  const prevMonthStats = (depth < 12 && prevMonth !== month) 
+    ? getCalculations(db, prevMonth, depth + 1) 
+    : null;
+
+  const userStats = allNonAdminUsers.map(user => {
+    const isActive = activeResidentIds.has(user.id);
+    const uTotalMeals = isActive 
+      ? monthMeals.filter(m => m.userId === user.id).reduce((sum, m) => sum + m.breakfast + m.lunch + m.dinner + m.guest, 0)
+      : 0;
+    
+    const uMealCost = uTotalMeals * mealRate;
+    
+    let uRoomRent = 0;
+    if (isActive) {
+      const uRoom = db.rooms.find(r => r.id === user.roomId);
+      if (uRoom) {
+        const roomMonthRent = db.monthlyRoomOverrides?.find(ov => ov.roomId === uRoom.id && ov.month === month)?.rent ?? uRoom.rent;
+        if (uRoom.splitType === 'PERCENTAGE') {
+          uRoomRent = (roomMonthRent * (user.rentShare || 0)) / 100;
+        } else {
+          const activeMembersInRoom = activeResidents.filter(r => r.roomId === user.roomId).length;
+          uRoomRent = roomMonthRent / Math.max(1, activeMembersInRoom);
+        }
+      }
+    }
+
+    const uUtilityShare = isActive ? (utilityShares[user.id] || 0) : 0;
+    const uCurrentMonthCost = uMealCost + uRoomRent + uUtilityShare;
+    
+    const uContribution = monthPayments.filter(p => p.userId === user.id).reduce((sum, p) => sum + p.amount, 0) + 
+                         monthBazars.filter(b => b.userId === user.id).reduce((sum, b) => sum + b.amount, 0);
+
+    const uPrevBalance = prevMonthStats?.userStats.find((s: any) => s.userId === user.id)?.balance || 0;
+    const uNetRequired = uCurrentMonthCost - uPrevBalance;
+    const uBalance = uContribution - uNetRequired;
+
+    return {
+      userId: user.id,
+      name: user.name,
+      isActive,
+      totalMeals: uTotalMeals,
+      mealCost: uMealCost,
+      roomRent: uRoomRent,
+      utilityShare: uUtilityShare,
+      currentMonthCost: uCurrentMonthCost,
+      prevAdjustment: uPrevBalance,
+      netRequired: uNetRequired,
+      contribution: uContribution,
+      balance: uBalance,
+      totalCost: uCurrentMonthCost
+    };
+  });
+
+  return {
+    totalBazar,
+    totalMeals,
+    mealRate,
+    userStats
+  };
+};
+
+function calculateUtilityShares(amount: number, mode: CalcMode, values: any, activeResidentIds: Set<string>, activeResidents: User[], utilityShares: Record<string, number>) {
+  if (mode === CalcMode.FIXED) {
+    let fixedTotal = 0;
+    const fixedUserIds = new Set<string>();
+    Object.entries(values).forEach(([uid, val]: [string, any]) => {
+      if (activeResidentIds.has(uid)) {
+        utilityShares[uid] += val;
+        fixedTotal += val;
+        fixedUserIds.add(uid);
+      }
+    });
+    const remainingAmount = amount - fixedTotal;
+    const remainingUsers = activeResidents.filter(r => !fixedUserIds.has(r.id));
+    if (remainingUsers.length > 0) {
+      const share = remainingAmount / remainingUsers.length;
+      remainingUsers.forEach(r => utilityShares[r.id] += share);
+    }
+  } else if (mode === CalcMode.MULTIPLIER) {
+    let sumMultipliers = 0;
+    const multipliers: Record<string, number> = {};
+    activeResidents.forEach(r => {
+      const m = values[r.id] || 1.0;
+      multipliers[r.id] = m;
+      sumMultipliers += m;
+    });
+    if (sumMultipliers > 0) {
+      activeResidents.forEach(r => {
+        utilityShares[r.id] += (amount / sumMultipliers) * multipliers[r.id];
+      });
+    }
+  } else {
+    const share = amount / Math.max(1, activeResidents.length);
+    activeResidents.forEach(r => utilityShares[r.id] += share);
+  }
+}
+
+export const getUserRoleInMonth = (db: MessSystemDB, userId: string, month: string): Role => {
+  const user = db.users.find(u => u.id === userId);
+  if (!user) return Role.MEMBER;
+  if (user.isAdmin) return Role.ADMIN;
+  const isOff = user.isPermanentlyOff || (user.monthlyOff || []).includes(month);
+  if (isOff) return Role.MEMBER; 
+  const monthRole = db.monthlyRoles.find(r => r.userId === userId && r.month === month);
+  return monthRole ? monthRole.role : Role.MEMBER;
+};
