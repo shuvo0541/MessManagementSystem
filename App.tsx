@@ -15,34 +15,47 @@ import Analytics from './pages/Analytics';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import { supabase } from './supabase';
-import { Loader2 } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCcw } from 'lucide-react';
 
 const App: React.FC = () => {
   const [db, setDb] = useState<MessSystemDB>(INITIAL_DB);
   const [user, setUser] = useState<User | null>(null);
   const [messId, setMessId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initError, setInitError] = useState<string | null>(null);
   const [view, setView] = useState('dashboard');
   const [selectedMonth, setSelectedMonth] = useState(getCurrentMonthStr());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     const initApp = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      if (session) {
-        const activeMessId = localStorage.getItem('ACTIVE_MESS_ID');
-        if (activeMessId) {
-          const remoteDB = await fetchMessDB(activeMessId);
-          setDb(remoteDB);
-          setMessId(activeMessId);
-          
-          const sessionUser = JSON.parse(sessionStorage.getItem('user') || '{}');
-          const freshUser = remoteDB.users.find(u => u.id === sessionUser.id || u.username === sessionUser.username);
-          if (freshUser) setUser(freshUser);
+      try {
+        setLoading(true);
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
+
+        if (session) {
+          const activeMessId = localStorage.getItem('ACTIVE_MESS_ID');
+          if (activeMessId) {
+            const remoteDB = await fetchMessDB(activeMessId);
+            setDb(remoteDB);
+            setMessId(activeMessId);
+            
+            const sessionUserStr = sessionStorage.getItem('user');
+            if (sessionUserStr) {
+                const sessionUser = JSON.parse(sessionUserStr);
+                const freshUser = remoteDB.users.find(u => u.id === sessionUser.id || u.username === sessionUser.username);
+                if (freshUser) setUser(freshUser);
+            }
+          }
         }
+      } catch (err: any) {
+        console.error("Initialization Error:", err);
+        setInitError(err.message || "অ্যাপলোড করতে সমস্যা হচ্ছে।");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
 
     initApp();
@@ -59,14 +72,19 @@ const App: React.FC = () => {
   };
 
   const handleLoginSuccess = async (loggedInUser: User, activeMessId: string) => {
-    setLoading(true);
-    const remoteDB = await fetchMessDB(activeMessId);
-    setDb(remoteDB);
-    setMessId(activeMessId);
-    setUser(loggedInUser);
-    localStorage.setItem('ACTIVE_MESS_ID', activeMessId);
-    sessionStorage.setItem('user', JSON.stringify(loggedInUser));
-    setLoading(false);
+    try {
+      setLoading(true);
+      const remoteDB = await fetchMessDB(activeMessId);
+      setDb(remoteDB);
+      setMessId(activeMessId);
+      setUser(loggedInUser);
+      localStorage.setItem('ACTIVE_MESS_ID', activeMessId);
+      sessionStorage.setItem('user', JSON.stringify(loggedInUser));
+    } catch (err: any) {
+      alert("ডাটাবেস কানেক্ট করা যাচ্ছে না। দয়া করে আবার চেষ্টা করুন।");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleLogout = async () => {
@@ -87,7 +105,25 @@ const App: React.FC = () => {
     return (
       <div className="h-screen bg-gray-950 flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-blue-500" size={48} />
-        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">আপনার ডাটা লোড হচ্ছে...</p>
+        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs animate-pulse">আপনার ডাটা লোড হচ্ছে...</p>
+      </div>
+    );
+  }
+
+  if (initError) {
+    return (
+      <div className="h-screen bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mb-6 border border-red-500/20">
+          <AlertTriangle size={40} />
+        </div>
+        <h1 className="text-2xl font-black text-white mb-2">সংযোগ বিচ্ছিন্ন!</h1>
+        <p className="text-gray-500 max-w-xs mb-8 font-bold">{initError}</p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
+        >
+          <RefreshCcw size={18} /> রিফ্রেশ করুন
+        </button>
       </div>
     );
   }
