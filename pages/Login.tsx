@@ -18,7 +18,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  // ইমেইল ফরম্যাট ঠিক করার ফাংশন
   const getFormattedEmail = (input: string) => {
     const trimmed = input.trim().toLowerCase();
     if (trimmed.includes('@') && trimmed.includes('.')) {
@@ -173,7 +172,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     <Info className="text-blue-500 shrink-0 mt-0.5" size={16}/>
                     <div className="space-y-2">
                       <p className="text-[10px] text-blue-200/70 font-bold leading-relaxed uppercase">সমাধানের উপায়:</p>
-                      <p className="text-[11px] text-gray-400">সুপারবেস ড্যাশবোর্ডে গিয়ে <strong>Auth > Providers > Email</strong> থেকে <strong>Confirm Email</strong> অপশনটি অফ করে দিন। এতে ইমেইল ভেরিফিকেশন লাগবে না।</p>
+                      <p className="text-[11px] text-gray-400">সুপারবেস ড্যাশবোর্ডে গিয়ে <strong>Auth &gt; Providers &gt; Email</strong> থেকে <strong>Confirm Email</strong> অপশনটি অফ করে দিন। এতে ইমেইল ভেরিফিকেশন লাগবে না।</p>
                     </div>
                   </div>
                 )}
