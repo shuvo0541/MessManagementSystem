@@ -15,9 +15,10 @@
             background-color: #030712;
             color: #f3f4f6;
             margin: 0;
+            overflow-x: hidden;
         }
         #root:empty::before {
-            content: "লোডিং হচ্ছে...";
+            content: "সিস্টেম চালু হচ্ছে...";
             display: flex;
             align-items: center;
             justify-content: center;
@@ -30,24 +31,36 @@
             top: 0;
             left: 0;
             z-index: 999;
-            text-align: center;
         }
     </style>
+    <script>
+        // জাভাস্ক্রিপ্ট এরর ডিবাগ করার জন্য
+        window.onerror = function(msg, url, lineNo, columnNo, error) {
+            console.error('Error: ' + msg + '\nScript: ' + url + '\nLine: ' + lineNo);
+            const root = document.getElementById('root');
+            if (root) {
+                root.innerHTML = `<div style="padding: 40px; color: #f87171; text-align: center; font-family: sans-serif;">
+                    <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">সিস্টেম লোড হতে সমস্যা হয়েছে</h2>
+                    <p style="font-size: 14px; color: #9ca3af;">${msg}</p>
+                    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">আবার চেষ্টা করুন</button>
+                </div>`;
+            }
+            return false;
+        };
+    </script>
     <script type="importmap">
-{
-  "imports": {
-    "react": "https://esm.sh/react@19.0.0",
-    "react-dom": "https://esm.sh/react-dom@19.0.0",
-    "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
-    "recharts": "https://esm.sh/recharts@3.7.0",
-    "lucide-react": "https://esm.sh/lucide-react@0.463.0",
-    "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.1",
-    "@google/genai": "https://esm.sh/@google/genai@1.40.0",
-    "react-dom/": "https://esm.sh/react-dom@^19.2.4/",
-    "react/": "https://esm.sh/react@^19.2.4/"
-  }
-}
-</script>
+    {
+      "imports": {
+        "react": "https://esm.sh/react@19.0.0",
+        "react-dom": "https://esm.sh/react-dom@19.0.0",
+        "react-dom/client": "https://esm.sh/react-dom@19.0.0/client",
+        "recharts": "https://esm.sh/recharts@2.12.7?external=react,react-dom",
+        "lucide-react": "https://esm.sh/lucide-react@0.446.0?external=react,react-dom",
+        "@supabase/supabase-js": "https://esm.sh/@supabase/supabase-js@2.45.1",
+        "@google/genai": "https://esm.sh/@google/genai@1.40.0"
+      }
+    }
+    </script>
 </head>
 <body class="bg-gray-950">
     <div id="root"></div>
