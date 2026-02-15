@@ -11,27 +11,32 @@ import {
   LogOut,
   Home,
   TableProperties,
-  LineChart as LineChartIcon
+  LineChart as LineChartIcon,
+  LayoutGrid,
+  User as UserIcon
 } from 'lucide-react';
 
 interface SidebarProps {
   currentView: string;
   onViewChange: (view: string) => void;
   onLogout: () => void;
+  onSwitchMess: () => void;
   isAdmin: boolean;
   role: Role;
+  hasActiveMess: boolean;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, isAdmin, role }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, onSwitchMess, isAdmin, role, hasActiveMess }) => {
   const menuItems = [
-    { id: 'dashboard', label: T.dashboard, icon: LayoutDashboard, show: true },
-    { id: 'members', label: T.members, icon: Users, show: isAdmin },
-    { id: 'meals', label: T.meals, icon: UtensilsCrossed, show: true },
-    { id: 'bazar', label: T.bazar, icon: ShoppingBag, show: true },
-    { id: 'utility', label: 'রুম ও ইউটিলিটি', icon: Home, show: true },
-    { id: 'meal-bazar-ledger', label: T.mealBazarLedger, icon: TableProperties, show: true },
-    { id: 'analytics', label: T.analytics, icon: LineChartIcon, show: true },
-    { id: 'reports', label: T.reports, icon: FileBarChart, show: true },
+    { id: 'profile', label: 'প্রোফাইল', icon: UserIcon, show: true },
+    { id: 'dashboard', label: T.dashboard, icon: LayoutDashboard, show: hasActiveMess },
+    { id: 'members', label: T.members, icon: Users, show: hasActiveMess }, // সবার জন্য উন্মুক্ত করা হলো
+    { id: 'meals', label: T.meals, icon: UtensilsCrossed, show: hasActiveMess },
+    { id: 'bazar', label: T.bazar, icon: ShoppingBag, show: hasActiveMess },
+    { id: 'utility', label: 'রুম ও ইউটিলিটি', icon: Home, show: hasActiveMess },
+    { id: 'meal-bazar-ledger', label: T.mealBazarLedger, icon: TableProperties, show: hasActiveMess },
+    { id: 'analytics', label: T.analytics, icon: LineChartIcon, show: hasActiveMess },
+    { id: 'reports', label: T.reports, icon: FileBarChart, show: hasActiveMess },
   ];
 
   return (
@@ -60,10 +65,19 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
         ))}
       </nav>
 
-      <div className="p-6 border-t border-gray-50 dark:border-gray-700 shrink-0">
+      <div className="p-6 border-t border-gray-50 dark:border-gray-700 shrink-0 space-y-3">
+        {hasActiveMess && (
+          <button
+            onClick={onSwitchMess}
+            className="w-full flex items-center gap-4 px-5 py-3.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
+          >
+            <LayoutGrid size={20} />
+            সুইচ মেস
+          </button>
+        )}
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-4 px-5 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-2xl transition-all font-black text-sm uppercase tracking-wider"
+          className="w-full flex items-center gap-4 px-5 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
         >
           <LogOut size={20} />
           {T.logout}

@@ -21,6 +21,8 @@ export interface User {
   rentShare?: number;
   isPermanentlyOff?: boolean;
   monthlyOff?: string[]; // Array of strings in "YYYY-MM" format
+  joiningMonth?: string; // YYYY-MM
+  leavingMonth?: string | null; // YYYY-MM or null
 }
 
 export interface Room {
@@ -112,4 +114,6 @@ export interface MessSystemDB {
   extraCosts: ExtraCost[];
   payments: Payment[];
   theme: 'light' | 'dark';
+  messPassword?: string;
+  lockedMonths?: string[]; // Array of YYYY-MM strings
 }

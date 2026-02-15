@@ -1,9 +1,9 @@
 
 import React, { useState, useMemo } from 'react';
 import { T } from '../translations';
-import { getLocalDateStr, getUserRoleInMonth } from '../db';
-import { Role, Meal, MessSystemDB } from '../types';
-import { Utensils, Calendar as CalendarIcon, Info, Lock, Eye, ShieldCheck, Sigma, UserX } from 'lucide-react';
+import { getLocalDateStr, getUserRoleInMonth, getActiveResidentsInMonth } from '../db';
+import { Role, Meal, MessSystemDB, User } from '../types';
+import { Utensils, Calendar as CalendarIcon, Info, Lock, Eye, ShieldCheck, Sigma, UserX, AlertTriangle } from 'lucide-react';
 
 interface MealEntryProps {
   month: string;
@@ -20,30 +20,20 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
     return today.startsWith(month) ? today : `${month}-01`;
   });
 
-  // Check if current logged in user is OFF for the selected month
-  const isCurrentUserOff = useMemo(() => {
-    const user = db.users.find(u => u.id === userId);
-    if (!user || user.isAdmin) return false;
-    const dateMonth = selectedDate.substring(0, 7);
-    return user.isPermanentlyOff || (user.monthlyOff || []).includes(dateMonth);
-  }, [db.users, userId, selectedDate]);
+  const isMonthLocked = (db.lockedMonths || []).includes(month);
 
   const isEditable = useMemo(() => {
+    if (isMonthLocked) return false;
     if (isAdmin) return true;
-    if (isCurrentUserOff) return false; // Off members can NEVER edit
     const dateMonth = selectedDate.substring(0, 7);
     const effectiveRole = getUserRoleInMonth(db, userId, dateMonth);
     return effectiveRole === Role.MANAGER;
-  }, [db, userId, isAdmin, selectedDate, isCurrentUserOff]);
+  }, [db, userId, isAdmin, selectedDate, isMonthLocked]);
 
   const mealData = useMemo(() => {
-    // CRITICAL: Filter out members who are OFF for the selected date's month
     const dateMonth = selectedDate.substring(0, 7);
-    const activeResidents = db.users.filter(u => 
-      !u.isAdmin && 
-      !u.isPermanentlyOff && 
-      !(u.monthlyOff || []).includes(dateMonth)
-    );
+    // db.ts এর নতুন ফিল্টারিং ফাংশন ব্যবহার করা হচ্ছে
+    const activeResidents = getActiveResidentsInMonth(db, dateMonth);
     
     return activeResidents.map(user => {
       const existing = db.meals.find(m => m.userId === user.id && m.date === selectedDate);
@@ -108,21 +98,9 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
         </div>
       </div>
 
-      {isCurrentUserOff && !isAdmin && (
-        <div className="bg-red-900/10 border border-red-500/20 p-5 rounded-3xl flex items-center gap-4 animate-pulse">
-           <div className="p-2 bg-red-600 rounded-xl text-white">
-              <UserX size={20}/>
-           </div>
-           <div>
-              <p className="text-xs font-black text-red-500 uppercase tracking-widest">স্ট্যাটাস: অফ (OFF)</p>
-              <p className="text-[11px] text-red-200/70 font-bold">আপনি এই মাসে অফ আছেন, তাই কোনো মিল এন্ট্রি করতে পারবেন না।</p>
-           </div>
-        </div>
-      )}
-
-      <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-[2rem] flex items-center justify-between shadow-lg shadow-blue-500/5">
+      <div className="bg-blue-600/10 border border-blue-500/20 p-6 rounded-[2rem] flex items-center justify-between shadow-lg">
         <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-600 text-white rounded-2xl shadow-lg shadow-blue-500/20">
+          <div className="p-3 bg-blue-600 text-white rounded-2xl">
             <Sigma size={24} />
           </div>
           <div>
@@ -130,13 +108,9 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
             <h3 className="text-2xl font-black text-white">{globalTotalMeals.toFixed(1)}</h3>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-2 text-blue-400/50 text-[10px] font-black uppercase tracking-widest">
-          <Info size={14} />
-          অফ থাকা মেম্বাররা এই তালিকায় নেই
-        </div>
       </div>
 
-      <div className="bg-gray-900 rounded-[2rem] border border-gray-800 overflow-hidden shadow-2xl">
+      <div className="bg-gray-900 rounded-[2rem] border border-gray-800 overflow-hidden shadow-2xl relative">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -151,7 +125,7 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
             </thead>
             <tbody className="divide-y divide-gray-800">
               {mealData.length === 0 ? (
-                <tr><td colSpan={6} className="px-8 py-10 text-center text-gray-600 italic">কোনো অ্যাক্টিভ মেম্বার পাওয়া যায়নি</td></tr>
+                <tr><td colSpan={6} className="px-8 py-10 text-center text-gray-600 italic">এই মাসের জন্য কোনো একটিভ মেম্বার পাওয়া যায়নি</td></tr>
               ) : (
                 mealData.map(m => {
                   const rowTotal = m.breakfast + m.lunch + m.dinner + m.guest;
@@ -164,9 +138,8 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
                         <td key={field} className="px-2 py-6 text-center">
                           <input 
                             type="number" step="0.5" min="0"
-                            className="w-16 mx-auto bg-gray-800 border border-gray-700 rounded-xl text-center py-2.5 text-sm font-black text-white focus:ring-2 focus:ring-blue-600 outline-none disabled:opacity-30 transition-all placeholder:text-gray-700"
+                            className="w-16 mx-auto bg-gray-800 border border-gray-700 rounded-xl text-center py-2.5 text-sm font-black text-white focus:ring-2 focus:ring-blue-600 outline-none disabled:opacity-30"
                             value={m[field as keyof typeof m] || ''}
-                            placeholder="0"
                             onFocus={(e) => e.target.select()}
                             onChange={(e) => updateMealValue(m.userId, field as any, e.target.value)}
                             disabled={!isEditable}
@@ -184,15 +157,6 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
           </table>
         </div>
       </div>
-
-      {!isEditable && !isCurrentUserOff && (
-        <div className="flex items-center gap-3 bg-amber-900/10 border border-amber-500/20 p-4 rounded-2xl">
-          <Lock className="text-amber-500" size={18} />
-          <p className="text-xs font-black text-amber-400 uppercase tracking-wide">
-            তথ্য পরিবর্তনের অনুমতি নেই। শুধুমাত্র ম্যানেজার বা এডমিন এন্ট্রি দিতে পারবেন।
-          </p>
-        </div>
-      )}
     </div>
   );
 };

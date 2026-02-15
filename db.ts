@@ -17,7 +17,6 @@ export const INITIAL_DB: MessSystemDB = {
   theme: 'dark'
 };
 
-// সুপারবেস থেকে ডাটাবেস লোড করা
 export const fetchMessDB = async (messId: string): Promise<MessSystemDB> => {
   const { data, error } = await supabase
     .from('messes')
@@ -32,7 +31,6 @@ export const fetchMessDB = async (messId: string): Promise<MessSystemDB> => {
   return data.db_json as MessSystemDB;
 };
 
-// সুপারবেস-এ ডাটাবেস সেভ করা
 export const syncDBToSupabase = async (db: MessSystemDB, messId: string) => {
   const { error } = await supabase
     .from('messes')
@@ -62,20 +60,24 @@ export const getPreviousMonthStr = (monthStr: string) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
+// এই ফাংশনটি নির্দিষ্ট মাসে কারা একটিভ তা নিখুঁতভাবে নির্ধারণ করে
+export const getActiveResidentsInMonth = (db: MessSystemDB, month: string) => {
+  return db.users.filter(u => {
+    const isJoined = !u.joiningMonth || u.joiningMonth <= month;
+    const isNotLeft = !u.leavingMonth || u.leavingMonth >= month;
+    const isOff = u.isPermanentlyOff || (u.monthlyOff || []).includes(month);
+    return isJoined && isNotLeft && !isOff;
+  });
+};
+
 export const getCalculations = (db: MessSystemDB, month: string, depth = 0): any => {
-  const allNonAdminUsers = db.users.filter(u => !u.isAdmin);
-  const activeResidents = db.users.filter(u => 
-    !u.isAdmin && 
-    !u.isPermanentlyOff && 
-    !(u.monthlyOff || []).includes(month)
-  );
-  
+  const activeResidents = getActiveResidentsInMonth(db, month);
   const activeResidentIds = new Set(activeResidents.map(u => u.id));
-  const allNonAdminIds = new Set(allNonAdminUsers.map(u => u.id));
+  const allUserIds = new Set(db.users.map(u => u.id));
   
-  const monthBazars = db.bazars.filter(b => b.date.startsWith(month) && allNonAdminIds.has(b.userId));
+  const monthBazars = db.bazars.filter(b => b.date.startsWith(month) && allUserIds.has(b.userId));
   const monthMeals = db.meals.filter(m => m.date.startsWith(month) && activeResidentIds.has(m.userId));
-  const monthPayments = db.payments.filter(p => p.month === month && allNonAdminIds.has(p.userId));
+  const monthPayments = db.payments.filter(p => p.month === month && allUserIds.has(p.userId));
   
   const utilityShares: Record<string, number> = {}; 
   activeResidents.forEach(u => utilityShares[u.id] = 0);
@@ -101,7 +103,7 @@ export const getCalculations = (db: MessSystemDB, month: string, depth = 0): any
     ? getCalculations(db, prevMonth, depth + 1) 
     : null;
 
-  const userStats = allNonAdminUsers.map(user => {
+  const userStats = db.users.map(user => {
     const isActive = activeResidentIds.has(user.id);
     const uTotalMeals = isActive 
       ? monthMeals.filter(m => m.userId === user.id).reduce((sum, m) => sum + m.breakfast + m.lunch + m.dinner + m.guest, 0)
@@ -198,8 +200,12 @@ export const getUserRoleInMonth = (db: MessSystemDB, userId: string, month: stri
   const user = db.users.find(u => u.id === userId);
   if (!user) return Role.MEMBER;
   if (user.isAdmin) return Role.ADMIN;
-  const isOff = user.isPermanentlyOff || (user.monthlyOff || []).includes(month);
-  if (isOff) return Role.MEMBER; 
+  
+  const isJoined = !user.joiningMonth || user.joiningMonth <= month;
+  const isNotLeft = !user.leavingMonth || user.leavingMonth >= month;
+  
+  if (!isJoined || !isNotLeft) return Role.MEMBER; 
+  
   const monthRole = db.monthlyRoles.find(r => r.userId === userId && r.month === month);
   return monthRole ? monthRole.role : Role.MEMBER;
 };
