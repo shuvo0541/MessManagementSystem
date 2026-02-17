@@ -1,8 +1,9 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../supabase';
 import { User, MessSystemDB } from '../types';
 import { INITIAL_DB, generateDemoData } from '../db';
+import jsQR from 'jsqr';
 import { 
   User as UserIcon, 
   Mail, 
@@ -28,7 +29,8 @@ import {
   Info,
   AlertCircle,
   QrCode,
-  Camera
+  Camera,
+  Maximize
 } from 'lucide-react';
 
 interface ProfileProps {
@@ -56,9 +58,16 @@ const Profile: React.FC<ProfileProps> = ({
   const [statusMsg, setStatusMsg] = useState<{type: 'error' | 'success' | 'info', text: string} | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{id: string, pass: string} | null>(null);
   const [invitations, setInvitations] = useState<any[]>([]);
+  
+  // Scanner States
+  const [isScanning, setIsScanning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
 
   useEffect(() => {
     fetchInvitations();
+    return () => stopScanner(); // Cleanup camera on unmount
   }, [authEmail]);
 
   const fetchInvitations = async () => {
@@ -70,6 +79,63 @@ const Profile: React.FC<ProfileProps> = ({
         .eq('status', 'pending');
       if (data) setInvitations(data);
     } catch (err) {}
+  };
+
+  const startScanner = async () => {
+    setIsScanning(true);
+    setStatusMsg(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      streamRef.current = stream;
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute("playsinline", "true"); // required to tell iOS safari we don't want fullscreen
+        videoRef.current.play();
+        requestAnimationFrame(tick);
+      }
+    } catch (err) {
+      console.error(err);
+      setIsScanning(false);
+      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন।' });
+    }
+  };
+
+  const stopScanner = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    setIsScanning(false);
+  };
+
+  const tick = () => {
+    if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
+      const canvas = canvasRef.current;
+      const video = videoRef.current;
+      if (canvas) {
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          canvas.height = video.videoHeight;
+          canvas.width = video.videoWidth;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "dontInvert",
+          });
+          if (code) {
+            setMessCode(code.data);
+            stopScanner();
+            setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
+            return;
+          }
+        }
+      }
+    }
+    if (isScanning) {
+      requestAnimationFrame(tick);
+    }
   };
 
   const handleCreateMess = async () => {
@@ -236,18 +302,33 @@ const Profile: React.FC<ProfileProps> = ({
       {view === 'join' && (
         <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8 animate-in slide-in-from-bottom-4">
           <div className="flex items-center gap-4">
-             <button onClick={() => setView('info')} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><ChevronRight className="rotate-180"/></button>
+             <button onClick={() => { if(isScanning) stopScanner(); setView('info'); }} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><ChevronRight className="rotate-180"/></button>
              <h3 className="text-2xl font-black text-white">মেসে যোগ দিন</h3>
           </div>
           <div className="space-y-6">
             <div className="grid grid-cols-1 gap-4">
-               <button 
-                 onClick={() => alert("কিউআর স্ক্যানারটি একটি এক্সটার্নাল লাইব্রেরি নির্ভর। বর্তমানে আইডি দিয়ে যোগ দিন অপশনটি সচল আছে।")} 
-                 className="flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all"
-               >
-                 <Camera size={20}/> QR কোড স্ক্যান করুন
-               </button>
-               <div className="text-center text-gray-700 text-[10px] font-black uppercase">অথবা ম্যানুয়ালি আইডি দিন</div>
+               {isScanning ? (
+                 <div className="relative w-full aspect-square bg-black rounded-3xl overflow-hidden border-2 border-blue-500/50 shadow-2xl">
+                    <video ref={videoRef} className="w-full h-full object-cover" />
+                    <canvas ref={canvasRef} className="hidden" />
+                    <div className="scanner-line"></div>
+                    <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none"></div>
+                    <button 
+                      onClick={stopScanner}
+                      className="absolute bottom-6 left-1/2 -translate-x-1/2 px-6 py-2 bg-red-600 text-white rounded-full font-black text-[10px] uppercase"
+                    >
+                      বন্ধ করুন
+                    </button>
+                 </div>
+               ) : (
+                 <button 
+                   onClick={startScanner} 
+                   className="flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg"
+                 >
+                   <Camera size={20}/> QR কোড স্ক্যান করুন
+                 </button>
+               )}
+               <div className="text-center text-gray-700 text-[10px] font-black uppercase py-2">অথবা ম্যানুয়ালি আইডি দিন</div>
             </div>
             <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600" placeholder="মেস আইডি" value={messCode} onChange={e => setMessCode(e.target.value)} />
             <input type="password" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600" placeholder="পাসওয়ার্ড" value={messPasswordInput} onChange={e => setMessPasswordInput(e.target.value)} />

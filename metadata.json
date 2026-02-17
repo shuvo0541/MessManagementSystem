@@ -1,5 +1,7 @@
 {
   "name": "Mess Management System",
   "description": "A comprehensive, Bangla-language hostel meal management system featuring monthly role-based access, auto-calculations, and detailed analytics.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [
+    "camera"
+  ]
 }
