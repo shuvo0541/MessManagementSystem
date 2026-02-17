@@ -5,6 +5,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>মেস ম্যানেজমেন্ট সিস্টেম</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3b82f6">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3448/3448636.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -32,7 +35,6 @@
             left: 0;
             z-index: 999;
         }
-        /* QR Scanner Animation */
         @keyframes scan {
           0% { top: 0; }
           100% { top: 100%; }
@@ -54,11 +56,22 @@
                 root.innerHTML = `<div style="padding: 40px; color: #f87171; text-align: center; font-family: sans-serif;">
                     <h2 style="font-size: 20px; font-weight: bold; margin-bottom: 10px;">সিস্টেম লোড হতে সমস্যা হয়েছে</h2>
                     <p style="font-size: 14px; color: #9ca3af;">${msg}</p>
-                    <button onclick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">আবার চেষ্টা করুন</button>
+                    <button onClick="location.reload()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">আবার চেষ্টা করুন</button>
                 </div>`;
             }
             return false;
         };
+
+        // Register Service Worker
+        if ('serviceWorker' in navigator) {
+          window.addEventListener('load', () => {
+            navigator.serviceWorker.register('/sw.js').then(reg => {
+              console.log('SW Registered', reg);
+            }).catch(err => {
+              console.log('SW registration failed', err);
+            });
+          });
+        }
     </script>
     <script type="importmap">
 {

@@ -1,0 +1,25 @@
+
+{
+  "name": "মেস ম্যানেজমেন্ট সিস্টেম",
+  "short_name": "মেস ম্যানেজমেন্ট",
+  "description": "একটি আধুনিক এবং সহজ মেস ম্যানেজমেন্ট সিস্টেম।",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#030712",
+  "theme_color": "#3b82f6",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3448/3448636.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/3448/3448636.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
