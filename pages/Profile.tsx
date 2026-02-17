@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { supabase } from '../supabase';
 import { User, MessSystemDB } from '../types';
 import { INITIAL_DB, generateDemoData } from '../db';
@@ -59,16 +59,94 @@ const Profile: React.FC<ProfileProps> = ({
   const [createdInfo, setCreatedInfo] = useState<{id: string, pass: string} | null>(null);
   const [invitations, setInvitations] = useState<any[]>([]);
   
-  // Scanner States
+  // Scanner States using Refs for synchronous access in loop
   const [isScanning, setIsScanning] = useState(false);
+  const isScanningRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const requestRef = useRef<number>();
 
   useEffect(() => {
     fetchInvitations();
-    return () => stopScanner(); // Cleanup camera on unmount
+    return () => stopScanner(); 
   }, [authEmail]);
+
+  const tick = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current || !isScanningRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (ctx) {
+        canvas.height = video.videoHeight;
+        canvas.width = video.videoWidth;
+        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+        
+        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const code = jsQR(imageData.data, imageData.width, imageData.height, {
+          inversionAttempts: "attemptBoth",
+        });
+
+        if (code && code.data) {
+          console.log("Found QR code:", code.data);
+          setMessCode(code.data);
+          stopScanner();
+          setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
+          return;
+        }
+      }
+    }
+    
+    if (isScanningRef.current) {
+      requestRef.current = requestAnimationFrame(tick);
+    }
+  }, []);
+
+  const startScanner = async () => {
+    setStatusMsg(null);
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment' } 
+      });
+      
+      streamRef.current = stream;
+      isScanningRef.current = true;
+      setIsScanning(true);
+
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.setAttribute("playsinline", "true"); 
+        await videoRef.current.play();
+        requestRef.current = requestAnimationFrame(tick);
+      }
+    } catch (err) {
+      console.error("Camera error:", err);
+      setIsScanning(false);
+      isScanningRef.current = false;
+      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন।' });
+    }
+  };
+
+  const stopScanner = () => {
+    isScanningRef.current = false;
+    setIsScanning(false);
+    
+    if (requestRef.current) {
+      cancelAnimationFrame(requestRef.current);
+    }
+    
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+  };
 
   const fetchInvitations = async () => {
     try {
@@ -79,63 +157,6 @@ const Profile: React.FC<ProfileProps> = ({
         .eq('status', 'pending');
       if (data) setInvitations(data);
     } catch (err) {}
-  };
-
-  const startScanner = async () => {
-    setIsScanning(true);
-    setStatusMsg(null);
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        videoRef.current.setAttribute("playsinline", "true"); // required to tell iOS safari we don't want fullscreen
-        videoRef.current.play();
-        requestAnimationFrame(tick);
-      }
-    } catch (err) {
-      console.error(err);
-      setIsScanning(false);
-      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন।' });
-    }
-  };
-
-  const stopScanner = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
-      streamRef.current = null;
-    }
-    setIsScanning(false);
-  };
-
-  const tick = () => {
-    if (videoRef.current && videoRef.current.readyState === videoRef.current.HAVE_ENOUGH_DATA) {
-      const canvas = canvasRef.current;
-      const video = videoRef.current;
-      if (canvas) {
-        const ctx = canvas.getContext('2d');
-        if (ctx) {
-          canvas.height = video.videoHeight;
-          canvas.width = video.videoWidth;
-          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-          const code = jsQR(imageData.data, imageData.width, imageData.height, {
-            inversionAttempts: "dontInvert",
-          });
-          if (code) {
-            setMessCode(code.data);
-            stopScanner();
-            setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
-            return;
-          }
-        }
-      }
-    }
-    if (isScanning) {
-      requestAnimationFrame(tick);
-    }
   };
 
   const handleCreateMess = async () => {
