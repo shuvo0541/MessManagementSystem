@@ -72,13 +72,21 @@ const Profile: React.FC<ProfileProps> = ({
     return () => stopScanner(); 
   }, [authEmail]);
 
+  // ক্যামেরা চালু করার জন্য useEffect
+  useEffect(() => {
+    if (isScanning) {
+      initCamera();
+    } else {
+      stopScanner();
+    }
+  }, [isScanning]);
+
   const tick = useCallback(() => {
     if (!videoRef.current || !canvasRef.current || !isScanningRef.current) return;
 
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    // readyState 2 বা তার বেশি হলে এবং ভিডিওর সাইজ পাওয়া গেলে স্ক্যান শুরু হবে
     if (video.readyState >= 2 && video.videoWidth > 0) {
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (ctx) {
@@ -93,7 +101,7 @@ const Profile: React.FC<ProfileProps> = ({
 
           if (code && code.data) {
             setMessCode(code.data);
-            stopScanner();
+            setIsScanning(false);
             setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
             return;
           }
@@ -105,10 +113,9 @@ const Profile: React.FC<ProfileProps> = ({
     }
   }, []);
 
-  const startScanner = async () => {
+  const initCamera = async () => {
     setStatusMsg({ type: 'info', text: 'ক্যামেরা চালু হচ্ছে...' });
     try {
-      // রেজোলিউশন কমানো হয়েছে যাতে হার্ডওয়্যার দ্রুত সেন্সর চালু করতে পারে
       const constraints = { 
         video: { 
           facingMode: 'environment',
@@ -118,63 +125,36 @@ const Profile: React.FC<ProfileProps> = ({
       };
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
-      
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
-      }
-
       streamRef.current = stream;
       isScanningRef.current = true;
-      setIsScanning(true);
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute("playsinline", "true"); 
-        videoRef.current.muted = true; 
         
-        // ভিডিও সরাসরি প্লে করার চেষ্টা
-        try {
-          await videoRef.current.play();
-          requestRef.current = requestAnimationFrame(tick);
-          setStatusMsg(null);
-        } catch (playErr) {
-          // যদি সরাসরি প্লে না হয় তবে লোড হওয়া পর্যন্ত অপেক্ষা
-          videoRef.current.onloadedmetadata = () => {
-            videoRef.current?.play().then(() => {
-               requestRef.current = requestAnimationFrame(tick);
-               setStatusMsg(null);
-            });
-          };
-        }
+        // ভিডিও লোড হওয়ার সাথে সাথে প্লে করার চেষ্টা
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+            requestRef.current = requestAnimationFrame(tick);
+            setStatusMsg(null);
+          }).catch(e => console.error("Play failed", e));
+        };
       }
     } catch (err: any) {
-      console.error("Camera access error:", err);
+      console.error("Camera error:", err);
       setIsScanning(false);
       isScanningRef.current = false;
-      
-      let errorText = 'ক্যামেরা চালু করা যায়নি।';
-      if (err.name === 'NotAllowedError') {
-        errorText = 'ক্যামেরা ব্যবহারের অনুমতি দেওয়া হয়নি।';
-      } else if (err.name === 'NotFoundError') {
-        errorText = 'ডিভাইসে কোনো ক্যামেরা পাওয়া যায়নি।';
-      }
-      setStatusMsg({ type: 'error', text: errorText });
+      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন।' });
     }
   };
 
   const stopScanner = () => {
     isScanningRef.current = false;
-    setIsScanning(false);
-    
-    if (requestRef.current) {
-      cancelAnimationFrame(requestRef.current);
-    }
-    
+    if (requestRef.current) cancelAnimationFrame(requestRef.current);
     if (streamRef.current) {
       streamRef.current.getTracks().forEach(track => track.stop());
       streamRef.current = null;
     }
-
     if (videoRef.current) {
       videoRef.current.srcObject = null;
       videoRef.current.pause();
@@ -356,30 +336,39 @@ const Profile: React.FC<ProfileProps> = ({
       {view === 'join' && (
         <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8 animate-in slide-in-from-bottom-4">
           <div className="flex items-center gap-4">
-             <button onClick={() => { if(isScanning) stopScanner(); setView('info'); }} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><ChevronRight className="rotate-180"/></button>
+             <button onClick={() => { setIsScanning(false); setView('info'); }} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><ChevronRight className="rotate-180"/></button>
              <h3 className="text-2xl font-black text-white">মেসে যোগ দিন</h3>
           </div>
           <div className="space-y-6">
             <div className="grid grid-cols-1 gap-4">
                {isScanning ? (
-                 <div className="relative w-full aspect-square bg-black rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl">
-                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
+                 <div className="relative w-full aspect-square bg-black rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl flex items-center justify-center">
+                    <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" autoPlay playsInline muted />
                     <canvas ref={canvasRef} className="hidden" />
-                    <div className="scanner-line"></div>
-                    {/* Scanner overlay corners */}
-                    <div className="absolute inset-0 border-[60px] border-black/40 pointer-events-none"></div>
+                    <div className="scanner-line z-10"></div>
+                    
+                    {/* Camera Loading State */}
+                    {statusMsg?.type === 'info' && (
+                      <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-4 z-20">
+                        <Loader2 className="animate-spin text-blue-500" size={32} />
+                        <span className="text-white font-bold text-xs uppercase tracking-widest">{statusMsg.text}</span>
+                      </div>
+                    )}
+
+                    {/* Scanner UI Overlay */}
+                    <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none"></div>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-blue-400/30 rounded-2xl pointer-events-none"></div>
                     
                     <button 
-                      onClick={stopScanner}
-                      className="absolute bottom-6 left-1/2 -translate-x-1/2 px-8 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl active:scale-95"
+                      onClick={() => setIsScanning(false)}
+                      className="absolute bottom-6 left-1/2 -translate-x-1/2 px-8 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl active:scale-95 z-30"
                     >
                       বন্ধ করুন
                     </button>
                  </div>
                ) : (
                  <button 
-                   onClick={startScanner} 
+                   onClick={() => setIsScanning(true)} 
                    className="flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-6 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl active:scale-95"
                  >
                    <Camera size={24}/> QR কোড স্ক্যান করুন
