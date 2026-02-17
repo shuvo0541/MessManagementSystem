@@ -12,7 +12,10 @@ import {
   PieChart as PieChartIcon,
   Lock,
   Unlock,
-  RefreshCcw
+  RefreshCcw,
+  Key,
+  Hash,
+  Copy
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -62,7 +65,6 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
   const handleApprove = async (req: any) => {
     setLoadingRequests(true);
     try {
-      // মেম্বার অনুমোদনের সময় বর্তমান মাসকেই তাদের যোগদানের মাস হিসেবে ধরা হচ্ছে
       const currentMonth = getCurrentMonthStr(); 
       const newUser: User = {
         id: req.user_id,
@@ -103,6 +105,11 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
   const chartData = useMemo(() => stats.userStats.map((u: any) => ({ name: u.name, meals: u.totalMeals })), [stats.userStats]);
   
+  const copyToClipboard = (text: string, label: string) => {
+    navigator.clipboard.writeText(text);
+    alert(`${label} কপি হয়েছে!`);
+  };
+
   const SummaryCard = ({ title, value, icon: Icon, color }: any) => (
     <div className="bg-gray-900 p-6 rounded-3xl border border-gray-800 group relative overflow-hidden transition-all hover:shadow-xl">
       <div className={`absolute -right-2 -bottom-2 opacity-[0.05] group-hover:opacity-10 transition-opacity transform scale-150 text-${color}-500`}>
@@ -136,6 +143,46 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
               </button>
            </div>
         )}
+      </div>
+
+      {/* মেস আইডি এবং পাসওয়ার্ড কার্ড (রেসপন্সিভ) */}
+      <div className="bg-gradient-to-br from-blue-900/20 to-gray-900 border border-blue-500/20 rounded-[2.5rem] p-6 md:p-8 shadow-2xl flex flex-col md:flex-row gap-6 items-center justify-between">
+         <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="bg-gray-950/50 p-5 rounded-2xl border border-gray-800 flex items-center justify-between group">
+               <div className="flex items-center gap-4">
+                  <div className="p-3 bg-blue-600/20 text-blue-400 rounded-xl">
+                     <Hash size={20}/>
+                  </div>
+                  <div>
+                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">মেস আইডি</p>
+                     <p className="text-sm font-black text-blue-400 select-all truncate max-w-[120px] sm:max-w-none">{messId}</p>
+                  </div>
+               </div>
+               <button onClick={() => copyToClipboard(messId, 'মেস আইডি')} className="p-2 hover:bg-gray-800 rounded-lg text-gray-500 hover:text-white transition-all active:scale-90">
+                  <Copy size={16}/>
+               </button>
+            </div>
+
+            <div className="bg-gray-950/50 p-5 rounded-2xl border border-gray-800 flex items-center justify-between group">
+               <div className="flex items-center gap-4">
+                  <div className="p-3 bg-green-600/20 text-green-400 rounded-xl">
+                     <Key size={20}/>
+                  </div>
+                  <div>
+                     <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">মেস পাসওয়ার্ড</p>
+                     <p className="text-lg font-black text-green-400 tracking-widest">{db.messPassword || 'N/A'}</p>
+                  </div>
+               </div>
+               {db.messPassword && (
+                 <button onClick={() => copyToClipboard(db.messPassword!, 'পাসওয়ার্ড')} className="p-2 hover:bg-gray-800 rounded-lg text-gray-500 hover:text-white transition-all active:scale-90">
+                    <Copy size={16}/>
+                 </button>
+               )}
+            </div>
+         </div>
+         <div className="hidden lg:block shrink-0 px-6 border-l border-gray-800">
+            <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] vertical-text">ACCESS DETAILS</p>
+         </div>
       </div>
 
       {user.isAdmin && pendingRequests.length > 0 && (

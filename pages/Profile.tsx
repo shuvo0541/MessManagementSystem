@@ -225,7 +225,7 @@ const Profile: React.FC<ProfileProps> = ({
             <h1 className="text-4xl font-black text-white truncate">{user.name}</h1>
             <span className="px-3 py-1 bg-blue-900/40 text-blue-400 text-xs font-black uppercase tracking-widest rounded-full border border-blue-500/20">ইউজার প্রোফাইল</span>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 max-w-4xl">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl">
             <div className="flex items-center gap-3 text-gray-400 font-bold bg-gray-900/50 px-5 py-3 rounded-2xl border border-gray-800 truncate">
               <Mail size={18} className="text-blue-500 shrink-0" />
               <span className="truncate">{authEmail}</span>
@@ -233,14 +233,6 @@ const Profile: React.FC<ProfileProps> = ({
             <div className="flex items-center gap-3 text-gray-400 font-bold bg-gray-900/50 px-5 py-3 rounded-2xl border border-gray-800">
               <AtSign size={18} className="text-purple-500 shrink-0" />
               @{user.username}
-            </div>
-            <div className="flex items-center gap-3 text-gray-400 font-bold bg-gray-900/50 px-5 py-3 rounded-2xl border border-gray-800">
-              <CalendarDays size={18} className="text-green-500 shrink-0" />
-              <span>যোগদান: {user.joiningMonth || 'N/A'}</span>
-            </div>
-            <div className="flex items-center gap-3 text-gray-400 font-bold bg-gray-900/50 px-5 py-3 rounded-2xl border border-gray-800">
-              <CalendarX size={18} className="text-red-500 shrink-0" />
-              <span>ছাড়ার মাস: {user.leavingMonth || 'অ্যাক্টিভ'}</span>
             </div>
           </div>
         </div>
