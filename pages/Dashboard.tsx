@@ -113,7 +113,9 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     alert(`${label} কপি হয়েছে!`);
   };
 
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${messId}`;
+  // কিউআর কোডে পাসওয়ার্ড যুক্ত করা হয়েছে যেন স্ক্যান করলে দুটিই ফিল হয়
+  const qrData = `${messId}|${db.messPassword || ''}`;
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
 
   const SummaryCard = ({ title, value, icon: Icon, color }: any) => (
     <div className="bg-gray-900 p-6 rounded-3xl border border-gray-800 group relative overflow-hidden transition-all hover:shadow-xl">
@@ -252,7 +254,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                  <img src={qrUrl} alt="Mess QR" className="w-56 h-56" />
               </div>
               <div className="space-y-2">
-                 <p className="text-xs font-bold text-gray-400 leading-relaxed">নতুন মেম্বারদের এই কিউআর কোডটি স্ক্যান করতে বলুন। এটি সরাসরি তাদের মেসে জয়েন করতে সাহায্য করবে।</p>
+                 <p className="text-xs font-bold text-gray-400 leading-relaxed">নতুন মেম্বারদের এই কিউআর কোডটি স্ক্যান করতে বলুন। এটি সরাসরি তাদের মেস আইডি ও পাসওয়ার্ড বসিয়ে দেবে।</p>
               </div>
               <button onClick={() => window.print()} className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all">প্রিন্ট কোড</button>
            </div>

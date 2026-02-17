@@ -100,9 +100,18 @@ const Profile: React.FC<ProfileProps> = ({
           });
 
           if (code && code.data) {
-            setMessCode(code.data);
+            // আইডি এবং পাসওয়ার্ড আলাদা করার চেষ্টা (ID|Pass ফরম্যাট)
+            const parts = code.data.split('|');
+            if (parts.length > 1) {
+              setMessCode(parts[0]);
+              setMessPasswordInput(parts[1]);
+              setStatusMsg({ type: 'success', text: 'মেস আইডি ও পাসওয়ার্ড স্ক্যান করা হয়েছে!' });
+            } else {
+              setMessCode(code.data);
+              setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
+            }
+            
             setIsScanning(false);
-            setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
             return;
           }
       }
@@ -131,20 +140,32 @@ const Profile: React.FC<ProfileProps> = ({
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute("playsinline", "true"); 
+        videoRef.current.muted = true;
         
-        // ভিডিও লোড হওয়ার সাথে সাথে প্লে করার চেষ্টা
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-            requestRef.current = requestAnimationFrame(tick);
-            setStatusMsg(null);
-          }).catch(e => console.error("Play failed", e));
+        // ভিডিও প্লে করার জন্য ইভেন্ট লিসেনার যোগ করা
+        const playVideo = async () => {
+          try {
+            if (videoRef.current) {
+              await videoRef.current.play();
+              requestRef.current = requestAnimationFrame(tick);
+              setStatusMsg(null);
+            }
+          } catch (e) {
+            console.error("Camera play failed", e);
+          }
         };
+
+        videoRef.current.onloadedmetadata = playVideo;
+        // যদি মেটাডাটা আগে থেকেই লোড হয়ে থাকে
+        if (videoRef.current.readyState >= 2) {
+          playVideo();
+        }
       }
     } catch (err: any) {
       console.error("Camera error:", err);
       setIsScanning(false);
       isScanningRef.current = false;
-      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন।' });
+      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন। ' + err.message });
     }
   };
 
@@ -321,12 +342,12 @@ const Profile: React.FC<ProfileProps> = ({
       {view === 'create' && (
         <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8 animate-in slide-in-from-bottom-4">
           <div className="flex items-center gap-4">
-             <button onClick={() => setView('info')} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><ChevronRight className="rotate-180"/></button>
+             <button onClick={() => setView('info')} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-colors"><ChevronRight className="rotate-180"/></button>
              <h3 className="text-2xl font-black text-white">নতুন মেস তৈরি</h3>
           </div>
           <div className="space-y-6">
-            <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" placeholder="মেসের নাম" value={messName} onChange={e => setMessName(e.target.value)} />
-            <button onClick={handleCreateMess} disabled={loading || !messName} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-3">
+            <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all" placeholder="মেসের নাম" value={messName} onChange={e => setMessName(e.target.value)} />
+            <button onClick={handleCreateMess} disabled={loading || !messName} className="w-full py-5 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-3 transition-all active:scale-95">
               {loading && <Loader2 size={18} className="animate-spin"/>} মেস তৈরি করুন
             </button>
           </div>
@@ -336,7 +357,7 @@ const Profile: React.FC<ProfileProps> = ({
       {view === 'join' && (
         <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8 animate-in slide-in-from-bottom-4">
           <div className="flex items-center gap-4">
-             <button onClick={() => { setIsScanning(false); setView('info'); }} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><ChevronRight className="rotate-180"/></button>
+             <button onClick={() => { setIsScanning(false); setView('info'); }} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-colors"><ChevronRight className="rotate-180"/></button>
              <h3 className="text-2xl font-black text-white">মেসে যোগ দিন</h3>
           </div>
           <div className="space-y-6">
@@ -376,9 +397,9 @@ const Profile: React.FC<ProfileProps> = ({
                )}
                <div className="text-center text-gray-700 text-[10px] font-black uppercase py-2">অথবা ম্যানুয়ালি আইডি দিন</div>
             </div>
-            <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600" placeholder="মেস আইডি" value={messCode} onChange={e => setMessCode(e.target.value)} />
-            <input type="password" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600" placeholder="পাসওয়ার্ড" value={messPasswordInput} onChange={e => setMessPasswordInput(e.target.value)} />
-            <button onClick={handleJoinMess} disabled={loading} className="w-full py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-3">
+            <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600 transition-all" placeholder="মেস আইডি" value={messCode} onChange={e => setMessCode(e.target.value)} />
+            <input type="password" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600 transition-all" placeholder="পাসওয়ার্ড" value={messPasswordInput} onChange={e => setMessPasswordInput(e.target.value)} />
+            <button onClick={handleJoinMess} disabled={loading} className="w-full py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-3 transition-all active:scale-95">
               {loading && <Loader2 size={18} className="animate-spin"/>} অনুরোধ পাঠান
             </button>
           </div>
@@ -386,7 +407,7 @@ const Profile: React.FC<ProfileProps> = ({
       )}
 
       {view === 'success' && createdInfo && (
-        <div className="max-w-lg mx-auto bg-gray-900 p-12 rounded-[4rem] border border-blue-500/30 text-center space-y-10 animate-in zoom-in-95">
+        <div className="max-lg mx-auto bg-gray-900 p-12 rounded-[4rem] border border-blue-500/30 text-center space-y-10 animate-in zoom-in-95">
            <div className="w-24 h-24 bg-green-600 rounded-full flex items-center justify-center text-white mx-auto shadow-2xl shadow-green-500/30">
               <CheckCircle2 size={48}/>
            </div>
@@ -403,7 +424,7 @@ const Profile: React.FC<ProfileProps> = ({
                  </div>
               </div>
            </div>
-           <button onClick={() => window.location.reload()} className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm">ড্যাশবোর্ড প্রবেশ</button>
+           <button onClick={() => window.location.reload()} className="w-full py-6 bg-blue-600 text-white rounded-2xl font-black uppercase text-sm shadow-xl active:scale-95 transition-all">ড্যাশবোর্ড প্রবেশ</button>
         </div>
       )}
 
