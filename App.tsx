@@ -58,16 +58,27 @@ const App: React.FC = () => {
     }
   };
 
+  // Global Sync Logic: ইউজার যে কয়টি মেসের মেম্বার, সবখানে তার নাম আপডেট করবে
+  const syncUserNameGlobally = async (userId: string, metaName: string, messes: any[]) => {
+    for (const mess of messes) {
+      const messDB = { ...mess.db_json } as MessSystemDB;
+      const uIdx = messDB.users.findIndex(u => u.id === userId);
+      
+      if (uIdx > -1 && messDB.users[uIdx].name !== metaName) {
+        messDB.users[uIdx].name = metaName;
+        await syncDBToSupabase(messDB, mess.id);
+      }
+    }
+  };
+
   const enterMess = async (messData: any, userId: string, metaName: string) => {
     const messDB = { ...messData.db_json } as MessSystemDB;
     const userIdx = messDB.users.findIndex(u => u.id === userId);
     
-    // Self-healing: If stored name is email prefix, update it to Full Name from metadata
     if (userIdx > -1) {
-      const storedName = messDB.users[userIdx].name;
-      if (storedName !== metaName) {
+      // লোকাল স্টেট আপডেট
+      if (messDB.users[userIdx].name !== metaName) {
         messDB.users[userIdx].name = metaName;
-        // Sync the corrected name back to database
         await syncDBToSupabase(messDB, messData.id);
       }
       
@@ -83,7 +94,6 @@ const App: React.FC = () => {
         monthlyOff: [] 
       };
       setUser(adminUser);
-      // Admin should also be in the users list typically
       if (!messDB.users.some(u => u.id === userId)) {
         messDB.users.push(adminUser);
         await syncDBToSupabase(messDB, messData.id);
@@ -114,6 +124,9 @@ const App: React.FC = () => {
           
           const metadata = session.user.user_metadata;
           const metaName = metadata?.full_name || metadata?.name || session.user.email?.split('@')[0] || 'User';
+
+          // মেম্বার লগইন করা মাত্রই তার নাম সব মেসে আপডেট করে দেওয়া হবে
+          await syncUserNameGlobally(userId, metaName, messes);
 
           const lastMessId = localStorage.getItem('ACTIVE_MESS_ID');
           const lastMess = messes.find(m => m.id === lastMessId);
