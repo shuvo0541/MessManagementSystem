@@ -59,7 +59,7 @@ const Profile: React.FC<ProfileProps> = ({
   const [createdInfo, setCreatedInfo] = useState<{id: string, pass: string} | null>(null);
   const [invitations, setInvitations] = useState<any[]>([]);
   
-  // Scanner States using Refs for synchronous access in loop
+  // Scanner States
   const [isScanning, setIsScanning] = useState(false);
   const isScanningRef = useRef(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -81,21 +81,24 @@ const Profile: React.FC<ProfileProps> = ({
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (ctx) {
-        canvas.height = video.videoHeight;
-        canvas.width = video.videoWidth;
-        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-        
-        const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-        const code = jsQR(imageData.data, imageData.width, imageData.height, {
-          inversionAttempts: "attemptBoth",
-        });
+        // Ensure dimensions are valid
+        if (video.videoWidth > 0 && video.videoHeight > 0) {
+          canvas.height = video.videoHeight;
+          canvas.width = video.videoWidth;
+          ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+          
+          const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+          const code = jsQR(imageData.data, imageData.width, imageData.height, {
+            inversionAttempts: "attemptBoth",
+          });
 
-        if (code && code.data) {
-          console.log("Found QR code:", code.data);
-          setMessCode(code.data);
-          stopScanner();
-          setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
-          return;
+          if (code && code.data) {
+            console.log("Found QR code:", code.data);
+            setMessCode(code.data);
+            stopScanner();
+            setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
+            return;
+          }
         }
       }
     }
@@ -106,11 +109,19 @@ const Profile: React.FC<ProfileProps> = ({
   }, []);
 
   const startScanner = async () => {
-    setStatusMsg(null);
+    setStatusMsg({ type: 'info', text: 'ক্যামেরা চালু হচ্ছে...' });
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        video: { facingMode: 'environment' } 
-      });
+      // Constraints optimized for mobile browsers
+      // Fix: Changed '理想' to 'ideal' to match MediaTrackConstraints interface
+      const constraints = { 
+        video: { 
+          facingMode: 'environment',
+          width: {ideal: 1280},
+          height: {ideal: 720}
+        } 
+      };
+      
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
       streamRef.current = stream;
       isScanningRef.current = true;
@@ -118,15 +129,33 @@ const Profile: React.FC<ProfileProps> = ({
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Important for iOS: playsinline and muted
         videoRef.current.setAttribute("playsinline", "true"); 
-        await videoRef.current.play();
-        requestRef.current = requestAnimationFrame(tick);
+        videoRef.current.muted = true; 
+        
+        // Wait for video to actually load before starting the loop
+        videoRef.current.onloadedmetadata = () => {
+          videoRef.current?.play().then(() => {
+             requestRef.current = requestAnimationFrame(tick);
+             setStatusMsg(null);
+          }).catch(err => {
+             console.error("Play error:", err);
+             setStatusMsg({ type: 'error', text: 'ভিডিও প্লে করা যায়নি।' });
+          });
+        };
       }
-    } catch (err) {
-      console.error("Camera error:", err);
+    } catch (err: any) {
+      console.error("Camera access error:", err);
       setIsScanning(false);
       isScanningRef.current = false;
-      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন।' });
+      
+      let errorText = 'ক্যামেরা চালু করা যায়নি।';
+      if (err.name === 'NotAllowedError') {
+        errorText = 'ক্যামেরা ব্যবহারের পারমিশন দেওয়া হয়নি। ব্রাউজার সেটিিংস চেক করুন।';
+      } else if (err.name === 'NotFoundError') {
+        errorText = 'আপনার ডিভাইসে কোনো ক্যামেরা পাওয়া যায়নি।';
+      }
+      setStatusMsg({ type: 'error', text: errorText });
     }
   };
 
@@ -329,14 +358,17 @@ const Profile: React.FC<ProfileProps> = ({
           <div className="space-y-6">
             <div className="grid grid-cols-1 gap-4">
                {isScanning ? (
-                 <div className="relative w-full aspect-square bg-black rounded-3xl overflow-hidden border-2 border-blue-500/50 shadow-2xl">
-                    <video ref={videoRef} className="w-full h-full object-cover" />
+                 <div className="relative w-full aspect-square bg-black rounded-3xl overflow-hidden border-4 border-blue-500/50 shadow-2xl">
+                    <video ref={videoRef} className="w-full h-full object-cover" autoPlay playsInline muted />
                     <canvas ref={canvasRef} className="hidden" />
                     <div className="scanner-line"></div>
-                    <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none"></div>
+                    {/* Scanner overlay corners */}
+                    <div className="absolute inset-0 border-[60px] border-black/40 pointer-events-none"></div>
+                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-blue-400/30 rounded-2xl pointer-events-none"></div>
+                    
                     <button 
                       onClick={stopScanner}
-                      className="absolute bottom-6 left-1/2 -translate-x-1/2 px-6 py-2 bg-red-600 text-white rounded-full font-black text-[10px] uppercase"
+                      className="absolute bottom-6 left-1/2 -translate-x-1/2 px-8 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl active:scale-95"
                     >
                       বন্ধ করুন
                     </button>
@@ -344,9 +376,9 @@ const Profile: React.FC<ProfileProps> = ({
                ) : (
                  <button 
                    onClick={startScanner} 
-                   className="flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg"
+                   className="flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-6 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl active:scale-95"
                  >
-                   <Camera size={20}/> QR কোড স্ক্যান করুন
+                   <Camera size={24}/> QR কোড স্ক্যান করুন
                  </button>
                )}
                <div className="text-center text-gray-700 text-[10px] font-black uppercase py-2">অথবা ম্যানুয়ালি আইডি দিন</div>
