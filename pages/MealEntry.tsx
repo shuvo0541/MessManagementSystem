@@ -54,7 +54,10 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
 
   const updateMealValue = (uId: string, field: keyof Omit<Meal, 'id' | 'userId' | 'date'>, val: string) => {
     if (!isEditable) return;
-    const value = parseFloat(val) || 0;
+    
+    // ঋণাত্মক (negative) সংখ্যা আটকাতে Math.max(0, ...) ব্যবহার করা হলো
+    const rawValue = parseFloat(val) || 0;
+    const value = Math.max(0, rawValue);
     
     const mealIdx = db.meals.findIndex(m => m.userId === uId && m.date === selectedDate);
     const newMeals = [...db.meals];

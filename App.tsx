@@ -256,7 +256,7 @@ const App: React.FC = () => {
       case 'members': return <Members {...commonProps} role={userRole} isAdmin={user?.isAdmin || false} messAdminId={messAdminId} messId={messId!} messName={messName} user={user!} />;
       case 'utility': return <UtilityRoom {...commonProps} />;
       case 'meal-bazar-ledger': return <MealBazarLedger {...commonProps} />;
-      case 'analytics': return <Analytics db={db} user={user!} />;
+      case 'analytics': return <Analytics db={db} user={user!} month={selectedMonth} />;
       case 'meals': return <MealEntry {...commonProps} role={userRole} userId={user?.id || ''} isAdmin={user?.isAdmin || false} />;
       case 'bazar': return <BazarEntry {...commonProps} userId={user?.id || ''} isAdmin={user?.isAdmin || false} />;
       case 'reports': return <Reports {...commonProps} />;

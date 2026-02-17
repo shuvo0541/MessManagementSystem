@@ -2,7 +2,7 @@
 import React from 'react';
 import { T } from '../translations';
 import { User, Role } from '../types';
-import { Calendar, Menu, User as UserIcon } from 'lucide-react';
+import { Calendar, Menu, User as UserIcon, ChevronDown } from 'lucide-react';
 
 interface HeaderProps {
   user: User;
@@ -18,6 +18,32 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({ 
   user, role, messName, messId, selectedMonth, onMonthChange, onMenuToggle, hasActiveMess
 }) => {
+  const banglaMonths = [
+    "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
+    "জুলাই", "আগস্ট", "সেপ্টেম্বর", "অক্টোবর", "নভেম্বর", "ডিসেম্বর"
+  ];
+
+  const currentYear = new Date().getFullYear();
+  const currentMonth = new Date().getMonth() + 1; // 1-12
+
+  // সাল সিলেক্টরের জন্য অপশন তৈরি (২০২০ থেকে বর্তমান সাল পর্যন্ত)
+  const years = [];
+  for (let y = currentYear; y >= 2020; y--) {
+    years.push(y);
+  }
+
+  const [yearStr, monthStr] = selectedMonth.split('-');
+  const selectedYear = parseInt(yearStr);
+  const selectedMonthIdx = parseInt(monthStr);
+
+  const handleYearChange = (newYear: string) => {
+    onMonthChange(`${newYear}-${monthStr}`);
+  };
+
+  const handleMonthChange = (newMonth: string) => {
+    onMonthChange(`${yearStr}-${newMonth.padStart(2, '0')}`);
+  };
+
   const getRoleBadge = () => {
     if (user.isAdmin && hasActiveMess) return <span className="px-2 py-0.5 bg-purple-900/40 text-purple-400 text-[9px] md:text-xs rounded-full font-black uppercase tracking-tight shrink-0 border border-purple-500/30">{T.admin}</span>;
     
@@ -29,10 +55,6 @@ const Header: React.FC<HeaderProps> = ({
     }
     return <span className="px-2 py-0.5 bg-gray-900/40 text-gray-400 text-[9px] md:text-xs rounded-full font-black uppercase tracking-tight shrink-0 border border-gray-500/30">ইউজার</span>;
   };
-
-  // মেম্বারদের জন্য মাসের সীমাবদ্ধতা নির্ধারণ
-  const minMonthLimit = !user.isAdmin ? user.joiningMonth : undefined;
-  const maxMonthLimit = (!user.isAdmin && user.leavingMonth) ? user.leavingMonth : undefined;
 
   return (
     <header className="bg-gray-900/50 backdrop-blur-md border-b border-gray-800 px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-30">
@@ -60,17 +82,31 @@ const Header: React.FC<HeaderProps> = ({
             </h1>
           </div>
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-800/80 rounded-xl border border-gray-700">
-              <Calendar size={14} className="text-gray-500 hidden sm:block" />
-              <input 
-                type="month" 
-                value={selectedMonth}
-                min={minMonthLimit}
-                max={maxMonthLimit}
-                onChange={(e) => onMonthChange(e.target.value)}
-                className="bg-transparent border-none outline-none text-[11px] md:text-sm font-black focus:ring-0 w-32 cursor-pointer text-gray-100"
-              />
+          <div className="flex items-center gap-2 shrink-0">
+            <div className="flex items-center gap-1 px-2 py-1.5 bg-gray-800/80 rounded-xl border border-gray-700">
+              <Calendar size={14} className="text-gray-500 ml-1 hidden sm:block" />
+              
+              {/* মাস সিলেক্টর */}
+              <select 
+                value={selectedMonthIdx}
+                onChange={(e) => handleMonthChange(e.target.value)}
+                className="bg-transparent border-none outline-none text-[11px] md:text-xs font-black focus:ring-0 cursor-pointer text-gray-100 pr-6"
+              >
+                {banglaMonths.map((m, i) => (
+                  <option key={i} value={i + 1} className="bg-gray-900 text-white">{m}</option>
+                ))}
+              </select>
+
+              {/* সাল সিলেক্টর */}
+              <select 
+                value={selectedYear}
+                onChange={(e) => handleYearChange(e.target.value)}
+                className="bg-transparent border-none outline-none text-[11px] md:text-xs font-black focus:ring-0 cursor-pointer text-blue-400 pr-6 border-l border-gray-700 pl-2"
+              >
+                {years.map(y => (
+                  <option key={y} value={y} className="bg-gray-900 text-white">{y}</option>
+                ))}
+              </select>
             </div>
           </div>
         </>

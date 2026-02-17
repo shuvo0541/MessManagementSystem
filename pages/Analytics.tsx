@@ -10,12 +10,14 @@ import { TrendingUp, PieChart as PieIcon, BarChart3, Users, Calendar } from 'luc
 interface AnalyticsProps {
   db: MessSystemDB;
   user: User;
+  month: string;
 }
 
-const Analytics: React.FC<AnalyticsProps> = ({ db, user }) => {
-  const currentYear = new Date().getFullYear();
+const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
+  // হেডারে সিলেক্ট করা মাস থেকে বছরটি নেওয়া হচ্ছে
+  const selectedYear = parseInt(month.split('-')[0]);
 
-  // ১. ক্যালেন্ডার বছরের ডাটা সংগ্রহ (জানুয়ারি থেকে ডিসেম্বর)
+  // ১. সিলেক্ট করা বছরের ডাটা সংগ্রহ (জানুয়ারি থেকে ডিসেম্বর)
   const yearlyData = useMemo(() => {
     const months = [];
     const monthNames = [
@@ -24,7 +26,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user }) => {
     ];
 
     for (let i = 0; i < 12; i++) {
-      const mStr = `${currentYear}-${String(i + 1).padStart(2, '0')}`;
+      const mStr = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
       
       // মেম্বারদের জন্য শুধুমাত্র তাদের অ্যাক্টিভ মাসগুলোর ডাটা প্রসেস করা
       if (!user.isAdmin) {
@@ -43,20 +45,20 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user }) => {
       });
     }
     return months;
-  }, [db, currentYear, user]);
+  }, [db, selectedYear, user]);
 
-  // ২. বার্ষিক বাজার কন্ট্রিবিউশন
+  // ২. বার্ষিক বাজার কন্ট্রিবিউশন (সিলেক্ট করা বছরে)
   const userYearlyContribution = useMemo(() => {
     const residents = db.users; 
     return residents.map(u => {
-      const total = db.bazars.filter(b => b.userId === u.id).reduce((s, b) => s + b.amount, 0) +
-                    db.payments.filter(p => p.userId === u.id).reduce((s, p) => s + p.amount, 0);
+      const total = db.bazars.filter(b => b.userId === u.id && b.date.startsWith(selectedYear.toString())).reduce((s, b) => s + b.amount, 0) +
+                    db.payments.filter(p => p.userId === u.id && p.month.startsWith(selectedYear.toString())).reduce((s, p) => s + p.amount, 0);
       return {
         name: u.name,
         amount: total
       };
     }).filter(u => u.amount > 0).sort((a, b) => b.amount - a.amount);
-  }, [db]);
+  }, [db, selectedYear]);
 
   // ৩. ইউটিলিটি ব্রেকডাউন
   const utilityBreakdown = useMemo(() => {
@@ -66,7 +68,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user }) => {
     }));
   }, [db.utilities]);
 
-  // ৪. প্রকৃত শীর্ষ ৫ মিল গ্রহণকারী বের করা (সারা বছরের মিল যোগ করে)
+  // ৪. প্রকৃত শীর্ষ ৫ মিল গ্রহণকারী বের করা (সিলেক্ট করা বছরের মিল যোগ করে)
   const top5Eaters = useMemo(() => {
     const userMealSums: Record<string, { id: string, name: string, total: number }> = {};
     
@@ -75,7 +77,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user }) => {
     });
 
     db.meals.forEach(m => {
-      if (m.date.startsWith(currentYear.toString()) && userMealSums[m.userId]) {
+      if (m.date.startsWith(selectedYear.toString()) && userMealSums[m.userId]) {
         userMealSums[m.userId].total += (m.breakfast + m.lunch + m.dinner + m.guest);
       }
     });
@@ -83,7 +85,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user }) => {
     return Object.values(userMealSums)
       .sort((a, b) => b.total - a.total)
       .slice(0, 5);
-  }, [db.users, db.meals, currentYear]);
+  }, [db.users, db.meals, selectedYear]);
 
   // ৫. মাসিক মিল ট্রেন্ড ডাটা প্রসেসিং (শীর্ষ ৫ জনের জন্য)
   const mealConsumptionTrend = useMemo(() => {
@@ -108,17 +110,17 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user }) => {
         <div>
           <h2 className="text-3xl font-black text-white">বার্ষিক অ্যানালিটিক্স</h2>
           <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1">
-             {user.isAdmin ? `${currentYear} সালের ডাটা` : `আপনার অ্যাক্টিভ মাসগুলোর ডাটা`}
+             {selectedYear} সালের ডাটা
           </p>
         </div>
       </div>
 
-      {yearlyData.length === 0 ? (
+      {yearlyData.filter(d => d.totalMeals > 0 || d.totalBazar > 0).length === 0 ? (
         <div className="bg-gray-900 p-20 rounded-[3rem] border border-gray-800 text-center space-y-4">
            <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-600">
               <Calendar size={40} />
            </div>
-           <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">এই বছরে আপনার কোনো অ্যাক্টিভ ডাটা নেই</p>
+           <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">{selectedYear} সালে কোনো ডাটা পাওয়া যায়নি</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -164,7 +166,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user }) => {
           <div className="bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 shadow-2xl">
             <h3 className="text-lg font-black text-white flex items-center gap-3 mb-8">
               <Users size={20} className="text-green-500" />
-              মোট বাজার কন্ট্রিবিউশন (৳)
+              মোট কন্ট্রিবিউশন (৳) - {selectedYear}
             </h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
