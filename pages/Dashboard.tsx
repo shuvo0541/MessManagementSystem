@@ -15,7 +15,11 @@ import {
   RefreshCcw,
   Key,
   Hash,
-  Copy
+  Copy,
+  QrCode,
+  Clock,
+  Settings,
+  X
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -38,6 +42,8 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId }) => {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showTimeSettings, setShowTimeSettings] = useState(false);
 
   useEffect(() => {
     if (user.isAdmin) {
@@ -89,7 +95,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
       updateDB({ users: updatedUsers });
       setPendingRequests(prev => prev.filter(r => r.id !== req.id));
-      alert("মেম্বার অনুমোদিত হয়েছে! তাকে এখন মেম্বার লিস্টে অ্যাক্টিভ হিসেবে দেখা যাবে।");
+      alert("মেম্বার অনুমোদিত হয়েছে!");
     } catch (err: any) {
       alert("অনুমোদন করা যায়নি।");
     } finally {
@@ -109,6 +115,8 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     navigator.clipboard.writeText(text);
     alert(`${label} কপি হয়েছে!`);
   };
+
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${messId}`;
 
   const SummaryCard = ({ title, value, icon: Icon, color }: any) => (
     <div className="bg-gray-900 p-6 rounded-3xl border border-gray-800 group relative overflow-hidden transition-all hover:shadow-xl">
@@ -130,22 +138,33 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
   return (
     <div className="space-y-8 pb-10">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <h2 className="text-3xl font-black text-white">
-          {user.isAdmin ? 'অ্যাডমিন প্যানেল' : `স্বাগতম, ${user.name}!`}
-        </h2>
-        {user.isAdmin && (
-           <div className="flex gap-3">
-              <button onClick={() => {
-                const nextLocked = isMonthLocked ? db.lockedMonths?.filter(m => m !== month) : [...(db.lockedMonths || []), month];
-                if(window.confirm(isMonthLocked ? "আনলক করতে চান?" : "এই মাসের তথ্য ক্লোজ করতে চান?")) updateDB({ lockedMonths: nextLocked });
-              }} className={`flex items-center gap-3 px-6 py-4 rounded-3xl font-black uppercase text-xs tracking-widest transition-all ${isMonthLocked ? 'bg-amber-600' : 'bg-red-600'} text-white`}>
-                {isMonthLocked ? <><Unlock size={18}/> আনলক করুন</> : <><Lock size={18}/> মাস ক্লোজ করুন</>}
-              </button>
-           </div>
-        )}
+        <div>
+           <h2 className="text-3xl font-black text-white">
+             {user.isAdmin ? 'অ্যাডমিন প্যানেল' : `স্বাগতম, ${user.name}!`}
+           </h2>
+           <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1">মেস ড্যাশবোর্ড ওভারভিউ</p>
+        </div>
+        
+        <div className="flex flex-wrap gap-3">
+           {user.isAdmin && (
+              <>
+                 <button onClick={() => setShowTimeSettings(true)} className="flex items-center gap-2 px-5 py-3.5 bg-gray-900 text-gray-400 border border-gray-800 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:text-white transition-all">
+                    <Clock size={16}/> টাইম-লক
+                 </button>
+                 <button onClick={() => setShowQRModal(true)} className="flex items-center gap-2 px-5 py-3.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all">
+                    <QrCode size={16}/> QR কোড
+                 </button>
+                 <button onClick={() => {
+                   const nextLocked = isMonthLocked ? db.lockedMonths?.filter(m => m !== month) : [...(db.lockedMonths || []), month];
+                   if(window.confirm(isMonthLocked ? "আনলক করতে চান?" : "এই মাসের তথ্য ক্লোজ করতে চান?")) updateDB({ lockedMonths: nextLocked });
+                 }} className={`flex items-center gap-3 px-6 py-4 rounded-[1.5rem] font-black uppercase text-xs tracking-widest transition-all ${isMonthLocked ? 'bg-amber-600' : 'bg-red-600'} text-white shadow-xl`}>
+                   {isMonthLocked ? <><Unlock size={18}/> আনলক</> : <><Lock size={18}/> মাস ক্লোজ</>}
+                 </button>
+              </>
+           )}
+        </div>
       </div>
 
-      {/* মেস আইডি এবং পাসওয়ার্ড কার্ড (রেসপন্সিভ) */}
       <div className="bg-gradient-to-br from-blue-900/20 to-gray-900 border border-blue-500/20 rounded-[2.5rem] p-6 md:p-8 shadow-2xl flex flex-col md:flex-row gap-6 items-center justify-between">
          <div className="flex-1 w-full grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="bg-gray-950/50 p-5 rounded-2xl border border-gray-800 flex items-center justify-between group">
@@ -226,6 +245,75 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
           </ResponsiveContainer>
         </div>
       </div>
+
+      {/* QR Modal */}
+      {showQRModal && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
+           <div className="bg-gray-900 w-full max-w-sm rounded-[4rem] border border-gray-800 p-10 text-center space-y-8 animate-in zoom-in-95 duration-300">
+              <div className="flex justify-between items-center">
+                 <h3 className="text-xl font-black text-white uppercase tracking-widest">মেস QR কোড</h3>
+                 <button onClick={() => setShowQRModal(false)} className="p-2 bg-gray-800 rounded-xl text-gray-500 hover:text-white"><X size={20}/></button>
+              </div>
+              <div className="bg-white p-6 rounded-[3rem] shadow-2xl mx-auto w-fit">
+                 <img src={qrUrl} alt="Mess QR" className="w-56 h-56" />
+              </div>
+              <div className="space-y-2">
+                 <p className="text-xs font-bold text-gray-400 leading-relaxed">নতুন মেম্বারদের এই কিউআর কোডটি স্ক্যান করতে বলুন। এটি সরাসরি তাদের মেসে জয়েন করতে সাহায্য করবে।</p>
+              </div>
+              <button onClick={() => window.print()} className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all">প্রিন্ট কোড</button>
+           </div>
+        </div>
+      )}
+
+      {/* Time Lock Settings Modal */}
+      {showTimeSettings && (
+        <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
+           <div className="bg-gray-900 w-full max-w-md rounded-[4rem] border border-gray-800 p-10 space-y-8 animate-in zoom-in-95 duration-300">
+              <div className="flex justify-between items-center">
+                 <div className="flex items-center gap-3">
+                    <Clock size={24} className="text-blue-500" />
+                    <h3 className="text-xl font-black text-white uppercase tracking-widest">টাইম-লক সেটিংস</h3>
+                 </div>
+                 <button onClick={() => setShowTimeSettings(false)} className="p-2 bg-gray-800 rounded-xl text-gray-500 hover:text-white"><X size={20}/></button>
+              </div>
+
+              <div className="space-y-6">
+                 <div className="flex items-center justify-between p-5 bg-gray-800/50 rounded-3xl border border-gray-800">
+                    <span className="font-black text-gray-300 text-sm">লক সিস্টেম চালু করুন</span>
+                    <button 
+                       onClick={() => updateDB({ mealLockTimes: { ...(db.mealLockTimes || {breakfast:"20:00", lunch:"10:00", dinner:"17:00", enabled: false}), enabled: !db.mealLockTimes?.enabled }})}
+                       className={`w-14 h-8 rounded-full transition-all relative ${db.mealLockTimes?.enabled ? 'bg-blue-600' : 'bg-gray-700'}`}
+                    >
+                       <div className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${db.mealLockTimes?.enabled ? 'left-7' : 'left-1'}`} />
+                    </button>
+                 </div>
+
+                 <div className="grid grid-cols-1 gap-4 opacity-100 transition-opacity">
+                    {[
+                      { id: 'breakfast', label: 'সকাল (আগের রাত)', icon: Utensils },
+                      { id: 'lunch', label: 'দুপুর (একই দিন)', icon: Utensils },
+                      { id: 'dinner', label: 'রাত (একই দিন)', icon: Utensils }
+                    ].map(field => (
+                      <div key={field.id} className="flex items-center justify-between p-5 bg-gray-800/50 rounded-3xl border border-gray-800">
+                        <div className="flex items-center gap-3">
+                           <field.icon size={18} className="text-blue-500/50" />
+                           <span className="font-bold text-gray-400 text-xs">{field.label}</span>
+                        </div>
+                        <input 
+                          type="time" 
+                          className="bg-gray-900 border-gray-700 rounded-xl px-3 py-2 text-white font-black text-xs outline-none focus:ring-2 focus:ring-blue-600"
+                          value={db.mealLockTimes?.[field.id as keyof Omit<MessSystemDB['mealLockTimes'], 'enabled'>] || '00:00'}
+                          onChange={e => updateDB({ mealLockTimes: { ...db.mealLockTimes!, [field.id]: e.target.value }})}
+                        />
+                      </div>
+                    ))}
+                 </div>
+              </div>
+
+              <button onClick={() => setShowTimeSettings(false)} className="w-full py-5 bg-blue-600 text-white rounded-3xl font-black uppercase text-xs shadow-xl active:scale-95 transition-all">সেভ সেটিংস</button>
+           </div>
+        </div>
+      )}
     </div>
   );
 };

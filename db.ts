@@ -1,5 +1,5 @@
 
-import { MessSystemDB, User, Role, CalcMode } from './types';
+import { MessSystemDB, User, Role, CalcMode, Meal, Bazar, Payment } from './types';
 import { supabase } from './supabase';
 
 export const INITIAL_DB: MessSystemDB = {
@@ -14,7 +14,13 @@ export const INITIAL_DB: MessSystemDB = {
   bazars: [],
   extraCosts: [],
   payments: [],
-  theme: 'dark'
+  theme: 'dark',
+  mealLockTimes: {
+    breakfast: "21:00", // আগের রাত ৯টায় লক
+    lunch: "10:30",     // সকাল ১০:৩০ এ লক
+    dinner: "17:00",    // বিকাল ৫টায় লক
+    enabled: false
+  }
 };
 
 export const fetchMessDB = async (messId: string): Promise<MessSystemDB> => {
@@ -60,7 +66,6 @@ export const getPreviousMonthStr = (monthStr: string) => {
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
 };
 
-// এই ফাংশনটি নির্দিষ্ট মাসে কারা একটিভ তা নিখুঁতভাবে নির্ধারণ করে
 export const getActiveResidentsInMonth = (db: MessSystemDB, month: string) => {
   return db.users.filter(u => {
     const isJoined = !u.joiningMonth || u.joiningMonth <= month;
@@ -68,6 +73,70 @@ export const getActiveResidentsInMonth = (db: MessSystemDB, month: string) => {
     const isOff = u.isPermanentlyOff || (u.monthlyOff || []).includes(month);
     return isJoined && isNotLeft && !isOff;
   });
+};
+
+// টেস্টিং এর জন্য ১ বছরের ডামি ডাটা জেনারেটর
+export const generateDemoData = (db: MessSystemDB): MessSystemDB => {
+  const newDB = { ...db };
+  const currentMonth = new Date();
+  const meals: Meal[] = [];
+  const bazars: Bazar[] = [];
+  const payments: Payment[] = [];
+
+  // গত ১২ মাসের ডাটা তৈরি
+  for (let m = 0; m < 12; m++) {
+    const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - m, 1);
+    const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+    const residents = getActiveResidentsInMonth(db, mStr);
+
+    if (residents.length === 0) continue;
+
+    // প্রতিদিনের মিল এবং বাজার
+    for (let day = 1; day <= 28; day++) {
+      const dateStr = `${mStr}-${String(day).padStart(2, '0')}`;
+      
+      // মিল
+      residents.forEach(u => {
+        meals.push({
+          id: crypto.randomUUID(),
+          userId: u.id,
+          date: dateStr,
+          breakfast: Math.random() > 0.2 ? 1 : 0,
+          lunch: Math.random() > 0.1 ? 1 : 0,
+          dinner: Math.random() > 0.1 ? 1 : 0,
+          guest: Math.random() > 0.9 ? 1 : 0
+        });
+      });
+
+      // বাজার (মাঝে মাঝে)
+      if (day % 3 === 0) {
+        const randomU = residents[Math.floor(Math.random() * residents.length)];
+        bazars.push({
+          id: crypto.randomUUID(),
+          userId: randomU.id,
+          date: dateStr,
+          amount: Math.floor(Math.random() * 500) + 200,
+          note: "Demo Market Cost"
+        });
+      }
+    }
+    
+    // পেমেন্ট
+    residents.forEach(u => {
+       payments.push({
+         id: crypto.randomUUID(),
+         userId: u.id,
+         date: `${mStr}-05`,
+         amount: 2000,
+         month: mStr
+       });
+    });
+  }
+
+  newDB.meals = meals;
+  newDB.bazars = bazars;
+  newDB.payments = payments;
+  return newDB;
 };
 
 export const getCalculations = (db: MessSystemDB, month: string, depth = 0): any => {

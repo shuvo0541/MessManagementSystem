@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../supabase';
 import { User, MessSystemDB } from '../types';
-import { INITIAL_DB } from '../db';
+import { INITIAL_DB, generateDemoData } from '../db';
 import { 
   User as UserIcon, 
   Mail, 
@@ -26,7 +26,9 @@ import {
   ArrowRight,
   Zap,
   Info,
-  AlertCircle
+  AlertCircle,
+  QrCode,
+  Camera
 } from 'lucide-react';
 
 interface ProfileProps {
@@ -107,6 +109,24 @@ const Profile: React.FC<ProfileProps> = ({
     }
   };
 
+  const seedData = async (messId: string) => {
+    if(!window.confirm("আপনি কি ১ বছরের ডামি ডাটা জেনারেট করতে চান? (এটি আপনার বর্তমান ডাটার সাথে যুক্ত হবে)")) return;
+    setLoading(true);
+    try {
+      const { data } = await supabase.from('messes').select('db_json').eq('id', messId).single();
+      if(data) {
+        const newDB = generateDemoData(data.db_json);
+        await supabase.from('messes').update({ db_json: newDB }).eq('id', messId);
+        alert("ডামি ডাটা সফলভাবে তৈরি হয়েছে! ড্যাশবোর্ডে গিয়ে চেক করুন।");
+        window.location.reload();
+      }
+    } catch(err) {
+      alert("ডাটা জেনারেট করা যায়নি।");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="max-w-6xl mx-auto space-y-12 pb-20 animate-in fade-in duration-700">
       <div className="flex flex-col md:flex-row gap-10 items-start">
@@ -152,7 +172,7 @@ const Profile: React.FC<ProfileProps> = ({
             <h3 className="text-2xl font-black text-white flex items-center gap-3">
               <Building className="text-blue-500" /> আপনার মেসসমূহ
             </h3>
-            <div className="flex gap-4 w-full md:w-auto">
+            <div className="flex flex-wrap gap-4 w-full md:w-auto">
               <button onClick={() => setView('join')} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-900 border border-gray-800 text-gray-300 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-800">
                 <UserPlus size={16}/> মেসে যোগ দিন
               </button>
@@ -164,21 +184,30 @@ const Profile: React.FC<ProfileProps> = ({
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {userMesses.map(mess => (
-              <button key={mess.id} onClick={() => onSelectMess(mess)} className="group bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 hover:border-blue-500/50 hover:shadow-2xl transition-all text-left space-y-6 relative overflow-hidden">
-                <div className="w-16 h-16 bg-blue-900/20 text-blue-500 rounded-2xl flex items-center justify-center font-black text-2xl group-hover:scale-110 transition-transform">
-                  {mess.mess_name[0].toUpperCase()}
-                </div>
-                <div>
-                  <h4 className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors truncate">{mess.mess_name}</h4>
-                  <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-2 flex items-center gap-2"><Hash size={12}/> ID: {mess.id.slice(0, 12)}...</p>
+              <div key={mess.id} className="group bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 hover:border-blue-500/50 hover:shadow-2xl transition-all text-left space-y-6 relative overflow-hidden">
+                <div onClick={() => onSelectMess(mess)} className="cursor-pointer space-y-6">
+                  <div className="w-16 h-16 bg-blue-900/20 text-blue-500 rounded-2xl flex items-center justify-center font-black text-2xl group-hover:scale-110 transition-transform">
+                    {mess.mess_name[0].toUpperCase()}
+                  </div>
+                  <div>
+                    <h4 className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors truncate">{mess.mess_name}</h4>
+                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-2 flex items-center gap-2"><Hash size={12}/> ID: {mess.id.slice(0, 12)}...</p>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between pt-2">
-                   <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${mess.admin_id === user.id ? 'bg-purple-900/30 text-purple-400 border border-purple-500/20' : 'bg-blue-900/30 text-blue-400 border border-blue-500/20'}`}>
-                      {mess.admin_id === user.id ? 'Admin' : 'Member'}
-                   </span>
-                   <ArrowRight size={20} className="text-blue-500 group-hover:translate-x-2 transition-transform" />
+                   <div className="flex gap-2">
+                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${mess.admin_id === user.id ? 'bg-purple-900/30 text-purple-400 border border-purple-500/20' : 'bg-blue-900/30 text-blue-400 border border-blue-500/20'}`}>
+                         {mess.admin_id === user.id ? 'Admin' : 'Member'}
+                      </span>
+                      {mess.admin_id === user.id && (
+                        <button onClick={(e) => {e.stopPropagation(); seedData(mess.id)}} className="px-3 py-1 bg-amber-900/30 text-amber-500 text-[9px] font-black uppercase rounded-lg border border-amber-500/20 flex items-center gap-1 hover:bg-amber-600 hover:text-white transition-all">
+                           <Zap size={10}/> ১ বছরের ডাটা
+                        </button>
+                      )}
+                   </div>
+                   <ArrowRight size={20} className="text-blue-500 group-hover:translate-x-2 transition-transform cursor-pointer" onClick={() => onSelectMess(mess)} />
                 </div>
-              </button>
+              </div>
             ))}
             {userMesses.length === 0 && (
               <div className="col-span-full py-20 text-center bg-gray-900 rounded-[3rem] border border-gray-800 border-dashed">
@@ -190,7 +219,7 @@ const Profile: React.FC<ProfileProps> = ({
       )}
 
       {view === 'create' && (
-        <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8">
+        <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8 animate-in slide-in-from-bottom-4">
           <div className="flex items-center gap-4">
              <button onClick={() => setView('info')} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><ChevronRight className="rotate-180"/></button>
              <h3 className="text-2xl font-black text-white">নতুন মেস তৈরি</h3>
@@ -205,13 +234,22 @@ const Profile: React.FC<ProfileProps> = ({
       )}
 
       {view === 'join' && (
-        <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8">
+        <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8 animate-in slide-in-from-bottom-4">
           <div className="flex items-center gap-4">
              <button onClick={() => setView('info')} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white"><ChevronRight className="rotate-180"/></button>
              <h3 className="text-2xl font-black text-white">মেসে যোগ দিন</h3>
           </div>
           <div className="space-y-6">
-            <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600 mb-4" placeholder="মেস আইডি" value={messCode} onChange={e => setMessCode(e.target.value)} />
+            <div className="grid grid-cols-1 gap-4">
+               <button 
+                 onClick={() => alert("কিউআর স্ক্যানারটি একটি এক্সটার্নাল লাইব্রেরি নির্ভর। বর্তমানে আইডি দিয়ে যোগ দিন অপশনটি সচল আছে।")} 
+                 className="flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-5 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-blue-600 hover:text-white transition-all"
+               >
+                 <Camera size={20}/> QR কোড স্ক্যান করুন
+               </button>
+               <div className="text-center text-gray-700 text-[10px] font-black uppercase">অথবা ম্যানুয়ালি আইডি দিন</div>
+            </div>
+            <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600" placeholder="মেস আইডি" value={messCode} onChange={e => setMessCode(e.target.value)} />
             <input type="password" className="w-full bg-gray-800 border border-gray-700 rounded-2xl px-6 py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600" placeholder="পাসওয়ার্ড" value={messPasswordInput} onChange={e => setMessPasswordInput(e.target.value)} />
             <button onClick={handleJoinMess} disabled={loading} className="w-full py-5 bg-green-600 text-white rounded-2xl font-black uppercase text-xs flex items-center justify-center gap-3">
               {loading && <Loader2 size={18} className="animate-spin"/>} অনুরোধ পাঠান
@@ -221,7 +259,7 @@ const Profile: React.FC<ProfileProps> = ({
       )}
 
       {view === 'success' && createdInfo && (
-        <div className="max-w-lg mx-auto bg-gray-900 p-12 rounded-[4rem] border border-blue-500/30 text-center space-y-10">
+        <div className="max-w-lg mx-auto bg-gray-900 p-12 rounded-[4rem] border border-blue-500/30 text-center space-y-10 animate-in zoom-in-95">
            <div className="w-24 h-24 bg-green-600 rounded-full flex items-center justify-center text-white mx-auto shadow-2xl shadow-green-500/30">
               <CheckCircle2 size={48}/>
            </div>
