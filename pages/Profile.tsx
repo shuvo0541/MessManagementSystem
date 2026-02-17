@@ -224,7 +224,14 @@ const Profile: React.FC<ProfileProps> = ({
       const currentDB = mess.db_json as MessSystemDB;
       if (currentDB.messPassword !== messPasswordInput.trim()) throw new Error('ভুল মেস পাসওয়ার্ড!');
       
-      await supabase.from('join_requests').insert([{ mess_id: mess.id, user_id: user.id, user_email: authEmail, status: 'pending' }]);
+      // ইউজারনেম হিসেবে পূর্ণ নাম পাঠানো হচ্ছে
+      await supabase.from('join_requests').insert([{ 
+        mess_id: mess.id, 
+        user_id: user.id, 
+        user_email: authEmail, 
+        user_name: user.name, // ইউজারের নাম এখানে যুক্ত করা হলো
+        status: 'pending' 
+      }]);
       onPending();
     } catch (err: any) {
       setStatusMsg({ type: 'error', text: err.message });
@@ -343,7 +350,7 @@ const Profile: React.FC<ProfileProps> = ({
       )}
 
       {view === 'create' && (
-        <div className="max-w-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8 animate-in slide-in-from-bottom-4">
+        <div className="max-md mx-auto bg-gray-900 p-10 rounded-[3rem] border border-gray-800 shadow-2xl space-y-8 animate-in slide-in-from-bottom-4">
           <div className="flex items-center gap-4">
              <button onClick={() => setView('info')} className="p-3 bg-gray-800 rounded-2xl text-gray-400 hover:text-white transition-colors"><ChevronRight className="rotate-180"/></button>
              <h3 className="text-2xl font-black text-white">নতুন মেস তৈরি</h3>

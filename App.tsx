@@ -24,7 +24,7 @@ const App: React.FC = () => {
   const [authEmail, setAuthEmail] = useState<string | null>(null);
   const [messId, setMessId] = useState<string | null>(null);
   const [messName, setMessName] = useState<string>('');
-  const [messAdminId, setMessAdminId] = useState<string | null>(null); // মেস মালিকের আইডি
+  const [messAdminId, setMessAdminId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [initError, setInitError] = useState<string | null>(null);
   const [view, setView] = useState('dashboard');
@@ -58,38 +58,42 @@ const App: React.FC = () => {
     }
   };
 
-  const enterMess = async (messData: any, userId: string) => {
-    const messDB = messData.db_json as MessSystemDB;
-    const foundInList = messDB.users.find(u => u.id === userId);
+  const enterMess = async (messData: any, userId: string, metaName: string) => {
+    const messDB = { ...messData.db_json } as MessSystemDB;
+    const userIdx = messDB.users.findIndex(u => u.id === userId);
     
-    setDb(messDB);
-    setMessId(messData.id);
-    setMessName(messData.mess_name);
-    setMessAdminId(messData.admin_id); // মালিকের আইডি সেট করা হলো
-    
-    const isPrimaryAdmin = messData.admin_id === userId;
-    
-    if (foundInList) {
-      const activeUser = { ...foundInList, isAdmin: isPrimaryAdmin || foundInList.isAdmin };
-      setUser(activeUser);
-
-      const currentMonth = getCurrentMonthStr();
-      const isOutBelow = activeUser.joiningMonth && currentMonth < activeUser.joiningMonth;
-      const isOutAbove = activeUser.leavingMonth && currentMonth > activeUser.leavingMonth;
-      
-      if (!activeUser.isAdmin && (isOutBelow || isOutAbove)) {
-        setSelectedMonth(activeUser.joiningMonth || currentMonth);
+    // Self-healing: If stored name is email prefix, update it to Full Name from metadata
+    if (userIdx > -1) {
+      const storedName = messDB.users[userIdx].name;
+      if (storedName !== metaName) {
+        messDB.users[userIdx].name = metaName;
+        // Sync the corrected name back to database
+        await syncDBToSupabase(messDB, messData.id);
       }
-    } else if (isPrimaryAdmin) {
+      
+      const activeUser = { ...messDB.users[userIdx], isAdmin: messData.admin_id === userId || messDB.users[userIdx].isAdmin };
+      setUser(activeUser);
+      setDb(messDB);
+    } else if (messData.admin_id === userId) {
       const adminUser: User = { 
         id: userId, 
-        name: 'Admin', 
+        name: metaName, 
         username: 'admin', 
         isAdmin: true, 
         monthlyOff: [] 
       };
       setUser(adminUser);
+      // Admin should also be in the users list typically
+      if (!messDB.users.some(u => u.id === userId)) {
+        messDB.users.push(adminUser);
+        await syncDBToSupabase(messDB, messData.id);
+        setDb(messDB);
+      }
     }
+    
+    setMessId(messData.id);
+    setMessName(messData.mess_name);
+    setMessAdminId(messData.admin_id);
     
     localStorage.setItem('ACTIVE_MESS_ID', messData.id);
     setView('dashboard');
@@ -110,21 +114,21 @@ const App: React.FC = () => {
           
           const metadata = session.user.user_metadata;
           const metaName = metadata?.full_name || metadata?.name || session.user.email?.split('@')[0] || 'User';
-          const baseUser: User = { 
-            id: userId, 
-            name: metaName, 
-            username: generateUniqueUsername(metaName, session.user.email || ''), 
-            isAdmin: false,
-            monthlyOff: []
-          };
-          setUser(baseUser);
 
           const lastMessId = localStorage.getItem('ACTIVE_MESS_ID');
           const lastMess = messes.find(m => m.id === lastMessId);
           
           if (lastMess) {
-            await enterMess(lastMess, userId);
+            await enterMess(lastMess, userId, metaName);
           } else {
+            const baseUser: User = { 
+              id: userId, 
+              name: metaName, 
+              username: generateUniqueUsername(metaName, session.user.email || ''), 
+              isAdmin: false,
+              monthlyOff: []
+            };
+            setUser(baseUser);
             setMessId(null);
             setView('profile');
           }
@@ -265,7 +269,7 @@ const App: React.FC = () => {
           user={user!} 
           authEmail={authEmail} 
           userMesses={userMesses} 
-          onSelectMess={(m) => enterMess(m, user?.id || '')} 
+          onSelectMess={(m) => enterMess(m, user?.id || '', user?.name || '')} 
           onLogout={handleLogout} 
           onPending={() => setIsPending(true)} 
         />

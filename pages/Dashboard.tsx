@@ -69,17 +69,27 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     setLoadingRequests(true);
     try {
       const currentMonth = getCurrentMonthStr(); 
+      // অগ্রাধিকার: ১. প্রেরিত নাম ২. ইমেইল প্রিফিক্স
+      const displayName = req.user_name || req.user_email.split('@')[0];
+      
       const newUser: User = {
         id: req.user_id,
-        name: req.user_email.split('@')[0],
-        username: req.user_email.split('@')[0].toLowerCase().replace(/[^a-z]/g, '') + Math.floor(100 + Math.random()*899),
+        name: displayName,
+        username: displayName.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(100 + Math.random()*899),
         isAdmin: false,
         monthlyOff: [],
         joiningMonth: currentMonth, 
         leavingMonth: null
       };
 
-      const updatedUsers = [...db.users, newUser];
+      const updatedUsers = [...db.users];
+      // যদি ইউজার ইতিমধ্যে থেকে থাকে (ভুলবশত), তবে তা আপডেট করুন, নইলে যোগ করুন
+      const existingIdx = updatedUsers.findIndex(u => u.id === req.user_id);
+      if (existingIdx > -1) {
+        updatedUsers[existingIdx] = newUser;
+      } else {
+        updatedUsers.push(newUser);
+      }
       
       const { error: dbError } = await supabase
         .from('messes')
@@ -92,7 +102,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
       updateDB({ users: updatedUsers });
       setPendingRequests(prev => prev.filter(r => r.id !== req.id));
-      alert("মেম্বার অনুমোদিত হয়েছে!");
+      alert(`${displayName} এখন আপনার মেসের সদস্য!`);
     } catch (err: any) {
       alert("অনুমোদন করা যায়নি।");
     } finally {
@@ -113,7 +123,6 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     alert(`${label} কপি হয়েছে!`);
   };
 
-  // কিউআর কোডে পাসওয়ার্ড যুক্ত করা হয়েছে যেন স্ক্যান করলে দুটিই ফিল হয়
   const qrData = `${messId}|${db.messPassword || ''}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
 
@@ -209,7 +218,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
            <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
                 {pendingRequests.map(req => (
                   <div key={req.id} className="bg-gray-800/40 border border-gray-800 p-6 rounded-[2rem] flex flex-col gap-5">
-                     <p className="font-black text-white truncate text-lg">{req.user_email}</p>
+                     <p className="font-black text-white truncate text-lg">{req.user_name || req.user_email}</p>
                      <div className="grid grid-cols-2 gap-4">
                         <button onClick={async () => { await supabase.from('join_requests').delete().eq('id', req.id); fetchPendingRequests(); }} className="py-4 bg-red-900/20 text-red-500 rounded-2xl font-black uppercase text-xs">বাতিল</button>
                         <button onClick={() => handleApprove(req)} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs">অনুমোদন</button>
@@ -242,7 +251,6 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
         </div>
       </div>
 
-      {/* QR Modal */}
       {showQRModal && (
         <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
            <div className="bg-gray-900 w-full max-w-sm rounded-[4rem] border border-gray-800 p-10 text-center space-y-8 animate-in zoom-in-95 duration-300">

@@ -89,7 +89,7 @@ const MessSelector: React.FC<MessSelectorProps> = ({
       const newUser: User = {
         id: userId,
         name: userName || userEmail.split('@')[0],
-        username: userUsername || (userEmail.split('@')[0] + Math.floor(Math.random()*1000)),
+        username: userUsername || (userEmail.split('@')[0] + Math.floor(100 + Math.random()*1000)),
         isAdmin: false,
         monthlyOff: [],
         joiningMonth: getCurrentMonthStr(),
@@ -206,12 +206,14 @@ const MessSelector: React.FC<MessSelectorProps> = ({
         return;
       }
 
+      // ইমেইল এবং পূর্ণ নাম উভয়ই জয়েন রিকোয়েস্টে পাঠানো হচ্ছে
       const { error: reqError } = await supabase
         .from('join_requests')
         .insert([{
           mess_id: mess.id,
           user_id: userId,
           user_email: userEmail,
+          user_name: userName, // পূর্ণ নাম যুক্ত করা হলো
           status: 'pending'
         }]);
 
