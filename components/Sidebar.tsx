@@ -30,7 +30,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
   const menuItems = [
     { id: 'profile', label: 'প্রোফাইল', icon: UserIcon, show: true },
     { id: 'dashboard', label: T.dashboard, icon: LayoutDashboard, show: hasActiveMess },
-    { id: 'members', label: T.members, icon: Users, show: hasActiveMess }, // সবার জন্য উন্মুক্ত করা হলো
+    { id: 'members', label: T.members, icon: Users, show: hasActiveMess },
     { id: 'meals', label: T.meals, icon: UtensilsCrossed, show: hasActiveMess },
     { id: 'bazar', label: T.bazar, icon: ShoppingBag, show: hasActiveMess },
     { id: 'utility', label: 'রুম ও ইউটিলিটি', icon: Home, show: hasActiveMess },
@@ -42,8 +42,10 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 shadow-sm lg:shadow-none">
       <div className="p-6 md:p-8 border-b border-gray-50 dark:border-gray-700 shrink-0">
-        <h1 className="text-xl md:text-2xl font-black text-blue-600 dark:text-blue-400 flex items-center gap-2">
-          <UtensilsCrossed size={32} />
+        <h1 className="text-xl md:text-2xl font-black text-blue-600 dark:text-blue-400 flex items-center gap-3">
+          <div className="bg-blue-600 p-2 rounded-2xl text-white shadow-lg shadow-blue-500/20">
+            <UtensilsCrossed size={28} />
+          </div>
           {T.appName}
         </h1>
       </div>

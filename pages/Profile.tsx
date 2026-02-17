@@ -102,13 +102,16 @@ const Profile: React.FC<ProfileProps> = ({
           if (code && code.data) {
             // আইডি এবং পাসওয়ার্ড আলাদা করার চেষ্টা (ID|Pass ফরম্যাট)
             const parts = code.data.split('|');
-            if (parts.length > 1) {
-              setMessCode(parts[0]);
-              setMessPasswordInput(parts[1]);
-              setStatusMsg({ type: 'success', text: 'মেস আইডি ও পাসওয়ার্ড স্ক্যান করা হয়েছে!' });
+            if (parts.length >= 2) {
+              const scannedId = parts[0].trim();
+              const scannedPass = parts[1].trim();
+              
+              setMessCode(scannedId);
+              setMessPasswordInput(scannedPass);
+              setStatusMsg({ type: 'success', text: 'মেস আইডি ও পাসওয়ার্ড সফলভাবে স্ক্যান করা হয়েছে!' });
             } else {
-              setMessCode(code.data);
-              setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
+              setMessCode(code.data.trim());
+              setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে! (পাসওয়ার্ড ম্যানুয়ালি দিন)' });
             }
             
             setIsScanning(false);
@@ -165,7 +168,7 @@ const Profile: React.FC<ProfileProps> = ({
       console.error("Camera error:", err);
       setIsScanning(false);
       isScanningRef.current = false;
-      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন। ' + err.message });
+      setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন।' });
     }
   };
 
