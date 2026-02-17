@@ -22,10 +22,7 @@ interface ReportsProps {
 }
 
 const Reports: React.FC<ReportsProps> = ({ month, db }) => {
-  // বর্তমান মাসের হিসাব
   const currentStats = useMemo(() => getCalculations(db, month), [db, month]);
-  
-  // গত মাসের হিসাব (শুধুমাত্র মিল ব্যালেন্স নেওয়ার জন্য)
   const prevMonth = useMemo(() => getPreviousMonthStr(month), [month]);
   const prevStats = useMemo(() => getCalculations(db, prevMonth), [db, prevMonth]);
 
@@ -36,20 +33,13 @@ const Reports: React.FC<ReportsProps> = ({ month, db }) => {
     return user ? user.name : "নির্ধারিত নয়";
   }, [db.monthlyRoles, db.users, month]);
 
-  // চূড়ান্ত ডাটা প্রসেসিং (লজিক: স্থির খরচ + গত মাসের মিল সমন্বয়)
   const reportData = useMemo(() => {
     return currentStats.userStats.map(u => {
       const pStat = prevStats.userStats.find(ps => ps.userId === u.userId);
-      
-      // ১. বর্তমান মাসের স্থির খরচ (রুম ভাড়া + ইউটিলিটি)
       const currentFixedCost = u.roomRent + u.utilityShare;
-      
-      // ২. গত মাসের মিল ব্যালেন্স (Food Balance Only) 
       const prevMealContribution = pStat ? pStat.contribution : 0;
       const prevMealCost = pStat ? pStat.mealCost : 0;
       const prevMealBalance = prevMealContribution - prevMealCost;
-
-      // ৩. সর্বমোট প্রদেয় (Fixed Cost - Prev Refund OR Fixed Cost + Prev Due)
       const totalPayable = currentFixedCost - prevMealBalance;
 
       return {
@@ -58,23 +48,21 @@ const Reports: React.FC<ReportsProps> = ({ month, db }) => {
         roomRent: u.roomRent,
         utilityShare: u.utilityShare,
         currentFixedCost,
-        prevMealBalance, // positive = refund, negative = due
+        prevMealBalance,
         totalPayable
       };
     });
   }, [currentStats, prevStats]);
 
   const handlePrint = () => {
-    // প্রিন্ট করার আগে নিশ্চিত হওয়া যে পেজটি টপ-এ আছে
-    window.scrollTo(0, 0);
+    // মোবাইলে ক্র্যাশ এড়াতে এবং ব্রাউজারকে DOM প্রসেস করার সময় দিতে setTimeout ব্যবহার করা হয়েছে
     setTimeout(() => {
-        window.print();
-    }, 100);
+      window.print();
+    }, 500);
   };
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500 pb-10">
-      {/* Action Area */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
         <div>
           <h2 className="text-3xl font-black flex items-center gap-3 text-white">
@@ -92,19 +80,16 @@ const Reports: React.FC<ReportsProps> = ({ month, db }) => {
         </button>
       </div>
 
-      {/* Logic Notice (No Print) */}
       <div className="bg-blue-900/10 border border-blue-500/20 p-5 rounded-3xl flex items-start gap-4 no-print">
          <Info className="text-blue-400 shrink-0 mt-0.5" size={18} />
          <div className="text-xs font-medium text-blue-300/80 leading-relaxed">
            <p className="font-black text-blue-400 uppercase tracking-widest mb-1">সমন্বয় লজিক (স্বয়ংক্রিয়)</p>
-           এই রিপোর্টে বর্তমান মাসের স্থির খরচ (রুম ও ইউটিলিটি) এর সাথে গত মাসের মিলের বকেয়া/রিফান্ড সমন্বয় করা হয়েছে। গত মাসের অন্য কোনো বকেয়া (ভাড়া/বিল) এখানে অন্তর্ভুক্ত করা হয়নি।
+           এই রিপোর্টে বর্তমান মাসের স্থির খরচ (রুম ও ইউটিলিটি) এর সাথে গত মাসের মিলের বকেয়া/রিফান্ড সমন্বয় করা হয়েছে।
          </div>
       </div>
 
-      {/* Main Report Container - Updated for Dark Mode Consistency */}
-      <div id="report-container" className="bg-gray-900 text-gray-100 p-8 md:p-12 rounded-[3rem] shadow-2xl border border-gray-800 print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
+      <div id="report-container" className="bg-gray-900 text-gray-100 p-8 md:p-12 rounded-[3rem] shadow-2xl border border-gray-800 print:bg-white print:text-black print:border-none print:shadow-none print:p-0 print:block print:overflow-visible">
         
-        {/* Report Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-8 border-b-2 border-gray-800 pb-10 print:border-gray-200">
           <div>
              <h3 className="text-3xl font-black text-blue-500 print:text-blue-800">{T.appName}</h3>
@@ -118,8 +103,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db }) => {
           </div>
         </div>
 
-        {/* Global Stats Grid (Print Friendly) */}
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-10">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 py-10 print:gap-2">
           <div className="bg-blue-900/20 p-6 rounded-2xl border border-blue-800/50 print:bg-blue-50 print:border-blue-100">
              <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest mb-1 print:text-blue-500">মোট স্থির খরচ (রুম+ইউটি)</p>
              <p className="text-2xl font-black text-white print:text-blue-900">৳{reportData.reduce((s,d) => s + d.currentFixedCost, 0).toLocaleString()}</p>
@@ -134,8 +118,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db }) => {
           </div>
         </div>
 
-        {/* Final Adjusted Table */}
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto print:overflow-visible">
           <table className="w-full text-left border-collapse">
             <thead>
               <tr className="bg-gray-800/40 text-[10px] uppercase font-black text-gray-500 border-y border-gray-800 print:bg-gray-50 print:border-gray-200">
@@ -156,7 +139,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db }) => {
                      </div>
                   </td>
                   <td className="px-6 py-6 text-right">
-                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-black ${u.prevMealBalance >= 0 ? 'bg-green-900/20 text-green-400' : 'bg-red-900/20 text-red-400'} print:bg-opacity-100 print:bg-gray-100`}>
+                    <div className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-[10px] font-black ${u.prevMealBalance >= 0 ? 'bg-green-900/20 text-green-400' : 'bg-red-900/20 text-red-400'} print:bg-opacity-100 print:bg-gray-100 print:text-gray-800`}>
                         {u.prevMealBalance >= 0 ? <ArrowUpRight size={12}/> : <ArrowDownRight size={12}/>}
                         ৳{Math.abs(u.prevMealBalance).toFixed(0)}
                         <span className="opacity-60">{u.prevMealBalance >= 0 ? 'রিফান্ড' : 'বকেয়া'}</span>
@@ -182,8 +165,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db }) => {
           </table>
         </div>
 
-        {/* Signatures */}
-        <div className="mt-24 flex justify-between items-end">
+        <div className="mt-24 flex justify-between items-end print:mt-10">
            <div className="text-center w-64">
               <div className="border-b border-gray-700 h-10 mb-4 print:border-gray-300"></div>
               <p className="font-black text-[10px] uppercase text-gray-500 mb-1">ম্যানেজার</p>

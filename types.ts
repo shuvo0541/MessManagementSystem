@@ -101,13 +101,6 @@ export interface Payment {
   month: string;
 }
 
-export interface MealLockTimes {
-  breakfast: string; // HH:mm format, e.g. "20:00" of previous day
-  lunch: string;     // HH:mm of same day
-  dinner: string;    // HH:mm of same day
-  enabled: boolean;
-}
-
 export interface MessSystemDB {
   users: User[];
   rooms: Room[];
@@ -123,5 +116,4 @@ export interface MessSystemDB {
   theme: 'light' | 'dark';
   messPassword?: string;
   lockedMonths?: string[];
-  mealLockTimes?: MealLockTimes; // নতুন ফিল্ড
 }

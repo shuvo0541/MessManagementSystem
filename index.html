@@ -7,7 +7,7 @@
     <title>মেস ম্যানেজমেন্ট সিস্টেম</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3448/3448636.png">
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/3170/3170733.png">
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -46,6 +46,60 @@
           background: rgba(59, 130, 246, 0.5);
           box-shadow: 0 0 15px 2px #3b82f6;
           animation: scan 2s linear infinite;
+        }
+
+        /* Print Specific Improvements */
+        @media print {
+          @page {
+            margin: 15mm;
+            size: auto;
+          }
+          body, html, #root {
+            background: white !important;
+            color: black !important;
+            height: auto !important;
+            overflow: visible !important;
+          }
+          main, .flex-1, .overflow-y-auto {
+            overflow: visible !important;
+            height: auto !important;
+            display: block !important;
+            padding: 0 !important;
+            margin: 0 !important;
+          }
+          .no-print {
+            display: none !important;
+          }
+          #report-container {
+            border: none !important;
+            box-shadow: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            width: 100% !important;
+            overflow: visible !important;
+            display: block !important;
+          }
+          table {
+            page-break-inside: auto;
+            width: 100% !important;
+          }
+          tr {
+            page-break-inside: avoid;
+            page-break-after: auto;
+          }
+          thead {
+            display: table-header-group;
+          }
+          tfoot {
+            display: table-footer-group;
+          }
+          .bg-gray-900 {
+            background: white !important;
+            color: black !important;
+          }
+          .text-white {
+            color: black !important;
+          }
         }
     </style>
     <script>

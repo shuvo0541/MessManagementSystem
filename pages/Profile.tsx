@@ -78,11 +78,10 @@ const Profile: React.FC<ProfileProps> = ({
     const video = videoRef.current;
     const canvas = canvasRef.current;
 
-    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+    // readyState 2 বা তার বেশি হলে এবং ভিডিওর সাইজ পাওয়া গেলে স্ক্যান শুরু হবে
+    if (video.readyState >= 2 && video.videoWidth > 0) {
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (ctx) {
-        // Ensure dimensions are valid
-        if (video.videoWidth > 0 && video.videoHeight > 0) {
           canvas.height = video.videoHeight;
           canvas.width = video.videoWidth;
           ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
@@ -93,13 +92,11 @@ const Profile: React.FC<ProfileProps> = ({
           });
 
           if (code && code.data) {
-            console.log("Found QR code:", code.data);
             setMessCode(code.data);
             stopScanner();
             setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে!' });
             return;
           }
-        }
       }
     }
     
@@ -111,38 +108,44 @@ const Profile: React.FC<ProfileProps> = ({
   const startScanner = async () => {
     setStatusMsg({ type: 'info', text: 'ক্যামেরা চালু হচ্ছে...' });
     try {
-      // Constraints optimized for mobile browsers
-      // Fix: Changed '理想' to 'ideal' to match MediaTrackConstraints interface
+      // রেজোলিউশন কমানো হয়েছে যাতে হার্ডওয়্যার দ্রুত সেন্সর চালু করতে পারে
       const constraints = { 
         video: { 
           facingMode: 'environment',
-          width: {ideal: 1280},
-          height: {ideal: 720}
+          width: { ideal: 640 },
+          height: { ideal: 480 }
         } 
       };
       
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+
       streamRef.current = stream;
       isScanningRef.current = true;
       setIsScanning(true);
 
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Important for iOS: playsinline and muted
         videoRef.current.setAttribute("playsinline", "true"); 
         videoRef.current.muted = true; 
         
-        // Wait for video to actually load before starting the loop
-        videoRef.current.onloadedmetadata = () => {
-          videoRef.current?.play().then(() => {
-             requestRef.current = requestAnimationFrame(tick);
-             setStatusMsg(null);
-          }).catch(err => {
-             console.error("Play error:", err);
-             setStatusMsg({ type: 'error', text: 'ভিডিও প্লে করা যায়নি।' });
-          });
-        };
+        // ভিডিও সরাসরি প্লে করার চেষ্টা
+        try {
+          await videoRef.current.play();
+          requestRef.current = requestAnimationFrame(tick);
+          setStatusMsg(null);
+        } catch (playErr) {
+          // যদি সরাসরি প্লে না হয় তবে লোড হওয়া পর্যন্ত অপেক্ষা
+          videoRef.current.onloadedmetadata = () => {
+            videoRef.current?.play().then(() => {
+               requestRef.current = requestAnimationFrame(tick);
+               setStatusMsg(null);
+            });
+          };
+        }
       }
     } catch (err: any) {
       console.error("Camera access error:", err);
@@ -151,9 +154,9 @@ const Profile: React.FC<ProfileProps> = ({
       
       let errorText = 'ক্যামেরা চালু করা যায়নি।';
       if (err.name === 'NotAllowedError') {
-        errorText = 'ক্যামেরা ব্যবহারের পারমিশন দেওয়া হয়নি। ব্রাউজার সেটিিংস চেক করুন।';
+        errorText = 'ক্যামেরা ব্যবহারের অনুমতি দেওয়া হয়নি।';
       } else if (err.name === 'NotFoundError') {
-        errorText = 'আপনার ডিভাইসে কোনো ক্যামেরা পাওয়া যায়নি।';
+        errorText = 'ডিভাইসে কোনো ক্যামেরা পাওয়া যায়নি।';
       }
       setStatusMsg({ type: 'error', text: errorText });
     }
@@ -174,6 +177,7 @@ const Profile: React.FC<ProfileProps> = ({
 
     if (videoRef.current) {
       videoRef.current.srcObject = null;
+      videoRef.current.pause();
     }
   };
 

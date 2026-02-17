@@ -14,13 +14,7 @@ export const INITIAL_DB: MessSystemDB = {
   bazars: [],
   extraCosts: [],
   payments: [],
-  theme: 'dark',
-  mealLockTimes: {
-    breakfast: "21:00", // আগের রাত ৯টায় লক
-    lunch: "10:30",     // সকাল ১০:৩০ এ লক
-    dinner: "17:00",    // বিকাল ৫টায় লক
-    enabled: false
-  }
+  theme: 'dark'
 };
 
 export const fetchMessDB = async (messId: string): Promise<MessSystemDB> => {
