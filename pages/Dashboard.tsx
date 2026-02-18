@@ -106,12 +106,19 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     if (confirmDelete) {
       setLoadingRequests(true);
       try {
+        // মেস ডিলিট করার আগে সংশ্লিষ্ট সকল জয়েন রিকোয়েস্ট মুছে ফেলা প্রয়োজন 
+        // যাতে Foreign Key Constraint এর কারণে ডিলিট ফেইল না করে
+        await supabase.from('join_requests').delete().eq('mess_id', messId);
+        
+        // মেস টেবিল থেকে মেসটি মুছে ফেলা
         const { error } = await supabase.from('messes').delete().eq('id', messId);
         if (error) throw error;
         
         localStorage.removeItem('ACTIVE_MESS_ID');
         alert("মেসটি সফলভাবে মুছে ফেলা হয়েছে।");
-        window.location.reload();
+        
+        // অ্যাপ রিস্টার্ট করে প্রোফাইল ভিউতে নিয়ে যাওয়া
+        window.location.href = window.location.origin;
       } catch (err: any) {
         alert("মেস ডিলিট করতে সমস্যা হয়েছে: " + err.message);
       } finally {

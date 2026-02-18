@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { MessSystemDB, Room, UtilityExpense, User, Role, MonthlyUtilityOverride, CalcMode, MonthlyRoomOverride, LocalUtilityExpense } from '../types';
 import { T } from '../translations';
@@ -273,10 +272,10 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 sm:px-6 py-4 sm:py-6 text-right font-bold text-gray-300 text-xs sm:text-sm">৳{u.roomRent.toFixed(2)}</td>
+                      <td className="px-4 sm:px-6 py-4 sm:py-6 text-right font-bold text-gray-300 text-xs sm:text-sm">৳{Number(u.roomRent || 0).toFixed(2)}</td>
                       {utilityBreakdown.map(util => (
                         <td key={util.id} className="px-3 sm:px-4 py-4 sm:py-6 text-right text-gray-400 text-[11px] sm:text-sm font-bold">
-                          ৳{(util.shares[u.userId] || 0).toFixed(2)}
+                          ৳{Number(util.shares[u.userId] || 0).toFixed(2)}
                         </td>
                       ))}
                       <td className="px-6 sm:px-8 py-4 sm:py-6 text-right font-black text-blue-500 text-base sm:text-xl bg-blue-900/5">
@@ -432,12 +431,12 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
           </div>
           <div>
             <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">অ্যাক্সেস সীমিত</p>
-            <p className="text-[11px] text-amber-200/60 font-bold mt-1">রুম সেটিংস শুধুমাত্র অ্যাডমিন বা ম্যানেজারের জন্য।</p>
+            <p className="text-[11px] text-amber-200/60 font-bold mt-1">রুম সেটিিংস শুধুমাত্র অ্যাডমিন বা ম্যানেজারের জন্য।</p>
           </div>
         </div>
       )}
 
-      {/* Modal designs adjusted to fit mobile screens */}
+      {/* Modal designs */}
       {showRoomAdd && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
           <div className="bg-gray-900 w-full max-w-sm rounded-[2rem] sm:rounded-[3rem] border border-gray-800 p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300">
@@ -455,6 +454,50 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                    <input type="number" step="0.01" className="w-full bg-gray-800 border border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={roomRent || ''} onChange={e=>setRoomRent(parseFloat(e.target.value)||0)} placeholder="৳ ০০০.০০"/>
                 </div>
                 <button onClick={performAddRoom} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">সংরক্ষণ করুন</button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {showUtilityAdd && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
+          <div className="bg-gray-900 w-full max-w-sm rounded-[2rem] sm:rounded-[3rem] border border-gray-800 p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+             <div className="flex justify-between items-center mb-6 sm:mb-8">
+                <h3 className="text-xl sm:text-2xl font-black text-white">মাস্টার ইউটিলিটি</h3>
+                <button onClick={() => setShowUtilityAdd(false)} className="text-gray-500 hover:text-white"><X size={20}/></button>
+             </div>
+             <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">নাম</label>
+                  <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" value={utilityName} onChange={e=>setUtilityName(e.target.value)} placeholder="যেমন: ওয়াইফাই"/>
+                </div>
+                <div className="space-y-1.5">
+                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">ডিফল্ট বিল</label>
+                   <input type="number" step="0.01" className="w-full bg-gray-800 border border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={utilityAmount || ''} onChange={e=>setUtilityAmount(parseFloat(e.target.value)||0)} placeholder="৳ ০০০.০০"/>
+                </div>
+                <button onClick={performAddGlobalUtility} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">সংরক্ষণ করুন</button>
+             </div>
+          </div>
+        </div>
+      )}
+
+      {showLocalUtilityAdd && (
+        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
+          <div className="bg-gray-900 w-full max-w-sm rounded-[2rem] sm:rounded-[3rem] border border-gray-800 p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300">
+             <div className="flex justify-between items-center mb-6 sm:mb-8">
+                <h3 className="text-xl sm:text-2xl font-black text-white">মাসিক ইউটিলিটি ({month})</h3>
+                <button onClick={() => setShowLocalUtilityAdd(false)} className="text-gray-500 hover:text-white"><X size={20}/></button>
+             </div>
+             <div className="space-y-4 sm:space-y-6">
+                <div className="space-y-1.5">
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">নাম</label>
+                  <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" value={utilityName} onChange={e=>setUtilityName(e.target.value)} placeholder="যেমন: কারেন্ট বিল"/>
+                </div>
+                <div className="space-y-1.5">
+                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">বিল পরিমাণ</label>
+                   <input type="number" step="0.01" className="w-full bg-gray-800 border border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={utilityAmount || ''} onChange={e=>setUtilityAmount(parseFloat(e.target.value)||0)} placeholder="৳ ০০০.০০"/>
+                </div>
+                <button onClick={performAddLocalUtility} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">সংরক্ষণ করুন</button>
              </div>
           </div>
         </div>

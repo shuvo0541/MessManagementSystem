@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { T } from '../translations';
 import { getLocalDateStr, getUserRoleInMonth, getActiveResidentsInMonth } from '../db';
@@ -60,7 +59,7 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
        return;
     }
 
-    // Constraints: Minimum 0.5, step 0.5
+    // Constraints: Minimum 0.5 for non-zero values
     if (value > 0 && value < 0.5) {
       value = 0.5;
     }
