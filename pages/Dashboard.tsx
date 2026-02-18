@@ -19,7 +19,9 @@ import {
   QrCode,
   X,
   UserCheck,
-  Inbox
+  Inbox,
+  AtSign,
+  User as UserIcon
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -96,13 +98,15 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     setLoadingRequests(true);
     try {
       const currentMonth = getCurrentMonthStr(); 
-      // 'user_name' কলাম না থাকলে ইমেইল প্রিফিক্স ব্যবহার করা হচ্ছে
-      const displayName = (req.user_email || 'New User').split('@')[0];
+      // রিকোয়েস্ট থেকে মেম্বারের প্রোফাইল নাম এবং ইউনিক আইডি সংগ্রহ
+      const actualName = req.display_name || req.user_name || "সদস্য";
+      const uniqueUserId = req.user_username || ("@user" + req.user_id.slice(0, 5));
       
       const newUser: User = {
         id: req.user_id,
-        name: displayName,
-        username: displayName.toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(100 + Math.random()*899),
+        name: actualName,
+        username: req.user_username?.replace('@', '') || "user_" + req.user_id.slice(0, 5),
+        userId: uniqueUserId,
         isAdmin: false,
         monthlyOff: [],
         joiningMonth: currentMonth, 
@@ -111,6 +115,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
       const updatedUsers = [...db.users];
       const existingIdx = updatedUsers.findIndex(u => u.id === req.user_id);
+      
       if (existingIdx > -1) {
         updatedUsers[existingIdx] = newUser;
       } else {
@@ -128,7 +133,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
       updateDB({ users: updatedUsers });
       setPendingRequests(prev => prev.filter(r => r.id !== req.id));
-      alert(`${displayName} এখন আপনার মেসের সদস্য!`);
+      alert(`${actualName} এখন আপনার মেসের সদস্য!`);
     } catch (err: any) {
       alert("অনুমোদন করা যায়নি: " + err.message);
     } finally {
@@ -230,17 +235,14 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                )}
             </div>
          </div>
-         <div className="hidden lg:block shrink-0 px-6 border-l border-gray-800">
-            <p className="text-[9px] font-black text-gray-600 uppercase tracking-[0.3em] vertical-text">ACCESS DETAILS</p>
-         </div>
       </div>
 
       {user.isAdmin && (
-        <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
+        <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] overflow-hidden shadow-2xl animate-in fade-in duration-500">
            <div className="p-8 border-b border-gray-800 flex items-center justify-between">
               <div className="flex items-center gap-3">
                  <UserCheck className="text-blue-500" size={24} />
-                 <h3 className="text-xl md:text-2xl font-black text-white uppercase">সদস্য আবেদন (Member Approval)</h3>
+                 <h3 className="text-xl md:text-2xl font-black text-white uppercase tracking-tight">সদস্য আবেদন (Member Approval)</h3>
               </div>
               <button onClick={fetchPendingRequests} className="p-3 hover:bg-gray-800 rounded-2xl text-blue-500 transition-all active:rotate-180 duration-500 shadow-lg"><RefreshCcw size={20}/></button>
            </div>
@@ -248,14 +250,31 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                 {pendingRequests.length > 0 ? (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {pendingRequests.map(req => (
-                      <div key={req.id} className="bg-gray-800/40 border border-gray-800 p-6 rounded-[2rem] flex flex-col gap-5">
-                        <div className="flex flex-col">
-                           <p className="font-black text-white truncate text-lg">{req.user_email?.split('@')[0] || 'New User'}</p>
-                           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{req.user_email}</p>
+                      <div key={req.id} className="bg-gray-800/40 border border-gray-700/50 p-8 rounded-[2.5rem] space-y-6 relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:opacity-10 transition-opacity">
+                          <UserIcon size={120} />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
-                            <button onClick={async () => { if(window.confirm("আপনি কি আবেদনটি বাতিল করতে চান?")) { await supabase.from('join_requests').delete().eq('id', req.id); fetchPendingRequests(); } }} className="py-4 bg-red-900/20 text-red-500 rounded-2xl font-black uppercase text-xs hover:bg-red-600 hover:text-white transition-all">বাতিল</button>
-                            <button onClick={() => handleApprove(req)} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all">অনুমোদন</button>
+                        <div className="space-y-4">
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">সদস্যের নাম</p>
+                              <div className="flex items-center gap-2">
+                                 <UserIcon size={16} className="text-blue-500" />
+                                 <p className="font-black text-white text-xl truncate">{req.display_name || req.user_name || "অজানা সদস্য"}</p>
+                              </div>
+                           </div>
+                           <div className="space-y-1">
+                              <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">ইউনিক আইডি</p>
+                              <div className="flex items-center gap-2">
+                                 <AtSign size={16} className="text-purple-500" />
+                                 <p className="text-sm font-black text-blue-400 tracking-wider">
+                                    {req.user_username || "আইডি নেই"}
+                                 </p>
+                              </div>
+                           </div>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4 relative z-10">
+                            <button onClick={async () => { if(window.confirm("আপনি কি আবেদনটি বাতিল করতে চান?")) { await supabase.from('join_requests').delete().eq('id', req.id); fetchPendingRequests(); } }} className="py-4 bg-red-900/20 text-red-500 rounded-2xl font-black uppercase text-xs hover:bg-red-600 hover:text-white transition-all border border-red-500/20">বাতিল</button>
+                            <button onClick={() => handleApprove(req)} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs hover:bg-blue-700 shadow-xl shadow-blue-500/20 transition-all active:scale-95">অনুমোদন</button>
                         </div>
                       </div>
                     ))}

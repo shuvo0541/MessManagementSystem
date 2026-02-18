@@ -121,10 +121,11 @@ const MessSelector: React.FC<MessSelectorProps> = ({
 
       const db = mess.db_json as MessSystemDB;
       
+      // শুধুমাত্র অরিজিনাল নাম ব্যবহার করা হচ্ছে
       const newUser: User = {
         id: userId,
-        name: userName || userEmail.split('@')[0],
-        username: userUsername || (userEmail.split('@')[0] + Math.floor(100 + Math.random()*1000)),
+        name: userName || "সদস্য",
+        username: userUsername || ("user_" + userId.slice(0, 5)),
         isAdmin: false,
         monthlyOff: [],
         joiningMonth: getCurrentMonthStr(),
@@ -160,15 +161,15 @@ const MessSelector: React.FC<MessSelectorProps> = ({
     }
   };
 
-  const getDisplayName = () => {
+  const getSafeDisplayName = () => {
     const rawName = (userName || '').toString();
     if (rawName && rawName !== 'undefined' && rawName.trim() !== '') {
       return rawName;
     }
-    return (userEmail || '').split('@')[0] || 'ব্যবহারকারী';
+    return 'সদস্য';
   };
 
-  const displaySafeName = getDisplayName();
+  const displaySafeName = getSafeDisplayName();
   const generatePass = () => Math.floor(100000 + Math.random() * 900000).toString();
 
   const handleCreateMess = async () => {
@@ -181,7 +182,7 @@ const MessSelector: React.FC<MessSelectorProps> = ({
       const newUser: User = {
         id: userId,
         name: displaySafeName,
-        username: userUsername || (userEmail?.split('@')[0] + '123'),
+        username: userUsername || ("user_" + userId.slice(0, 5)),
         isAdmin: true,
         monthlyOff: [],
         joiningMonth: getCurrentMonthStr(),
@@ -247,19 +248,22 @@ const MessSelector: React.FC<MessSelectorProps> = ({
         return;
       }
 
-      // 'user_name' কলামটি বাদ দেওয়া হয়েছে কারণ এটি ডাটাবেসে নেই
+      // display_name এবং user_name কলামে আসল নাম পাঠানো হচ্ছে
       const { error: reqError } = await supabase
         .from('join_requests')
         .insert([{
           mess_id: mess.id,
           user_id: userId,
           user_email: userEmail,
+          user_name: userName || "সদস্য", 
+          display_name: userName || "সদস্য",
+          user_username: userUsername || userId.slice(0, 5), 
           status: 'pending'
         }]);
 
       if (reqError) {
         if (reqError.code === '23505') throw new Error('আপনার একটি রিকোয়েস্ট ইতিমধ্যে পেন্ডিং আছে।');
-        throw new Error('রিকোয়েস্ট পাঠানো যায়নি। পুনরায় চেষ্টা করুন।');
+        throw new Error('রিকোয়েস্ট পাঠানো যায়নি। ডাটাবেস এরর চেক করুন।');
       }
 
       await fetchSentRequests();
@@ -462,7 +466,7 @@ const MessSelector: React.FC<MessSelectorProps> = ({
         )}
 
         {view === 'success' && createdInfo && (
-          <div className="max-w-lg mx-auto bg-gray-900 p-12 rounded-[4rem] border border-blue-500/30 shadow-2xl space-y-10 text-center animate-in zoom-in-95 duration-500">
+          <div className="max-w-lg mx-auto bg-gray-900 p-12 rounded-[4rem] border border-blue-500/30 shadow-2xl space-y-10 text-center animate-in zoom-in-95 duration-300">
              <div className="flex justify-center">
                 <div className="w-24 h-24 bg-green-600 rounded-full flex items-center justify-center text-white shadow-2xl shadow-green-500/30">
                    <CheckCircle2 size={48}/>

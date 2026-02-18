@@ -233,11 +233,14 @@ const Profile: React.FC<ProfileProps> = ({
       const currentDB = mess.db_json as MessSystemDB;
       if (currentDB.messPassword !== cleanPass) throw new Error('ভুল মেস পাসওয়ার্ড!');
       
-      // 'user_name' কলাম বাদ দেওয়া হয়েছে
+      // প্রোফাইলে প্রদর্শিত ইউনিক আইডি (user.userId) এবং আসল নাম (user.name) পাঠানো হচ্ছে
       const { error: reqError } = await supabase.from('join_requests').insert([{ 
         mess_id: mess.id, 
         user_id: user.id, 
-        user_email: authEmail, 
+        user_email: authEmail,
+        user_name: user.name,
+        display_name: user.name,
+        user_username: user.userId || user.username, 
         status: 'pending' 
       }]);
       
@@ -255,19 +258,21 @@ const Profile: React.FC<ProfileProps> = ({
     }
   };
 
-  const seedData = async (messId: string) => {
-    if(!window.confirm("আপনি কি ১ বছরের ডামি ডাটা জেনারেট করতে চান? (এটি আপনার বর্তমান ডাটার সাথে যুক্ত হবে)")) return;
+  const seedData = async (mId: string) => {
+    if (!window.confirm("আপনি কি ১ বছরের ডামি ডাটা জেনারেট করতে চান? এটি বর্তমান মিল ও বাজার ডাটা রিপ্লেস করবে।")) return;
     setLoading(true);
+    setStatusMsg({ type: 'info', text: 'ডাটা জেনারেট হচ্ছে...' });
     try {
-      const { data } = await supabase.from('messes').select('db_json').eq('id', messId).single();
-      if(data) {
-        const newDB = generateDemoData(data.db_json);
-        await supabase.from('messes').update({ db_json: newDB }).eq('id', messId);
-        alert("ডামি ডাটা সফলভাবে তৈরি হয়েছে! ড্যাশবোর্ডে গিয়ে চেক করুন।");
-        window.location.reload();
-      }
-    } catch(err) {
-      alert("ডাটা জেনারেট করা যায়নি।");
+      const { data, error } = await supabase.from('messes').select('db_json').eq('id', mId).single();
+      if (error || !data) throw new Error("মেস ডাটা পাওয়া যায়নি।");
+      
+      const seededDB = generateDemoData(data.db_json as MessSystemDB);
+      const { error: updateErr } = await supabase.from('messes').update({ db_json: seededDB }).eq('id', mId);
+      if (updateErr) throw updateErr;
+      
+      setStatusMsg({ type: 'success', text: 'সফলভাবে ১ বছরের ডামি ডাটা জেনারেট করা হয়েছে!' });
+    } catch (err: any) {
+      setStatusMsg({ type: 'error', text: err.message });
     } finally {
       setLoading(false);
     }
@@ -293,7 +298,7 @@ const Profile: React.FC<ProfileProps> = ({
             </div>
             <div className="flex items-center gap-3 text-gray-400 font-bold bg-gray-900/50 px-5 py-3 rounded-2xl border border-gray-800">
               <AtSign size={18} className="text-purple-500 shrink-0" />
-              @{user.username}
+              {user.userId || `@${user.username}`}
             </div>
           </div>
           
@@ -366,9 +371,9 @@ const Profile: React.FC<ProfileProps> = ({
           </div>
 
           {sentRequests.length > 0 && (
-            <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
-               <h3 className="text-2xl font-black text-white flex items-center gap-3 px-4">
-                 <SendHorizontal className="text-blue-500" /> পাঠানো আবেদনসমূহ (Pending)
+            <div className="space-y-8">
+               <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                 <SendHorizontal className="text-blue-500" /> পাঠানো আবেদন (পেন্ডিং)
                </h3>
                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                  {sentRequests.map(req => (
@@ -376,22 +381,22 @@ const Profile: React.FC<ProfileProps> = ({
                       <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
                         <Clock size={100} />
                       </div>
-                      <div className="flex items-center justify-between relative z-10">
-                        <div className="flex items-center gap-4">
-                           <div className="w-12 h-12 bg-blue-900/30 text-blue-400 rounded-2xl flex items-center justify-center font-black text-xl">
-                              {req.messes?.mess_name?.[0]?.toUpperCase() || 'M'}
-                           </div>
-                           <div>
-                              <p className="font-black text-white truncate max-w-[120px]">{req.messes?.mess_name || 'মেস আইডি: ' + req.mess_id.slice(0,8)}</p>
-                              <div className="flex items-center gap-2 mt-1">
-                                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-                                 <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Waiting for Approval</span>
-                              </div>
-                           </div>
-                        </div>
-                        <button onClick={() => handleCancelRequest(req.id)} className="p-3 bg-red-900/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 rounded-2xl transition-all" title="বাতিল করুন">
-                           <X size={18} />
-                        </button>
+                      <div className="flex items-center justify-between">
+                         <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 bg-blue-900/30 text-blue-400 rounded-2xl flex items-center justify-center font-black text-xl">
+                               {req.messes?.mess_name?.[0]?.toUpperCase() || 'M'}
+                            </div>
+                            <div>
+                               <p className="font-black text-white truncate">{req.messes?.mess_name || 'মেস আইডি: ' + req.mess_id.slice(0,8)}</p>
+                               <div className="flex items-center gap-2 mt-1">
+                                  <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                                  <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">অপেক্ষমান</span>
+                               </div>
+                            </div>
+                         </div>
+                         <button onClick={() => handleCancelRequest(req.id)} className="p-3 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 rounded-2xl transition-all" title="বাতিল করুন">
+                            <X size={18} />
+                         </button>
                       </div>
                    </div>
                  ))}

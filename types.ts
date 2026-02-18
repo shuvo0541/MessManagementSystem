@@ -14,7 +14,8 @@ export enum CalcMode {
 export interface User {
   id: string;
   name: string;
-  username: string;
+  username: string; // This will hold the legacy username/handle
+  userId?: string;  // This will hold the new unique @xxx12345 format
   password?: string;
   isAdmin: boolean;
   roomId?: string;

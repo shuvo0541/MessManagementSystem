@@ -33,11 +33,22 @@ const App: React.FC = () => {
   const [isPending, setIsPending] = useState(false);
   const [userMesses, setUserMesses] = useState<any[]>([]);
 
-  const generateUniqueUsername = (name: string, email: string) => {
-    const safeName = (name || 'user').toString().split(' ')[0].toLowerCase().replace(/[^a-z]/g, '') || 'user';
-    const emailPrefix = (email || 'abc').toString().split('@')[0].slice(0, 3).toLowerCase();
-    const randomSuffix = Math.floor(100 + Math.random() * 899);
-    return `${safeName}${emailPrefix}${randomSuffix}`;
+  // Internal helper to ensure ID compliance
+  const generateUserIdFromRules = (name: string) => {
+    const cleanName = name.replace(/[^a-zA-Z\s]/g, '').trim().toLowerCase();
+    const words = cleanName.split(/\s+/).filter(w => w.length > 0);
+    let letters = "";
+    if (words.length >= 3) {
+      letters = (words[0][0] || '') + (words[1][0] || '') + (words[2][0] || '');
+    } else if (words.length === 2) {
+      letters = (words[0][0] || '') + (words[1][0] || '') + (words[0][1] || words[1][1] || 'x');
+    } else if (words.length === 1) {
+      letters = (words[0] + 'xxx').substring(0, 3);
+    } else {
+      letters = "usr";
+    }
+    const digits = Math.floor(10000 + Math.random() * 90000);
+    return `@${letters.substring(0, 3)}${digits}`;
   };
 
   const fetchUserMesses = async (userId: string) => {
@@ -58,27 +69,42 @@ const App: React.FC = () => {
     }
   };
 
-  // Global Sync Logic: ইউজার যে কয়টি মেসের মেম্বার, সবখানে তার নাম আপডেট করবে
-  const syncUserNameGlobally = async (userId: string, metaName: string, messes: any[]) => {
+  const syncUserNameGlobally = async (userId: string, metaName: string, metaUserId: string, messes: any[]) => {
     for (const mess of messes) {
       const messDB = { ...mess.db_json } as MessSystemDB;
       const uIdx = messDB.users.findIndex(u => u.id === userId);
       
-      if (uIdx > -1 && messDB.users[uIdx].name !== metaName) {
-        messDB.users[uIdx].name = metaName;
-        await syncDBToSupabase(messDB, mess.id);
+      if (uIdx > -1) {
+        let changed = false;
+        if (messDB.users[uIdx].name !== metaName) {
+           messDB.users[uIdx].name = metaName;
+           changed = true;
+        }
+        if (messDB.users[uIdx].userId !== metaUserId) {
+           messDB.users[uIdx].userId = metaUserId;
+           changed = true;
+        }
+        if (changed) {
+          await syncDBToSupabase(messDB, mess.id);
+        }
       }
     }
   };
 
-  const enterMess = async (messData: any, userId: string, metaName: string) => {
+  const enterMess = async (messData: any, userId: string, metaName: string, metaUsername: string, metaUserId: string) => {
     const messDB = { ...messData.db_json } as MessSystemDB;
     const userIdx = messDB.users.findIndex(u => u.id === userId);
     
     if (userIdx > -1) {
-      // লোকাল স্টেট আপডেট
-      if (messDB.users[userIdx].name !== metaName) {
+      let changed = false;
+      if (messDB.users[userIdx].name !== metaName || messDB.users[userIdx].username !== metaUsername || messDB.users[userIdx].userId !== metaUserId) {
         messDB.users[userIdx].name = metaName;
+        messDB.users[userIdx].username = metaUsername;
+        messDB.users[userIdx].userId = metaUserId;
+        changed = true;
+      }
+      
+      if (changed) {
         await syncDBToSupabase(messDB, messData.id);
       }
       
@@ -89,7 +115,8 @@ const App: React.FC = () => {
       const adminUser: User = { 
         id: userId, 
         name: metaName, 
-        username: 'admin', 
+        username: metaUsername, 
+        userId: metaUserId,
         isAdmin: true, 
         monthlyOff: [] 
       };
@@ -120,24 +147,35 @@ const App: React.FC = () => {
         if (session) {
           setAuthEmail(session.user.email || null);
           const userId = session.user.id;
-          const messes = await fetchUserMesses(userId);
           
           const metadata = session.user.user_metadata;
-          const metaName = metadata?.full_name || metadata?.name || session.user.email?.split('@')[0] || 'User';
+          const metaName = metadata?.full_name || metadata?.name || "ইউজার";
+          const metaUsername = metadata?.username || "user_" + userId.slice(0, 5);
+          
+          // ID REPAIR LOGIC: If missing or generic, generate properly and update metadata
+          let metaUserId = metadata?.user_id;
+          if (!metaUserId || metaUserId.startsWith('@user')) {
+             metaUserId = generateUserIdFromRules(metaName);
+             // Save to auth metadata permanently
+             await supabase.auth.updateUser({
+                data: { user_id: metaUserId }
+             });
+          }
 
-          // মেম্বার লগইন করা মাত্রই তার নাম সব মেসে আপডেট করে দেওয়া হবে
-          await syncUserNameGlobally(userId, metaName, messes);
+          const messes = await fetchUserMesses(userId);
+          await syncUserNameGlobally(userId, metaName, metaUserId, messes);
 
           const lastMessId = localStorage.getItem('ACTIVE_MESS_ID');
           const lastMess = messes.find(m => m.id === lastMessId);
           
           if (lastMess) {
-            await enterMess(lastMess, userId, metaName);
+            await enterMess(lastMess, userId, metaName, metaUsername, metaUserId);
           } else {
             const baseUser: User = { 
               id: userId, 
               name: metaName, 
-              username: generateUniqueUsername(metaName, session.user.email || ''), 
+              username: metaUsername, 
+              userId: metaUserId,
               isAdmin: false,
               monthlyOff: []
             };
@@ -282,7 +320,7 @@ const App: React.FC = () => {
           user={user!} 
           authEmail={authEmail} 
           userMesses={userMesses} 
-          onSelectMess={(m) => enterMess(m, user?.id || '', user?.name || '')} 
+          onSelectMess={(m) => enterMess(m, user?.id || '', user?.name || '', user?.username || '', user?.userId || '')} 
           onLogout={handleLogout} 
           onPending={() => setIsPending(true)} 
         />

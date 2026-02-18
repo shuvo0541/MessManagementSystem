@@ -51,6 +51,30 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     });
   }, [password]);
 
+  // strict generation logic based on user prompt
+  const generateUniqueUserId = (name: string) => {
+    const cleanName = name.replace(/[^a-zA-Z\s]/g, '').trim().toLowerCase();
+    const words = cleanName.split(/\s+/).filter(w => w.length > 0);
+    let letters = "";
+
+    if (words.length >= 3) {
+      // ৩ শব্দ হলে: প্রতিটি শব্দের প্রথম অক্ষর
+      letters = (words[0][0] || '') + (words[1][0] || '') + (words[2][0] || '');
+    } else if (words.length === 2) {
+      // ২ শব্দ হলে: ১ম শব্দের ১ম অক্ষর + ২য় শব্দের ১ম অক্ষর + ১ম শব্দের পরের অক্ষর (২য় অক্ষর)
+      letters = (words[0][0] || '') + (words[1][0] || '') + (words[0][1] || words[1][1] || 'x');
+    } else if (words.length === 1) {
+      // ১ শব্দ হলে: প্রথম ৩ অক্ষর
+      letters = (words[0] + 'xxx').substring(0, 3);
+    } else {
+      letters = "usr";
+    }
+
+    // ৫টি র‍্যান্ডম ডিজিট
+    const digits = Math.floor(10000 + Math.random() * 90000);
+    return `@${letters.substring(0, 3).toLowerCase()}${digits}`;
+  };
+
   const isPasswordStrong = Object.values(requirements).every(Boolean);
   const passwordsMatch = password && confirmPassword && password === confirmPassword;
   const showMatchError = isRegistering && confirmPassword.length > 0 && password !== confirmPassword;
@@ -87,12 +111,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
     try {
       if (isRegistering) {
+        const uniqueId = generateUniqueUserId(fullName);
+
         const { error: signUpError } = await supabase.auth.signUp({ 
           email, 
           password,
           options: {
             data: {
               full_name: fullName.trim(),
+              user_id: uniqueId 
             }
           }
         });
@@ -104,7 +131,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           throw signUpError;
         }
         
-        alert('রেজিস্ট্রেশন সফল! আপনার ইমেইল চেক করুন অথবা সরাসরি লগইন করার চেষ্টা করুন।');
+        alert('রেজিস্ট্রেশন সফল! সরাসরি লগইন করার চেষ্টা করুন।');
         setIsRegistering(false);
         setPassword('');
         setConfirmPassword('');

@@ -70,7 +70,7 @@ const Header: React.FC<HeaderProps> = ({
             <span className="font-black text-sm md:text-base truncate text-gray-100">{user.name}</span>
             {getRoleBadge()}
           </div>
-          <span className="text-[10px] text-gray-500 truncate hidden xs:block font-bold">@{user.username}</span>
+          <span className="text-[10px] text-gray-500 truncate hidden xs:block font-bold">{user.userId || `@${user.username}`}</span>
         </div>
       </div>
 
