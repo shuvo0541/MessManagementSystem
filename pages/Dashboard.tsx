@@ -4,7 +4,6 @@ import { T } from '../translations';
 import { getCalculations, getLocalDateStr, getCurrentMonthStr } from '../db';
 import { MessSystemDB, User, Role } from '../types';
 import { supabase } from '../supabase';
-// Corrected import from lucide-center to lucide-react
 import { 
   TrendingUp, 
   Utensils, 
@@ -108,14 +107,24 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     if (confirmDelete) {
       setLoadingRequests(true);
       try {
+        // ১. সংশ্লিষ্ট জয়েন রিকোয়েস্টগুলো ডিলিট করা
         await supabase.from('join_requests').delete().eq('mess_id', messId);
+        
+        // ২. যদি ইনভাইটেশন টেবিল থাকে তবে সেগুলোও ডিলিট করা (অপশনাল)
         try {
           await supabase.from('invitations').delete().eq('mess_id', messId);
-        } catch (invErr) {}
+        } catch (e) {}
+
+        // ৩. মূল মেস রেকর্ডটি ডিলিট করা
         const { error } = await supabase.from('messes').delete().eq('id', messId);
         if (error) throw error;
+        
+        // ৪. লোকাল স্টোরেজ পরিষ্কার করা
         localStorage.removeItem('ACTIVE_MESS_ID');
+        
         alert("মেসটি সফলভাবে মুছে ফেলা হয়েছে।");
+        
+        // ৫. হার্ড রিফ্রেশ দিয়ে অ্যাপের শুরুতে নিয়ে যাওয়া
         window.location.href = window.location.origin;
       } catch (err: any) {
         console.error("Delete Error:", err);
@@ -188,10 +197,10 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <SummaryCard title="মোট বাজার" value={`৳${stats.totalBazar}`} icon={Wallet} color="blue" />
-        <SummaryCard title="মোট মিল" value={stats.totalMeals} icon={Utensils} color="green" />
+        <SummaryCard title="মোট বাজার" value={`৳${stats.totalBazar.toFixed(2)}`} icon={Wallet} color="blue" />
+        <SummaryCard title="মোট মিল" value={stats.totalMeals.toFixed(1)} icon={Utensils} color="green" />
         <SummaryCard title="মিল রেট" value={`৳${stats.mealRate.toFixed(2)}`} icon={TrendingUp} color="purple" />
-        <SummaryCard title="আজকের খরচ" value={`৳${todayExpense}`} icon={Zap} color="amber" />
+        <SummaryCard title="আজকের খরচ" value={`৳${todayExpense.toFixed(2)}`} icon={Zap} color="amber" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
