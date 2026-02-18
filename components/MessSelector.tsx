@@ -121,7 +121,6 @@ const MessSelector: React.FC<MessSelectorProps> = ({
 
       const db = mess.db_json as MessSystemDB;
       
-      // শুধুমাত্র অরিজিনাল নাম ব্যবহার করা হচ্ছে
       const newUser: User = {
         id: userId,
         name: userName || "সদস্য",
@@ -248,7 +247,7 @@ const MessSelector: React.FC<MessSelectorProps> = ({
         return;
       }
 
-      // display_name এবং user_name কলামে আসল নাম পাঠানো হচ্ছে
+      // 'display_name' বাদ দেওয়া হয়েছে কারণ এটি ডাটাবেসে নেই
       const { error: reqError } = await supabase
         .from('join_requests')
         .insert([{
@@ -256,14 +255,13 @@ const MessSelector: React.FC<MessSelectorProps> = ({
           user_id: userId,
           user_email: userEmail,
           user_name: userName || "সদস্য", 
-          display_name: userName || "সদস্য",
           user_username: userUsername || userId.slice(0, 5), 
           status: 'pending'
         }]);
 
       if (reqError) {
         if (reqError.code === '23505') throw new Error('আপনার একটি রিকোয়েস্ট ইতিমধ্যে পেন্ডিং আছে।');
-        throw new Error('রিকোয়েস্ট পাঠানো যায়নি। ডাটাবেস এরর চেক করুন।');
+        throw new Error('রিকোয়েস্ট পাঠানো যায়নি। সুপাবেস এরর: ' + reqError.message);
       }
 
       await fetchSentRequests();

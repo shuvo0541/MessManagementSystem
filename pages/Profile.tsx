@@ -233,14 +233,13 @@ const Profile: React.FC<ProfileProps> = ({
       const currentDB = mess.db_json as MessSystemDB;
       if (currentDB.messPassword !== cleanPass) throw new Error('ভুল মেস পাসওয়ার্ড!');
       
-      // প্রোফাইলে প্রদর্শিত ইউনিক আইডি (user.userId) এবং আসল নাম (user.name) পাঠানো হচ্ছে
+      // 'display_name' কলামটি বাদ দেওয়া হয়েছে কারণ এটি ডাটাবেসে নেই
       const { error: reqError } = await supabase.from('join_requests').insert([{ 
         mess_id: mess.id, 
         user_id: user.id, 
         user_email: authEmail,
-        user_name: user.name,
-        display_name: user.name,
-        user_username: user.userId || user.username, 
+        user_name: user.name, // এটি ডাটাবেসে আছে
+        user_username: user.userId || user.username, // এটি আপনার ইউনিক আইডি
         status: 'pending' 
       }]);
       

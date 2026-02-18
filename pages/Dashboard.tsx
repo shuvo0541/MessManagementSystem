@@ -98,8 +98,8 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     setLoadingRequests(true);
     try {
       const currentMonth = getCurrentMonthStr(); 
-      // রিকোয়েস্ট থেকে মেম্বারের প্রোফাইল নাম এবং ইউনিক আইডি সংগ্রহ
-      const actualName = req.display_name || req.user_name || "সদস্য";
+      // রিকোয়েস্ট থেকে মেম্বারের প্রোফাইল নাম এবং ইউনিক আইডি সংগ্রহ (শুধুমাত্র বিদ্যমান কলাম)
+      const actualName = req.user_name || "সদস্য";
       const uniqueUserId = req.user_username || ("@user" + req.user_id.slice(0, 5));
       
       const newUser: User = {
@@ -259,7 +259,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                               <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">সদস্যের নাম</p>
                               <div className="flex items-center gap-2">
                                  <UserIcon size={16} className="text-blue-500" />
-                                 <p className="font-black text-white text-xl truncate">{req.display_name || req.user_name || "অজানা সদস্য"}</p>
+                                 <p className="font-black text-white text-xl truncate">{req.user_name || "অজানা সদস্য"}</p>
                               </div>
                            </div>
                            <div className="space-y-1">
