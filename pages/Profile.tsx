@@ -30,7 +30,9 @@ import {
   AlertCircle,
   QrCode,
   Camera,
-  Maximize
+  Maximize,
+  Clock,
+  SendHorizontal
 } from 'lucide-react';
 
 interface ProfileProps {
@@ -58,6 +60,7 @@ const Profile: React.FC<ProfileProps> = ({
   const [statusMsg, setStatusMsg] = useState<{type: 'error' | 'success' | 'info', text: string} | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{id: string, pass: string} | null>(null);
   const [invitations, setInvitations] = useState<any[]>([]);
+  const [sentRequests, setSentRequests] = useState<any[]>([]);
   
   // Scanner States
   const [isScanning, setIsScanning] = useState(false);
@@ -69,10 +72,10 @@ const Profile: React.FC<ProfileProps> = ({
 
   useEffect(() => {
     fetchInvitations();
+    fetchSentRequests();
     return () => stopScanner(); 
-  }, [authEmail]);
+  }, [authEmail, user.id]);
 
-  // ক্যামেরা চালু করার জন্য useEffect
   useEffect(() => {
     if (isScanning) {
       initCamera();
@@ -100,12 +103,10 @@ const Profile: React.FC<ProfileProps> = ({
           });
 
           if (code && code.data) {
-            // আইডি এবং পাসওয়ার্ড আলাদা করার চেষ্টা (ID|Pass ফরম্যাট)
             const parts = code.data.split('|');
             if (parts.length >= 2) {
               const scannedId = parts[0].trim();
               const scannedPass = parts[1].trim();
-              
               setMessCode(scannedId);
               setMessPasswordInput(scannedPass);
               setStatusMsg({ type: 'success', text: 'মেস আইডি ও পাসওয়ার্ড সফলভাবে স্ক্যান করা হয়েছে!' });
@@ -113,7 +114,6 @@ const Profile: React.FC<ProfileProps> = ({
               setMessCode(code.data.trim());
               setStatusMsg({ type: 'success', text: 'মেস আইডি স্ক্যান করা হয়েছে! (পাসওয়ার্ড ম্যানুয়ালি দিন)' });
             }
-            
             setIsScanning(false);
             return;
           }
@@ -128,24 +128,14 @@ const Profile: React.FC<ProfileProps> = ({
   const initCamera = async () => {
     setStatusMsg({ type: 'info', text: 'ক্যামেরা চালু হচ্ছে...' });
     try {
-      const constraints = { 
-        video: { 
-          facingMode: 'environment',
-          width: { ideal: 640 },
-          height: { ideal: 480 }
-        } 
-      };
-      
+      const constraints = { video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } };
       const stream = await navigator.mediaDevices.getUserMedia(constraints);
       streamRef.current = stream;
       isScanningRef.current = true;
-
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
         videoRef.current.setAttribute("playsinline", "true"); 
         videoRef.current.muted = true;
-        
-        // ভিডিও প্লে করার জন্য ইভেন্ট লিসেনার যোগ করা
         const playVideo = async () => {
           try {
             if (videoRef.current) {
@@ -153,19 +143,12 @@ const Profile: React.FC<ProfileProps> = ({
               requestRef.current = requestAnimationFrame(tick);
               setStatusMsg(null);
             }
-          } catch (e) {
-            console.error("Camera play failed", e);
-          }
+          } catch (e) {}
         };
-
         videoRef.current.onloadedmetadata = playVideo;
-        // যদি মেটাডাটা আগে থেকেই লোড হয়ে থাকে
-        if (videoRef.current.readyState >= 2) {
-          playVideo();
-        }
+        if (videoRef.current.readyState >= 2) playVideo();
       }
     } catch (err: any) {
-      console.error("Camera error:", err);
       setIsScanning(false);
       isScanningRef.current = false;
       setStatusMsg({ type: 'error', text: 'ক্যামেরা চালু করা যায়নি। পারমিশন চেক করুন।' });
@@ -187,13 +170,34 @@ const Profile: React.FC<ProfileProps> = ({
 
   const fetchInvitations = async () => {
     try {
-      const { data } = await supabase
-        .from('invitations')
-        .select('*')
-        .eq('invitee_email', authEmail.toLowerCase())
-        .eq('status', 'pending');
+      const { data } = await supabase.from('invitations').select('*').eq('invitee_email', authEmail.toLowerCase()).eq('status', 'pending');
       if (data) setInvitations(data);
     } catch (err) {}
+  };
+
+  const fetchSentRequests = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('join_requests')
+        .select('*, messes(mess_name)')
+        .eq('user_id', user.id)
+        .eq('status', 'pending');
+      
+      if (!error && data) {
+        setSentRequests(data);
+      }
+    } catch (err) {}
+  };
+
+  const handleCancelRequest = async (requestId: string) => {
+    if(!window.confirm("আপনি কি আবেদনটি তুলে নিতে চান?")) return;
+    try {
+      await supabase.from('join_requests').delete().eq('id', requestId);
+      setSentRequests(prev => prev.filter(r => r.id !== requestId));
+      setStatusMsg({ type: 'success', text: 'আবেদনটি বাতিল করা হয়েছে।' });
+    } catch (err) {
+      setStatusMsg({ type: 'error', text: 'বাতিল করা যায়নি।' });
+    }
   };
 
   const handleCreateMess = async () => {
@@ -215,24 +219,35 @@ const Profile: React.FC<ProfileProps> = ({
   };
 
   const handleJoinMess = async () => {
-    if (!messCode.trim() || !messPasswordInput.trim()) return;
+    const cleanId = messCode.trim();
+    const cleanPass = messPasswordInput.trim();
+    if (!cleanId || !cleanPass) {
+      setStatusMsg({ type: 'error', text: 'মেস আইডি এবং পাসওয়ার্ড প্রদান করুন।' });
+      return;
+    }
     setLoading(true);
     setStatusMsg(null);
     try {
-      const { data: mess, error } = await supabase.from('messes').select('id, db_json').eq('id', messCode.trim()).single();
-      if (error || !mess) throw new Error('সঠিক মেস আইডি প্রদান করুন।');
+      const { data: mess, error: fetchErr } = await supabase.from('messes').select('id, db_json').eq('id', cleanId).single();
+      if (fetchErr || !mess) throw new Error('সঠিক মেস আইডি প্রদান করুন।');
       const currentDB = mess.db_json as MessSystemDB;
-      if (currentDB.messPassword !== messPasswordInput.trim()) throw new Error('ভুল মেস পাসওয়ার্ড!');
+      if (currentDB.messPassword !== cleanPass) throw new Error('ভুল মেস পাসওয়ার্ড!');
       
-      // ইউজারনেম হিসেবে পূর্ণ নাম পাঠানো হচ্ছে
-      await supabase.from('join_requests').insert([{ 
+      // 'user_name' কলাম বাদ দেওয়া হয়েছে
+      const { error: reqError } = await supabase.from('join_requests').insert([{ 
         mess_id: mess.id, 
         user_id: user.id, 
         user_email: authEmail, 
-        user_name: user.name, // ইউজারের নাম এখানে যুক্ত করা হলো
         status: 'pending' 
       }]);
-      onPending();
+      
+      if (reqError) {
+        if (reqError.code === '23505') throw new Error('আপনার একটি রিকোয়েস্ট ইতিমধ্যে পেন্ডিং আছে।');
+        throw reqError;
+      }
+      fetchSentRequests();
+      setView('info');
+      setStatusMsg({ type: 'success', text: 'আপনার আবেদন সফলভাবে পাঠানো হয়েছে।' });
     } catch (err: any) {
       setStatusMsg({ type: 'error', text: err.message });
     } finally {
@@ -298,54 +313,91 @@ const Profile: React.FC<ProfileProps> = ({
       </div>
 
       {view === 'info' && (
-        <div className="space-y-10">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-            <h3 className="text-2xl font-black text-white flex items-center gap-3">
-              <Building className="text-blue-500" /> আপনার মেসসমূহ
-            </h3>
-            <div className="flex flex-wrap gap-4 w-full md:w-auto">
-              <button onClick={() => setView('join')} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-900 border border-gray-800 text-gray-300 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-800">
-                <UserPlus size={16}/> মেসে যোগ দিন
-              </button>
-              <button onClick={() => setView('create')} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-500/20 active:scale-95">
-                <PlusCircle size={16}/> নতুন মেস তৈরি
-              </button>
+        <div className="space-y-12">
+          {/* Active Messes Section */}
+          <div className="space-y-8">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+              <h3 className="text-2xl font-black text-white flex items-center gap-3">
+                <Building className="text-blue-500" /> আপনার মেসসমূহ
+              </h3>
+              <div className="flex flex-wrap gap-4 w-full md:w-auto">
+                <button onClick={() => setView('join')} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-gray-900 border border-gray-800 text-gray-300 px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest hover:bg-gray-800 transition-all">
+                  <UserPlus size={16}/> মেসে যোগ দিন
+                </button>
+                <button onClick={() => setView('create')} className="flex-1 md:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-4 rounded-2xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all">
+                  <PlusCircle size={16}/> নতুন মেস তৈরি
+                </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {userMesses.map(mess => (
+                <div key={mess.id} className="group bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 hover:border-blue-500/50 hover:shadow-2xl transition-all text-left space-y-6 relative overflow-hidden">
+                  <div onClick={() => onSelectMess(mess)} className="cursor-pointer space-y-6">
+                    <div className="w-16 h-16 bg-blue-900/20 text-blue-500 rounded-2xl flex items-center justify-center font-black text-2xl group-hover:scale-110 transition-transform">
+                      {mess.mess_name[0].toUpperCase()}
+                    </div>
+                    <div>
+                      <h4 className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors truncate">{mess.mess_name}</h4>
+                      <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-2 flex items-center gap-2"><Hash size={12}/> ID: {mess.id.slice(0, 12)}...</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between pt-2">
+                     <div className="flex gap-2">
+                        <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${mess.admin_id === user.id ? 'bg-purple-900/30 text-purple-400 border border-purple-500/20' : 'bg-blue-900/30 text-blue-400 border border-blue-500/20'}`}>
+                           {mess.admin_id === user.id ? 'Admin' : 'Member'}
+                        </span>
+                        {mess.admin_id === user.id && (
+                          <button onClick={(e) => {e.stopPropagation(); seedData(mess.id)}} className="px-3 py-1 bg-amber-900/30 text-amber-500 text-[9px] font-black uppercase rounded-lg border border-amber-500/20 flex items-center gap-1 hover:bg-amber-600 hover:text-white transition-all">
+                             <Zap size={10}/> ১ বছরের ডাটা
+                          </button>
+                        )}
+                     </div>
+                     <ArrowRight size={20} className="text-blue-500 group-hover:translate-x-2 transition-transform cursor-pointer" onClick={() => onSelectMess(mess)} />
+                  </div>
+                </div>
+              ))}
+              {userMesses.length === 0 && (
+                <div className="col-span-full py-20 text-center bg-gray-900 rounded-[3rem] border border-gray-800 border-dashed">
+                   <p className="text-gray-500 font-bold">আপনি এখনো কোনো মেসে যুক্ত হননি।</p>
+                </div>
+              )}
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {userMesses.map(mess => (
-              <div key={mess.id} className="group bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 hover:border-blue-500/50 hover:shadow-2xl transition-all text-left space-y-6 relative overflow-hidden">
-                <div onClick={() => onSelectMess(mess)} className="cursor-pointer space-y-6">
-                  <div className="w-16 h-16 bg-blue-900/20 text-blue-500 rounded-2xl flex items-center justify-center font-black text-2xl group-hover:scale-110 transition-transform">
-                    {mess.mess_name[0].toUpperCase()}
-                  </div>
-                  <div>
-                    <h4 className="text-2xl font-black text-white group-hover:text-blue-400 transition-colors truncate">{mess.mess_name}</h4>
-                    <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mt-2 flex items-center gap-2"><Hash size={12}/> ID: {mess.id.slice(0, 12)}...</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between pt-2">
-                   <div className="flex gap-2">
-                      <span className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest ${mess.admin_id === user.id ? 'bg-purple-900/30 text-purple-400 border border-purple-500/20' : 'bg-blue-900/30 text-blue-400 border border-blue-500/20'}`}>
-                         {mess.admin_id === user.id ? 'Admin' : 'Member'}
-                      </span>
-                      {mess.admin_id === user.id && (
-                        <button onClick={(e) => {e.stopPropagation(); seedData(mess.id)}} className="px-3 py-1 bg-amber-900/30 text-amber-500 text-[9px] font-black uppercase rounded-lg border border-amber-500/20 flex items-center gap-1 hover:bg-amber-600 hover:text-white transition-all">
-                           <Zap size={10}/> ১ বছরের ডাটা
+          {sentRequests.length > 0 && (
+            <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-700">
+               <h3 className="text-2xl font-black text-white flex items-center gap-3 px-4">
+                 <SendHorizontal className="text-blue-500" /> পাঠানো আবেদনসমূহ (Pending)
+               </h3>
+               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                 {sentRequests.map(req => (
+                   <div key={req.id} className="bg-gray-900 border border-blue-500/20 p-8 rounded-[2.5rem] flex flex-col gap-6 shadow-xl relative overflow-hidden group">
+                      <div className="absolute -right-4 -bottom-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                        <Clock size={100} />
+                      </div>
+                      <div className="flex items-center justify-between relative z-10">
+                        <div className="flex items-center gap-4">
+                           <div className="w-12 h-12 bg-blue-900/30 text-blue-400 rounded-2xl flex items-center justify-center font-black text-xl">
+                              {req.messes?.mess_name?.[0]?.toUpperCase() || 'M'}
+                           </div>
+                           <div>
+                              <p className="font-black text-white truncate max-w-[120px]">{req.messes?.mess_name || 'মেস আইডি: ' + req.mess_id.slice(0,8)}</p>
+                              <div className="flex items-center gap-2 mt-1">
+                                 <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+                                 <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Waiting for Approval</span>
+                              </div>
+                           </div>
+                        </div>
+                        <button onClick={() => handleCancelRequest(req.id)} className="p-3 bg-red-900/10 text-red-500/40 hover:text-red-500 hover:bg-red-500/20 rounded-2xl transition-all" title="বাতিল করুন">
+                           <X size={18} />
                         </button>
-                      )}
+                      </div>
                    </div>
-                   <ArrowRight size={20} className="text-blue-500 group-hover:translate-x-2 transition-transform cursor-pointer" onClick={() => onSelectMess(mess)} />
-                </div>
-              </div>
-            ))}
-            {userMesses.length === 0 && (
-              <div className="col-span-full py-20 text-center bg-gray-900 rounded-[3rem] border border-gray-800 border-dashed">
-                 <p className="text-gray-500 font-bold">আপনি এখনো কোনো মেসে যুক্ত হননি।</p>
-              </div>
-            )}
-          </div>
+                 ))}
+               </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -377,31 +429,18 @@ const Profile: React.FC<ProfileProps> = ({
                     <video ref={videoRef} className="absolute inset-0 w-full h-full object-cover" autoPlay playsInline muted />
                     <canvas ref={canvasRef} className="hidden" />
                     <div className="scanner-line z-10"></div>
-                    
-                    {/* Camera Loading State */}
                     {statusMsg?.type === 'info' && (
                       <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-4 z-20">
                         <Loader2 className="animate-spin text-blue-500" size={32} />
                         <span className="text-white font-bold text-xs uppercase tracking-widest">{statusMsg.text}</span>
                       </div>
                     )}
-
-                    {/* Scanner UI Overlay */}
                     <div className="absolute inset-0 border-[40px] border-black/40 pointer-events-none"></div>
                     <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-2 border-blue-400/30 rounded-2xl pointer-events-none"></div>
-                    
-                    <button 
-                      onClick={() => setIsScanning(false)}
-                      className="absolute bottom-6 left-1/2 -translate-x-1/2 px-8 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl active:scale-95 z-30"
-                    >
-                      বন্ধ করুন
-                    </button>
+                    <button onClick={() => setIsScanning(false)} className="absolute bottom-6 left-1/2 -translate-x-1/2 px-8 py-3 bg-red-600 text-white rounded-2xl font-black text-xs uppercase shadow-xl active:scale-95 z-30">বন্ধ করুন</button>
                  </div>
                ) : (
-                 <button 
-                   onClick={() => setIsScanning(true)} 
-                   className="flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-6 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl active:scale-95"
-                 >
+                 <button onClick={() => setIsScanning(true)} className="flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-6 rounded-3xl font-black uppercase text-xs tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-xl active:scale-95">
                    <Camera size={24}/> QR কোড স্ক্যান করুন
                  </button>
                )}

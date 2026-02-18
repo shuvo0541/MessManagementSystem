@@ -17,7 +17,9 @@ import {
   Hash,
   Copy,
   QrCode,
-  X
+  X,
+  UserCheck,
+  Inbox
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -43,14 +45,35 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
   const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
-    if (user.isAdmin) {
-      fetchPendingRequests();
-    }
+    if (!user.isAdmin || !messId) return;
+
+    fetchPendingRequests();
+
+    const channel = supabase
+      .channel('schema-db-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'join_requests',
+          filter: `mess_id=eq.${messId}`
+        },
+        () => {
+          fetchPendingRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [user.isAdmin, messId]);
 
   const isMonthLocked = (db.lockedMonths || []).includes(month);
 
   const fetchPendingRequests = async () => {
+    if (!messId) return;
     setLoadingRequests(true);
     try {
       const { data, error } = await supabase
@@ -59,7 +82,11 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
         .eq('mess_id', messId)
         .eq('status', 'pending');
       
-      if (!error) setPendingRequests(data || []);
+      if (!error) {
+        setPendingRequests(data || []);
+      }
+    } catch (err) {
+      console.error("Fetch pending requests error:", err);
     } finally {
       setLoadingRequests(false);
     }
@@ -69,8 +96,8 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     setLoadingRequests(true);
     try {
       const currentMonth = getCurrentMonthStr(); 
-      // অগ্রাধিকার: ১. প্রেরিত নাম ২. ইমেইল প্রিফিক্স
-      const displayName = req.user_name || req.user_email.split('@')[0];
+      // 'user_name' কলাম না থাকলে ইমেইল প্রিফিক্স ব্যবহার করা হচ্ছে
+      const displayName = (req.user_email || 'New User').split('@')[0];
       
       const newUser: User = {
         id: req.user_id,
@@ -83,7 +110,6 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
       };
 
       const updatedUsers = [...db.users];
-      // যদি ইউজার ইতিমধ্যে থেকে থাকে (ভুলবশত), তবে তা আপডেট করুন, নইলে যোগ করুন
       const existingIdx = updatedUsers.findIndex(u => u.id === req.user_id);
       if (existingIdx > -1) {
         updatedUsers[existingIdx] = newUser;
@@ -104,7 +130,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
       setPendingRequests(prev => prev.filter(r => r.id !== req.id));
       alert(`${displayName} এখন আপনার মেসের সদস্য!`);
     } catch (err: any) {
-      alert("অনুমোদন করা যায়নি।");
+      alert("অনুমোদন করা যায়নি: " + err.message);
     } finally {
       setLoadingRequests(false);
     }
@@ -209,22 +235,42 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
          </div>
       </div>
 
-      {user.isAdmin && pendingRequests.length > 0 && (
+      {user.isAdmin && (
         <div className="bg-gray-900 border border-gray-800 rounded-[2.5rem] overflow-hidden shadow-2xl">
            <div className="p-8 border-b border-gray-800 flex items-center justify-between">
-              <h3 className="text-2xl font-black text-white uppercase">সদস্য আবেদন</h3>
-              <button onClick={fetchPendingRequests} className="p-3 hover:bg-gray-800 rounded-2xl text-blue-500"><RefreshCcw size={20}/></button>
+              <div className="flex items-center gap-3">
+                 <UserCheck className="text-blue-500" size={24} />
+                 <h3 className="text-xl md:text-2xl font-black text-white uppercase">সদস্য আবেদন (Member Approval)</h3>
+              </div>
+              <button onClick={fetchPendingRequests} className="p-3 hover:bg-gray-800 rounded-2xl text-blue-500 transition-all active:rotate-180 duration-500 shadow-lg"><RefreshCcw size={20}/></button>
            </div>
-           <div className="p-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-                {pendingRequests.map(req => (
-                  <div key={req.id} className="bg-gray-800/40 border border-gray-800 p-6 rounded-[2rem] flex flex-col gap-5">
-                     <p className="font-black text-white truncate text-lg">{req.user_name || req.user_email}</p>
-                     <div className="grid grid-cols-2 gap-4">
-                        <button onClick={async () => { await supabase.from('join_requests').delete().eq('id', req.id); fetchPendingRequests(); }} className="py-4 bg-red-900/20 text-red-500 rounded-2xl font-black uppercase text-xs">বাতিল</button>
-                        <button onClick={() => handleApprove(req)} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs">অনুমোদন</button>
-                     </div>
+           <div className="p-8">
+                {pendingRequests.length > 0 ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {pendingRequests.map(req => (
+                      <div key={req.id} className="bg-gray-800/40 border border-gray-800 p-6 rounded-[2rem] flex flex-col gap-5">
+                        <div className="flex flex-col">
+                           <p className="font-black text-white truncate text-lg">{req.user_email?.split('@')[0] || 'New User'}</p>
+                           <p className="text-[10px] font-bold text-gray-500 uppercase tracking-widest">{req.user_email}</p>
+                        </div>
+                        <div className="grid grid-cols-2 gap-4">
+                            <button onClick={async () => { if(window.confirm("আপনি কি আবেদনটি বাতিল করতে চান?")) { await supabase.from('join_requests').delete().eq('id', req.id); fetchPendingRequests(); } }} className="py-4 bg-red-900/20 text-red-500 rounded-2xl font-black uppercase text-xs hover:bg-red-600 hover:text-white transition-all">বাতিল</button>
+                            <button onClick={() => handleApprove(req)} className="py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all">অনুমোদন</button>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="py-12 flex flex-col items-center justify-center text-center space-y-4 opacity-40">
+                    <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center text-gray-500">
+                       <Inbox size={32} />
+                    </div>
+                    <div>
+                       <p className="text-gray-400 font-bold">বর্তমানে কোনো আবেদন নেই</p>
+                       <p className="text-[10px] font-black uppercase tracking-widest text-gray-600">No pending requests</p>
+                    </div>
+                  </div>
+                )}
            </div>
         </div>
       )}
