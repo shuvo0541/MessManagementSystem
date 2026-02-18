@@ -101,34 +101,33 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
   const handleDeleteMess = async () => {
     const confirmDelete = window.confirm(
-      "আপনি কি নিশ্চিতভাবে এই মেসটি ডিলিট করতে চান?\n\nসতর্কতা: মেস ডিলিট করলে এর সকল হিসাব, মেম্বার ডাটা এবং রেকর্ড চিরতরে মুছে যাবে। এই কাজটি আর ফিরিয়ে আনা সম্ভব নয়।"
+      "আপনি কি নিশ্চিতভাবে এই মেসটি ডিলিট করতে চান?\n\nসতর্কতা: মেস ডিলিট করলে এর সকল হিসাব, মেম্বার ডাটা এবং রেকর্ড চিরতরে মুছে যাবে। এটি আর ফিরে পাওয়া সম্ভব নয়।"
     );
     
     if (confirmDelete) {
       setLoadingRequests(true);
       try {
-        // ১. সংশ্লিষ্ট জয়েন রিকোয়েস্টগুলো ডিলিট করা
-        await supabase.from('join_requests').delete().eq('mess_id', messId);
+        const { error: reqError } = await supabase.from('join_requests').delete().eq('mess_id', messId);
+        if (reqError) console.warn("Requests deletion error:", reqError);
         
-        // ২. যদি ইনভাইটেশন টেবিল থাকে তবে সেগুলোও ডিলিট করা (অপশনাল)
         try {
           await supabase.from('invitations').delete().eq('mess_id', messId);
         } catch (e) {}
 
-        // ৩. মূল মেস রেকর্ডটি ডিলিট করা
-        const { error } = await supabase.from('messes').delete().eq('id', messId);
-        if (error) throw error;
+        const { error: messError } = await supabase.from('messes').delete().eq('id', messId);
+        if (messError) {
+          if (messError.message.includes("policy")) {
+            throw new Error("আপনার ডাটাবেসে 'DELETE' পারমিশন সেট করা নেই। দয়া করে Supabase SQL Editor-এ পারমিশন কোডটি রান করুন।");
+          }
+          throw messError;
+        }
         
-        // ৪. লোকাল স্টোরেজ পরিষ্কার করা
         localStorage.removeItem('ACTIVE_MESS_ID');
-        
-        alert("মেসটি সফলভাবে মুছে ফেলা হয়েছে।");
-        
-        // ৫. হার্ড রিফ্রেশ দিয়ে অ্যাপের শুরুতে নিয়ে যাওয়া
-        window.location.href = window.location.origin;
+        alert("মেসটি সফলভাবে ডিলিট করা হয়েছে।");
+        window.location.reload();
       } catch (err: any) {
-        console.error("Delete Error:", err);
-        alert("মেস ডিলিট করতে সমস্যা হয়েছে: " + (err.message || "Unknown Error"));
+        console.error("Delete Fail:", err);
+        alert("ডিলিট করা যায়নি: " + (err.message || "Unknown Database Error"));
       } finally {
         setLoadingRequests(false);
       }
@@ -182,7 +181,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                 disabled={loadingRequests}
                 className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
               >
-                <Trash2 size={14} className="sm:w-4 sm:h-4"/> মেস ডিলিট
+                {loadingRequests ? <RefreshCcw className="animate-spin" size={14}/> : <Trash2 size={14}/>} মেস ডিলিট
               </button>
            )}
            {user.isAdmin && (
@@ -211,12 +210,15 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
            </h3>
            <div className="h-64 sm:h-80 w-full">
              <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={chartData}>
+               <BarChart data={chartData} barCategoryGap="30%">
                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
-                 <XAxis dataKey="name" fontSize={10} stroke="#6b7280" />
-                 <YAxis fontSize={10} stroke="#6b7280" />
-                 <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px' }} />
-                 <Bar dataKey="meals" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                 <XAxis dataKey="name" fontSize={10} stroke="#6b7280" tickLine={false} axisLine={false} />
+                 <YAxis fontSize={10} stroke="#6b7280" tickLine={false} axisLine={false} />
+                 <Tooltip 
+                   cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
+                   contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px' }} 
+                 />
+                 <Bar dataKey="meals" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={24} />
                </BarChart>
              </ResponsiveContainer>
            </div>
