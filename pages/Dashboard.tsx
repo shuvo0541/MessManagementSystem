@@ -150,6 +150,30 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
   const qrData = `${messId}|${db.messPassword || ''}`;
   const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
 
+  // বড় নামগুলোকে ২-৩ লাইনে ভাঙার জন্য কাস্টম টিক ফাংশন
+  const renderCustomAxisTick = ({ x, y, payload }: any) => {
+    const name = payload.value;
+    const words = name.split(' ');
+    return (
+      <g transform={`translate(${x},${y})`}>
+        <text 
+          x={0} 
+          y={0} 
+          dy={12} 
+          textAnchor="middle" 
+          fill="#6b7280" 
+          style={{ fontSize: '8px', fontWeight: '700' }}
+        >
+          {words.slice(0, 3).map((word: string, index: number) => (
+            <tspan x={0} dy={index === 0 ? 0 : 10} key={index}>
+              {word}
+            </tspan>
+          ))}
+        </text>
+      </g>
+    );
+  };
+
   const SummaryCard = ({ title, value, icon: Icon, color }: any) => (
     <div className="bg-gray-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-800 group relative overflow-hidden transition-all hover:shadow-xl">
       <div className={`absolute -right-2 -bottom-2 opacity-[0.05] group-hover:opacity-10 transition-opacity transform scale-150 text-${color}-500`}>
@@ -210,15 +234,22 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
            </h3>
            <div className="h-64 sm:h-80 w-full">
              <ResponsiveContainer width="100%" height="100%">
-               <BarChart data={chartData} barCategoryGap="30%">
+               <BarChart data={chartData} barCategoryGap="15%">
                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
-                 <XAxis dataKey="name" fontSize={10} stroke="#6b7280" tickLine={false} axisLine={false} />
-                 <YAxis fontSize={10} stroke="#6b7280" tickLine={false} axisLine={false} />
+                 <XAxis 
+                   dataKey="name" 
+                   tick={renderCustomAxisTick}
+                   height={60}
+                   tickLine={false} 
+                   axisLine={false}
+                   interval={0}
+                 />
+                 <YAxis fontSize={9} stroke="#6b7280" tickLine={false} axisLine={false} />
                  <Tooltip 
                    cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
-                   contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px' }} 
+                   contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px', fontSize: '10px' }} 
                  />
-                 <Bar dataKey="meals" fill="#3b82f6" radius={[6, 6, 0, 0]} barSize={24} />
+                 <Bar dataKey="meals" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={40} barSize={24} />
                </BarChart>
              </ResponsiveContainer>
            </div>
