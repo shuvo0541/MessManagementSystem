@@ -41,12 +41,16 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-gray-800 border-r border-gray-100 dark:border-gray-700 shadow-sm lg:shadow-none">
-      <div className="p-6 md:p-8 border-b border-gray-50 dark:border-gray-700 shrink-0">
+      {/* Brand Header - Clickable to Profile */}
+      <div 
+        onClick={() => onViewChange('profile')}
+        className="p-6 md:p-8 border-b border-gray-50 dark:border-gray-700 shrink-0 cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-all active:scale-95 group"
+      >
         <h1 className="text-xl md:text-2xl font-black text-blue-600 dark:text-blue-400 flex items-center gap-3">
-          <div className="bg-blue-600 p-2 rounded-2xl text-white shadow-lg shadow-blue-500/20">
+          <div className="bg-blue-600 p-2 rounded-2xl text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
             <UtensilsCrossed size={28} />
           </div>
-          {T.appName}
+          <span className="group-hover:text-blue-500 transition-colors">{T.appName}</span>
         </h1>
       </div>
       

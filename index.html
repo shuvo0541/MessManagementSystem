@@ -3,7 +3,7 @@
 <html lang="bn" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>মেস ম্যানেজমেন্ট সিস্টেম</title>
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
@@ -22,6 +22,12 @@
             background-color: #030712;
             color: #f3f4f6;
             margin: 0;
+            overflow-x: hidden;
+            width: 100%;
+            position: relative;
+        }
+        #root {
+            width: 100%;
             overflow-x: hidden;
         }
         #root:empty::before {
@@ -60,6 +66,15 @@
           .no-print { display: none !important; }
           .bg-gray-900 { background: white !important; color: black !important; }
           .text-white { color: black !important; }
+        }
+
+        /* Hide scrollbars for cleaner mobile UI */
+        .no-scrollbar::-webkit-scrollbar {
+          display: none;
+        }
+        .no-scrollbar {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
         }
     </style>
     <script type="importmap">

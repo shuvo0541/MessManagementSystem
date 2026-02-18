@@ -58,7 +58,7 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-gray-900/50 backdrop-blur-md border-b border-gray-800 px-4 md:px-6 py-4 flex items-center justify-between sticky top-0 z-30">
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex items-center gap-3 shrink-0 min-w-0 max-w-[25%] sm:max-w-none">
         <button 
           onClick={onMenuToggle}
           className="lg:hidden p-2 hover:bg-gray-800 rounded-xl text-gray-300 transition-colors"
@@ -76,21 +76,21 @@ const Header: React.FC<HeaderProps> = ({
 
       {hasActiveMess ? (
         <>
-          <div className="flex-1 flex justify-center px-4 overflow-hidden">
-            <h1 className="text-lg md:text-2xl lg:text-3xl font-black text-blue-500 uppercase tracking-tight truncate drop-shadow-sm">
+          <div className="flex-1 flex justify-center px-2 overflow-hidden min-w-0">
+            <h1 className="text-base xs:text-lg sm:text-2xl lg:text-3xl font-black text-blue-500 tracking-tight truncate drop-shadow-sm text-center">
               {messName}
             </h1>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <div className="flex items-center gap-1 px-2 py-1.5 bg-gray-800/80 rounded-xl border border-gray-700">
+            <div className="flex items-center gap-1 px-1.5 sm:px-2 py-1.5 bg-gray-800/80 rounded-xl border border-gray-700">
               <Calendar size={14} className="text-gray-500 ml-1 hidden sm:block" />
               
               {/* মাস সিলেক্টর */}
               <select 
                 value={selectedMonthIdx}
                 onChange={(e) => handleMonthChange(e.target.value)}
-                className="bg-transparent border-none outline-none text-[11px] md:text-xs font-black focus:ring-0 cursor-pointer text-gray-100 pr-6"
+                className="bg-transparent border-none outline-none text-[10px] md:text-xs font-black focus:ring-0 cursor-pointer text-gray-100 pr-5 sm:pr-6"
               >
                 {banglaMonths.map((m, i) => (
                   <option key={i} value={i + 1} className="bg-gray-900 text-white">{m}</option>
@@ -101,7 +101,7 @@ const Header: React.FC<HeaderProps> = ({
               <select 
                 value={selectedYear}
                 onChange={(e) => handleYearChange(e.target.value)}
-                className="bg-transparent border-none outline-none text-[11px] md:text-xs font-black focus:ring-0 cursor-pointer text-blue-400 pr-6 border-l border-gray-700 pl-2"
+                className="bg-transparent border-none outline-none text-[10px] md:text-xs font-black focus:ring-0 cursor-pointer text-blue-400 pr-5 sm:pr-6 border-l border-gray-700 pl-2"
               >
                 {years.map(y => (
                   <option key={y} value={y} className="bg-gray-900 text-white">{y}</option>
