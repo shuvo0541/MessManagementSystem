@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { MessSystemDB, Room, UtilityExpense, User, Role, MonthlyUtilityOverride, CalcMode, MonthlyRoomOverride, LocalUtilityExpense } from '../types';
 import { T } from '../translations';
@@ -15,7 +16,9 @@ import {
   Settings2,
   UserCheck,
   ChevronRight,
-  ShieldAlert
+  ShieldAlert,
+  Wallet,
+  Coins
 } from 'lucide-react';
 import { getUserRoleInMonth, getCalculations } from '../db';
 
@@ -220,7 +223,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
   const currentEditingUtil = utilityBreakdown.find(u => u.id === editingModeUtilId);
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-10 overflow-x-hidden">
+    <div className="space-y-6 sm:space-y-8 pb-10 overflow-x-hidden px-1 sm:px-0">
       <div className="space-y-4 sm:space-y-6">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
@@ -233,7 +236,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
         </div>
 
         {isMonthLocked && (
-          <div className="bg-red-900/10 border border-red-500/20 p-4 sm:p-5 rounded-xl sm:rounded-3xl flex items-center gap-3 sm:gap-4">
+          <div className="bg-red-900/10 border border-red-500/20 p-4 sm:p-5 rounded-xl sm:rounded-3xl flex items-center gap-3 sm:gap-4 shadow-lg">
             <div className="p-2 bg-red-600 rounded-lg text-white shadow-lg shadow-red-500/10 shrink-0">
               <Lock size={18}/>
             </div>
@@ -244,7 +247,51 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
           </div>
         )}
 
-        <div className="bg-gray-900 rounded-2xl sm:rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl relative">
+        {/* মোবাইল ভিউ (Card Layout) */}
+        <div className="sm:hidden space-y-4">
+          {stats.userStats.filter((u:any) => u.isActive).map((u: any) => {
+            const userUtilitiesTotal = utilityBreakdown.reduce((s: number, util: any) => s + (Number(util.shares[u.userId]) || 0), 0);
+            const isCurrent = u.userId === user.id;
+            const totalWithRent = Number(u.roomRent || 0) + Number(userUtilitiesTotal);
+            const userRoom = db.rooms.find(r => r.id === db.users.find(usr => usr.id === u.userId)?.roomId);
+            
+            return (
+              <div key={u.userId} className={`bg-gray-900 border ${isCurrent ? 'border-blue-500/50 ring-1 ring-blue-500/20' : 'border-gray-800'} p-5 rounded-2xl space-y-4 shadow-xl`}>
+                <div className="flex justify-between items-center border-b border-gray-800 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-9 h-9 ${isCurrent ? 'bg-blue-600' : 'bg-gray-800'} text-white rounded-xl flex items-center justify-center font-black text-sm`}>
+                      {u.name[0]}
+                    </div>
+                    <div>
+                      <h4 className={`font-black text-sm ${isCurrent ? 'text-blue-400' : 'text-white'}`}>{u.name}</h4>
+                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{userRoom?.name || 'রুমহীন'}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">মোট বিল</p>
+                    <p className="text-lg font-black text-blue-500">৳{totalWithRent.toFixed(2)}</p>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-[11px]">
+                  <div className="flex justify-between items-center">
+                    <span className="text-gray-500 font-bold">রুম ভাড়া</span>
+                    <span className="text-gray-200 font-black">৳{u.roomRent.toFixed(2)}</span>
+                  </div>
+                  {utilityBreakdown.map(util => (
+                    <div key={util.id} className="flex justify-between items-center">
+                      <span className="text-gray-500 font-bold truncate max-w-[60px]">{util.name}</span>
+                      <span className="text-gray-200 font-black">৳{(util.shares[u.userId] || 0).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ডেক্সটপ ভিউ (Table Layout) */}
+        <div className="hidden sm:block bg-gray-900 rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl relative">
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full text-left min-w-[700px] sm:min-w-0">
               <thead>
@@ -302,7 +349,8 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10">
+            {/* রুম সেটিংস */}
             <div className="space-y-4 sm:space-y-6">
               <div className="flex items-center justify-between px-2 sm:px-4">
                 <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2 sm:gap-3"><Home className="text-blue-500" size={18}/> রুম সেটিংস</h3>
@@ -312,7 +360,28 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                   </button>
                 )}
               </div>
-              <div className="bg-gray-900 rounded-2xl sm:rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
+              <div className="space-y-3 sm:hidden">
+                {db.rooms.map(r => {
+                  const rent = (db.monthlyRoomOverrides || []).find(o => o.roomId === r.id && o.month === month)?.rent ?? r.rent;
+                  return (
+                    <div key={r.id} className="bg-gray-900 p-4 rounded-xl border border-gray-800 flex justify-between items-center">
+                       <div>
+                          <p className="font-black text-white text-xs">{r.name}</p>
+                          <p className="text-[8px] text-gray-500 uppercase font-bold tracking-widest mt-1">রুম আইডি: {r.id.slice(0,5)}</p>
+                       </div>
+                       <div className="flex items-center gap-3">
+                          <input 
+                            type="number" step="0.01" disabled={isMonthLocked}
+                            className="w-20 bg-gray-800 text-right px-2 py-2 rounded-lg border border-gray-700 font-black text-xs text-blue-400 outline-none" 
+                            value={rent || ''} onFocus={(e) => e.target.select()} onChange={(e) => updateRoomRent(r.id, parseFloat(e.target.value) || 0)} 
+                          />
+                          {isAdminUser && !isMonthLocked && <button onClick={() => performDeleteRoom(r.id)} className="p-2 text-red-500/40"><Trash2 size={16}/></button>}
+                       </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="hidden sm:block bg-gray-900 rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
                 <table className="w-full">
                   <thead className="bg-gray-800/40 text-[9px] sm:text-[10px] uppercase font-black text-gray-500 border-b border-gray-800">
                     <tr>
@@ -348,6 +417,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
               </div>
             </div>
 
+            {/* ইউটিলিটি বিল */}
             <div className="space-y-4 sm:space-y-6">
               <div className="flex items-center justify-between px-2 sm:px-4">
                 <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2 sm:gap-3"><Zap className="text-yellow-500" size={18}/> ইউটিলিটি বিল</h3>
@@ -360,7 +430,28 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                    )}
                 </div>
               </div>
-              <div className="bg-gray-900 rounded-2xl sm:rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
+              <div className="space-y-3 sm:hidden">
+                {utilityBreakdown.map(u => (
+                  <div key={u.id} className="bg-gray-900 p-4 rounded-xl border border-gray-800 flex justify-between items-center">
+                    <div>
+                      <p className="font-black text-white text-xs">{u.name}</p>
+                      <p className={`text-[7px] font-black uppercase tracking-widest mt-0.5 ${u.isLocal ? 'text-blue-400' : 'text-yellow-500'}`}>{u.isLocal ? 'মাসিক' : 'মাস্টার'}</p>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <p className="font-black text-white text-xs">৳{u.amount.toFixed(2)}</p>
+                      <div className="flex gap-1">
+                        {!isMonthLocked && (
+                          <>
+                            <button onClick={() => setEditingModeUtilId(u.id)} className="p-2 text-blue-400"><Settings2 size={16}/></button>
+                            <button onClick={() => performDeleteUtility(u.id, u.isLocal)} className="p-2 text-red-500/40"><Trash2 size={16}/></button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="hidden sm:block bg-gray-900 rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
                 <table className="w-full">
                   <tbody className="divide-y divide-gray-800">
                     {utilityBreakdown.map(u => (
@@ -392,11 +483,28 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
             </div>
           </div>
 
+          {/* মেম্বার রুম বরাদ্দ */}
           <div className="space-y-4 sm:space-y-6">
             <div className="px-2 sm:px-4">
                <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-2 sm:gap-3"><UserCheck className="text-green-500" size={18}/> মেম্বার রুম বরাদ্দ</h3>
             </div>
-            <div className="bg-gray-900 rounded-2xl sm:rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
+            <div className="grid grid-cols-1 sm:hidden gap-3">
+              {activeResidents.map(resUser => (
+                <div key={resUser.id} className="bg-gray-900 p-4 rounded-xl border border-gray-800 flex justify-between items-center">
+                  <span className="font-bold text-xs text-white truncate max-w-[120px]">{resUser.name}</span>
+                  <select 
+                    disabled={isMonthLocked}
+                    className="bg-gray-800 border-gray-700 rounded-lg text-[10px] font-black text-white px-3 py-2 outline-none" 
+                    value={resUser.roomId || ''} 
+                    onChange={(e) => assignRoom(resUser.id, e.target.value)}
+                  >
+                    <option value="">বরাদ্দ নেই</option>
+                    {db.rooms.map(room => <option key={room.id} value={room.id}>{room.name}</option>)}
+                  </select>
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block bg-gray-900 rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
               <table className="w-full">
                 <tbody className="divide-y divide-gray-800">
                   {activeResidents.map(resUser => (

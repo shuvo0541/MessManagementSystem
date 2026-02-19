@@ -11,7 +11,8 @@ import {
   Eye, 
   ArrowUpRight, 
   ArrowDownRight,
-  Info
+  Info,
+  User as UserIcon
 } from 'lucide-react';
 
 interface MealBazarLedgerProps {
@@ -35,9 +36,9 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
   );
 
   return (
-    <div className="space-y-6 sm:space-y-8 pb-10 animate-in fade-in duration-500 overflow-x-hidden">
+    <div className="space-y-6 sm:space-y-8 pb-10 animate-in fade-in duration-500 overflow-x-hidden px-1 sm:px-0">
       {/* Page Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-2 sm:px-0">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-3">
             <TableProperties className="text-blue-500" />
@@ -53,14 +54,14 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
       </div>
 
       {/* Live Summary Stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6 mx-2 sm:mx-0">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
         <SummaryCard title="মোট বাজার খরচ" value={`৳${stats.totalBazar.toFixed(2)}`} icon={Wallet} color="blue" />
         <SummaryCard title="মোট মিল" value={stats.totalMeals.toFixed(1)} icon={Utensils} color="green" />
         <SummaryCard title="মিল রেট" value={`৳${stats.mealRate.toFixed(2)}`} icon={TrendingUp} color="purple" />
       </div>
 
       {/* Transparency Note */}
-      <div className="bg-blue-900/10 border border-blue-500/20 p-5 rounded-2xl sm:rounded-3xl flex items-start gap-4 mx-2 sm:mx-0">
+      <div className="bg-blue-900/10 border border-blue-500/20 p-5 rounded-2xl sm:rounded-3xl flex items-start gap-4">
          <Info className="text-blue-400 shrink-0 mt-0.5" size={18} />
          <div className="text-[11px] sm:text-xs font-medium text-blue-300/80 leading-relaxed">
            <p className="font-black text-blue-400 uppercase tracking-widest mb-1">স্বচ্ছতা বিজ্ঞপ্তি</p>
@@ -68,8 +69,49 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
          </div>
       </div>
 
-      {/* Detailed Ledger Table */}
-      <div className="bg-gray-900 rounded-2xl sm:rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl mx-2 sm:mx-0">
+      {/* মোবাইল ভিউ (Card Layout) */}
+      <div className="sm:hidden space-y-4">
+        {stats.userStats.map((u: any, index: number) => {
+          const foodExpense = u.mealCost;
+          const deposited = u.contribution;
+          const ledgerBalance = deposited - foodExpense;
+          
+          return (
+            <div key={u.userId} className="bg-gray-900 border border-gray-800 p-5 rounded-2xl space-y-4 shadow-xl">
+              <div className="flex justify-between items-center border-b border-gray-800 pb-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-gray-800 text-blue-500 rounded-lg flex items-center justify-center font-black text-xs border border-gray-700">
+                    {String(index + 1).padStart(2, '0')}
+                  </div>
+                  <h4 className="font-black text-white text-sm truncate max-w-[150px]">{u.name}</h4>
+                </div>
+                <div className={`flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-black ${ledgerBalance >= 0 ? 'bg-green-900/20 text-green-400 border border-green-500/10' : 'bg-red-900/20 text-red-400 border border-red-500/10'}`}>
+                  {ledgerBalance >= 0 ? <ArrowUpRight size={10}/> : <ArrowDownRight size={10}/>}
+                  ৳{Math.abs(ledgerBalance).toFixed(2)}
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2">
+                <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
+                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">মিল</p>
+                  <p className="text-xs font-black text-white">{u.totalMeals.toFixed(1)}</p>
+                </div>
+                <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
+                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">খরচ</p>
+                  <p className="text-xs font-black text-gray-400">৳{foodExpense.toFixed(0)}</p>
+                </div>
+                <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
+                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">জমা</p>
+                  <p className="text-xs font-black text-green-500">৳{deposited.toFixed(0)}</p>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* ডেক্সটপ ভিউ (Detailed Ledger Table) */}
+      <div className="hidden sm:block bg-gray-900 rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto no-scrollbar">
           <table className="w-full text-left min-w-[650px] sm:min-w-0">
             <thead>

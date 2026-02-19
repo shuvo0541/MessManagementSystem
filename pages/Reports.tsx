@@ -13,7 +13,8 @@ import {
   Home,
   Zap,
   History,
-  CheckCircle2
+  CheckCircle2,
+  User as UserIcon
 } from 'lucide-react';
 
 interface ReportsProps {
@@ -61,34 +62,75 @@ const Reports: React.FC<ReportsProps> = ({ month, db }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-10 overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print px-2 sm:px-0">
+    <div className="space-y-6 sm:space-y-8 pb-10 animate-in fade-in duration-500 overflow-x-hidden px-1 sm:px-0">
+      {/* Page Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
         <div>
-          <h2 className="text-2xl sm:text-3xl font-black flex items-center gap-3 text-white">
+          <h2 className="text-xl sm:text-3xl font-black flex items-center gap-3 text-white">
             <FileText className="text-blue-500" />
             চূড়ান্ত রিপোর্ট ও সমন্বয়
           </h2>
-          <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1">স্থির খরচ ও গত মাসের খাবারের সমন্বয় (২ ঘর দশমিক)</p>
+          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">স্থির খরচ ও গত মাসের খাবারের সমন্বয়</p>
         </div>
         <button 
           onClick={handlePrint}
-          className="flex items-center justify-center gap-3 bg-blue-600 hover:bg-blue-700 text-white px-6 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl transition-all font-black shadow-lg shadow-blue-500/20 text-xs uppercase tracking-widest active:scale-95"
+          className="flex items-center justify-center gap-2 sm:gap-3 bg-blue-600 hover:bg-blue-700 text-white px-5 sm:px-8 py-3 sm:py-4 rounded-xl sm:rounded-2xl transition-all font-black shadow-lg shadow-blue-500/20 text-[10px] sm:text-xs uppercase tracking-widest active:scale-95 w-full sm:w-auto"
         >
-          <Printer size={18} />
+          <Printer size={16} />
           প্রিন্ট রিপোর্ট (PDF)
         </button>
       </div>
 
-      <div className="bg-blue-900/10 border border-blue-500/20 p-5 rounded-3xl flex items-start gap-4 no-print mx-2 sm:mx-0">
+      {/* Logic Info Notice */}
+      <div className="bg-blue-900/10 border border-blue-500/20 p-4 sm:p-5 rounded-2xl sm:rounded-3xl flex items-start gap-4 no-print">
          <Info className="text-blue-400 shrink-0 mt-0.5" size={18} />
-         <div className="text-xs font-medium text-blue-300/80 leading-relaxed">
-           <p className="font-black text-blue-400 uppercase tracking-widest mb-1">সমন্বয় লজিক (স্বয়ংক্রিয়)</p>
-           এই রিপোর্টে বর্তমান মাসের স্থির খরচ (রুম ও ইউটিলিটি) এর সাথে গত মাসের মিলের বকেয়া/রিফান্ড সমন্বয় করা হয়েছে। টাকার হিসাব দশমিকের ২ ঘর পর্যন্ত নির্ভুল রাখা হয়েছে।
+         <div className="text-[10px] sm:text-xs font-medium text-blue-300/80 leading-relaxed">
+           <p className="font-black text-blue-400 uppercase tracking-widest mb-1">সমন্বয় লজিক</p>
+           এই রিপোর্টে বর্তমান মাসের স্থির খরচ (রুম ও ইউটিলিটি) এর সাথে গত মাসের মিলের বকেয়া/রিফান্ড সমন্বয় করা হয়েছে।
          </div>
       </div>
 
-      {/* Desktop/Tablet View Table */}
-      <div id="report-container" className="bg-gray-900 text-gray-100 p-6 sm:p-12 rounded-2xl sm:rounded-[3rem] shadow-2xl border border-gray-800 print:bg-white print:text-black print:border-none print:shadow-none print:p-0 print:block print:overflow-visible">
+      {/* মোবাইল ভিউ (Card Layout) */}
+      <div className="sm:hidden space-y-4 no-print">
+        {reportData.map(u => (
+          <div key={u.userId} className="bg-gray-900 border border-gray-800 p-5 rounded-2xl space-y-4 shadow-xl">
+            <div className="flex justify-between items-start border-b border-gray-800 pb-3">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center font-black text-sm">
+                  {u.name[0]}
+                </div>
+                <div>
+                  <h4 className="font-black text-white text-sm">{u.name}</h4>
+                  <p className="text-[8px] text-gray-500 font-bold uppercase tracking-widest">ভেরিফাইড রিপোর্ট</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">চূড়ান্ত প্রদেয়</p>
+                <p className="text-lg font-black text-blue-500">৳{u.totalPayable.toFixed(2)}</p>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">স্থির খরচ</p>
+                <p className="text-xs font-black text-gray-300">৳{u.currentFixedCost.toFixed(2)}</p>
+                <p className="text-[7px] text-gray-600 font-bold italic">রুম:{u.roomRent.toFixed(0)} | ইউটি:{u.utilityShare.toFixed(0)}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">গত মাসের সমন্বয়</p>
+                <div className={`flex items-center gap-1 text-xs font-black ${u.prevMealBalance >= 0 ? 'text-green-500' : 'text-red-500'}`}>
+                   {u.prevMealBalance >= 0 ? <ArrowUpRight size={10}/> : <ArrowDownRight size={10}/>}
+                   ৳{Math.abs(u.prevMealBalance).toFixed(2)}
+                </div>
+                <p className="text-[7px] text-gray-600 font-bold uppercase">{u.prevMealBalance >= 0 ? 'রিফান্ড' : 'বকেয়া'}</p>
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* মেইন রিপোর্ট কন্টেইনার (Desktop Table & Print) */}
+      <div id="report-container" className="bg-gray-900 text-gray-100 p-6 sm:p-12 rounded-2xl sm:rounded-[3rem] shadow-2xl border border-gray-800 print:bg-white print:text-black print:border-none print:shadow-none print:p-0 print:block print:overflow-visible hidden sm:block">
         
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 sm:gap-8 border-b-2 border-gray-800 pb-8 sm:pb-10 print:border-gray-200">
           <div>

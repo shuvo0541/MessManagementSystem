@@ -1,8 +1,9 @@
+
 import React, { useState, useMemo } from 'react';
 import { T } from '../translations';
 import { getLocalDateStr, getUserRoleInMonth, getActiveResidentsInMonth } from '../db';
 import { Role, Meal, MessSystemDB } from '../types';
-import { Utensils, Calendar as CalendarIcon, Sigma } from 'lucide-react';
+import { Utensils, Calendar as CalendarIcon, Sigma, User as UserIcon } from 'lucide-react';
 
 interface MealEntryProps {
   month: string;
@@ -59,14 +60,11 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
        return;
     }
 
-    // Constraints: Minimum 0.5 for non-zero values
     if (value > 0 && value < 0.5) {
       value = 0.5;
     }
     
-    // Ensure value is a multiple of 0.5 for consistency
     value = Math.round(value * 2) / 2;
-
     updateMealInDB(uId, field, value);
   };
 
@@ -92,79 +90,126 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
   };
 
   return (
-    <div className="space-y-6 pb-10 animate-in fade-in duration-500 overflow-x-hidden">
+    <div className="space-y-6 pb-10 animate-in fade-in duration-500 overflow-x-hidden px-1 sm:px-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black flex items-center gap-3 text-white">
+          <h2 className="text-xl sm:text-3xl font-black flex items-center gap-3 text-white">
             <Utensils className="text-blue-500" />
             মিল এন্ট্রি
           </h2>
-          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">সর্বনিম্ন মিলের পরিমাণ ০.৫</p>
+          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">তারিখ অনুযায়ী মিল ইনপুট দিন</p>
         </div>
         
-        <div className="flex items-center gap-2 bg-gray-900 p-2 rounded-xl sm:rounded-2xl border border-gray-800 shadow-xl self-start sm:self-auto">
-           <CalendarIcon size={14} className="text-gray-500 ml-2" />
+        <div className="flex items-center gap-2 bg-gray-900 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-gray-800 shadow-xl self-start sm:self-auto w-full sm:w-auto">
+           <CalendarIcon size={16} className="text-blue-500 ml-2" />
            <input 
               type="date" 
-              className="bg-transparent border-none text-[12px] sm:text-sm font-black text-white outline-none cursor-pointer p-1"
+              className="bg-transparent border-none text-[13px] sm:text-sm font-black text-white outline-none cursor-pointer p-1 flex-1"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
             />
         </div>
       </div>
 
-      <div className="bg-blue-600/10 border border-blue-500/20 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-3 sm:gap-4">
-          <div className="p-2.5 sm:p-3 bg-blue-600 text-white rounded-xl sm:rounded-2xl shadow-xl shadow-blue-500/10">
-            <Sigma size={20} className="sm:w-6 sm:h-6" />
+      <div className="bg-blue-600/10 border border-blue-500/20 p-5 sm:p-7 rounded-2xl sm:rounded-[2.5rem] flex items-center justify-between shadow-lg">
+        <div className="flex items-center gap-4 sm:gap-5">
+          <div className="p-3 sm:p-4 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] shadow-xl shadow-blue-500/20">
+            <Sigma size={24} className="sm:w-8 sm:h-8" />
           </div>
           <div>
-            <p className="text-[8px] sm:text-[10px] font-black text-blue-400 uppercase tracking-widest">আজকের মোট মিল</p>
-            <h3 className="text-xl sm:text-2xl font-black text-white">{globalTotalMeals.toFixed(1)}</h3>
+            <p className="text-[9px] sm:text-[11px] font-black text-blue-400 uppercase tracking-widest mb-1">আজকের মোট মিল</p>
+            <h3 className="text-2xl sm:text-3xl font-black text-white">{globalTotalMeals.toFixed(1)}</h3>
           </div>
         </div>
       </div>
 
-      <div className="bg-gray-900 rounded-2xl sm:rounded-[2rem] border border-gray-800 overflow-hidden shadow-2xl">
+      {/* মোবাইল ভিউ (Card Layout) */}
+      <div className="sm:hidden space-y-4">
+        {mealData.length === 0 ? (
+          <div className="bg-gray-900/50 p-10 rounded-2xl border border-gray-800 text-center text-gray-500 font-bold italic">সদস্য পাওয়া যায়নি</div>
+        ) : (
+          mealData.map(m => {
+            const rowTotal = m.breakfast + m.lunch + m.dinner + m.guest;
+            return (
+              <div key={m.userId} className="bg-gray-900 border border-gray-800 p-5 rounded-2xl space-y-5">
+                <div className="flex justify-between items-center border-b border-gray-800 pb-3">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-blue-600/20 text-blue-500 rounded-lg flex items-center justify-center font-black text-sm">{m.userName[0]}</div>
+                    <span className="font-black text-white text-sm truncate max-w-[150px]">{m.userName}</span>
+                  </div>
+                  <div className="bg-blue-900/20 px-3 py-1 rounded-full border border-blue-500/20">
+                    <span className="text-blue-400 font-black text-xs">{rowTotal.toFixed(1)}</span>
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4">
+                  {[
+                    { id: 'breakfast', label: 'সকাল' },
+                    { id: 'lunch', label: 'দুপুর' },
+                    { id: 'dinner', label: 'রাত' },
+                    { id: 'guest', label: 'অতিথি' }
+                  ].map(field => (
+                    <div key={field.id} className="space-y-1.5">
+                      <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">{field.label}</label>
+                      <input 
+                        type="number" step="0.5" min="0"
+                        className="w-full bg-gray-800 border border-gray-700 rounded-xl py-3 text-center text-sm font-black text-white focus:ring-2 focus:ring-blue-600 outline-none disabled:opacity-30"
+                        value={m[field.id as keyof typeof m] || ''}
+                        onFocus={(e) => e.target.select()}
+                        onChange={(e) => updateMealValue(m.userId, field.id as any, e.target.value)}
+                        disabled={!isEditable}
+                      />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* ডেস্কটপ ভিউ (Table Layout) */}
+      <div className="hidden sm:block bg-gray-900 rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto no-scrollbar">
-          <table className="w-full min-w-[500px] sm:min-w-0">
+          <table className="w-full text-left">
             <thead>
-              <tr className="bg-gray-800/40 text-[9px] sm:text-[10px] uppercase font-black text-gray-500">
-                <th className="px-6 sm:px-8 py-5 sm:py-6 text-left">সদস্য</th>
-                <th className="px-2 py-5 sm:py-6 text-center">সকাল</th>
-                <th className="px-2 py-5 sm:py-6 text-center">দুপুর</th>
-                <th className="px-2 py-5 sm:py-6 text-center">রাত</th>
-                <th className="px-2 py-5 sm:py-6 text-center">অতিথি</th>
-                <th className="px-6 sm:px-8 py-5 sm:py-6 text-right bg-blue-900/10 text-blue-400">মোট</th>
+              <tr className="bg-gray-800/40 text-[10px] uppercase font-black text-gray-500">
+                <th className="px-8 py-6">সদস্য</th>
+                <th className="px-4 py-6 text-center">সকাল</th>
+                <th className="px-4 py-6 text-center">দুপুর</th>
+                <th className="px-4 py-6 text-center">রাত</th>
+                <th className="px-4 py-6 text-center">অতিথি</th>
+                <th className="px-8 py-6 text-right bg-blue-900/10 text-blue-400">মোট মিল</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
               {mealData.length === 0 ? (
-                <tr><td colSpan={6} className="px-8 py-10 text-center text-gray-600 italic">সদস্য পাওয়া যায়নি</td></tr>
+                <tr><td colSpan={6} className="px-8 py-12 text-center text-gray-600 italic font-bold">সদস্য পাওয়া যায়নি</td></tr>
               ) : (
                 mealData.map(m => {
                   const rowTotal = m.breakfast + m.lunch + m.dinner + m.guest;
                   return (
                     <tr key={m.userId} className="hover:bg-gray-800/30 transition-colors">
-                      <td className="px-6 sm:px-8 py-4 sm:py-6">
-                        <div className="font-black text-white text-[12px] sm:text-sm">{m.userName}</div>
+                      <td className="px-8 py-6">
+                        <div className="flex items-center gap-3">
+                          <UserIcon size={14} className="text-gray-600" />
+                          <span className="font-black text-white text-sm">{m.userName}</span>
+                        </div>
                       </td>
-                      {['breakfast', 'lunch', 'dinner', 'guest'].map(field => {
-                        return (
-                          <td key={field} className="px-1 py-4 sm:py-6 text-center">
-                            <input 
-                              type="number" step="0.5" min="0"
-                              className={`w-12 sm:w-16 mx-auto bg-gray-800 border border-gray-700 rounded-lg sm:rounded-xl text-center py-2 sm:py-2.5 text-[12px] sm:text-sm font-black text-white focus:ring-2 focus:ring-blue-600 outline-none disabled:opacity-30 transition-all`}
-                              value={m[field as keyof typeof m] || ''}
-                              onFocus={(e) => e.target.select()}
-                              onChange={(e) => updateMealValue(m.userId, field as any, e.target.value)}
-                              disabled={!isEditable}
-                            />
-                          </td>
-                        );
-                      })}
-                      <td className="px-6 sm:px-8 py-4 sm:py-6 text-right bg-blue-900/5">
-                        <span className="text-base sm:text-lg font-black text-blue-500">{rowTotal.toFixed(1)}</span>
+                      {['breakfast', 'lunch', 'dinner', 'guest'].map(field => (
+                        <td key={field} className="px-4 py-6 text-center">
+                          <input 
+                            type="number" step="0.5" min="0"
+                            className="w-16 mx-auto bg-gray-800 border border-gray-700 rounded-xl text-center py-2.5 text-sm font-black text-white focus:ring-2 focus:ring-blue-600 outline-none disabled:opacity-30 transition-all"
+                            value={m[field as keyof typeof m] || ''}
+                            onFocus={(e) => e.target.select()}
+                            onChange={(e) => updateMealValue(m.userId, field as any, e.target.value)}
+                            disabled={!isEditable}
+                          />
+                        </td>
+                      ))}
+                      <td className="px-8 py-6 text-right bg-blue-900/5">
+                        <span className="text-xl font-black text-blue-500">{rowTotal.toFixed(1)}</span>
                       </td>
                     </tr>
                   );
