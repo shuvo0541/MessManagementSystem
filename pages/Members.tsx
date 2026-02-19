@@ -1,3 +1,4 @@
+
 import React, { useState, useMemo } from 'react';
 import { T } from '../translations';
 import { Role, MessSystemDB, User } from '../types';
@@ -181,17 +182,23 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
                        )}
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-4">
-                       <div className="space-y-1">
-                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">জয়েনিং মাস</p>
-                          <input type="month" disabled={!canManageGeneral || u.id === messAdminId} className="w-full bg-gray-900 border-gray-700 rounded-lg text-[10px] p-2.5 text-white" value={u.joiningMonth || ''} onChange={(e) => updateMemberDates(u.id, 'joiningMonth', e.target.value)} />
+                    <div className="space-y-4">
+                       <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1.5">
+                             <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">যোগদান</p>
+                             <input type="month" disabled={!canManageGeneral || u.id === messAdminId} className="w-full bg-gray-900 border border-gray-700 rounded-lg text-[10px] p-2.5 text-white outline-none focus:ring-1 focus:ring-blue-500" value={u.joiningMonth || ''} onChange={(e) => updateMemberDates(u.id, 'joiningMonth', e.target.value)} />
+                          </div>
+                          <div className="space-y-1.5">
+                             <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">বিদায়</p>
+                             <input type="month" disabled={!canManageCritical || u.id === messAdminId} className="w-full bg-gray-900 border border-gray-700 rounded-lg text-[10px] p-2.5 text-white outline-none focus:ring-1 focus:ring-red-500" value={u.leavingMonth || ''} onChange={(e) => updateMemberDates(u.id, 'leavingMonth', e.target.value || null)} />
+                          </div>
                        </div>
-                       <div className="space-y-1">
-                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">রোল ({month})</p>
+                       <div className="space-y-1.5">
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">রোল ({month})</p>
                           {u.id === messAdminId ? (
                              <div className="w-full bg-purple-900/10 border border-purple-500/10 rounded-lg text-[10px] p-2.5 text-purple-400 font-black text-center uppercase">Admin</div>
                           ) : (
-                            <select disabled={!canManageCritical} className="w-full bg-gray-900 border-gray-700 rounded-lg text-[10px] p-2.5 text-white font-bold" value={db.monthlyRoles.find(r => r.userId === u.id && r.month === month)?.role || Role.MEMBER} onChange={(e) => setRole(u.id, e.target.value as Role)}>
+                            <select disabled={!canManageCritical} className="w-full bg-gray-900 border border-gray-700 rounded-lg text-[10px] p-2.5 text-white font-bold outline-none focus:ring-1 focus:ring-blue-500" value={db.monthlyRoles.find(r => r.userId === u.id && r.month === month)?.role || Role.MEMBER} onChange={(e) => setRole(u.id, e.target.value as Role)}>
                                <option value={Role.MEMBER}>Member</option>
                                <option value={Role.MANAGER}>Manager</option>
                             </select>
