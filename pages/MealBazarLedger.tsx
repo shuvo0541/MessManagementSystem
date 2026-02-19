@@ -65,7 +65,7 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
          <Info className="text-blue-400 shrink-0 mt-0.5" size={18} />
          <div className="text-[11px] sm:text-xs font-medium text-blue-300/80 leading-relaxed">
            <p className="font-black text-blue-400 uppercase tracking-widest mb-1">স্বচ্ছতা বিজ্ঞপ্তি</p>
-           মিল এন্ট্রি এবং বাজার খরচের ডাটা থেকে এটি অটোমেটিক জেনারেট হয়। এখানে টাকার হিসাব দশমিকের ২ ঘর পর্যন্ত নির্ভুল রাখা হয়েছে।
+           মিল এন্ট্রি এবং বাজার খরচের ডাটা থেকে এটি অটোমেটিক জেনারেট হয়। এখানে বাজার কলামে ওই মেম্বারের করা মোট বাজারের হিসাব দেখানো হয়েছে।
          </div>
       </div>
 
@@ -73,8 +73,11 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
       <div className="sm:hidden space-y-4">
         {stats.userStats.map((u: any, index: number) => {
           const foodExpense = u.mealCost;
-          const deposited = u.contribution;
-          const ledgerBalance = deposited - foodExpense;
+          // বাজার এন্ট্রি থেকে ওই ইউজারের ওই মাসের বাজার খরচ বের করা
+          const userBazar = db.bazars
+            .filter(b => b.userId === u.userId && b.date.startsWith(month))
+            .reduce((sum, b) => sum + b.amount, 0);
+          const ledgerBalance = userBazar - foodExpense;
           
           return (
             <div key={u.userId} className="bg-gray-900 border border-gray-800 p-5 rounded-2xl space-y-4 shadow-xl">
@@ -101,8 +104,8 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
                   <p className="text-xs font-black text-gray-400">৳{foodExpense.toFixed(0)}</p>
                 </div>
                 <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
-                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">জমা</p>
-                  <p className="text-xs font-black text-green-500">৳{deposited.toFixed(0)}</p>
+                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">বাজার</p>
+                  <p className="text-xs font-black text-green-500">৳{userBazar.toFixed(0)}</p>
                 </div>
               </div>
             </div>
@@ -120,15 +123,17 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
                 <th className="px-4 sm:px-6 py-5 sm:py-6">মেম্বার</th>
                 <th className="px-4 sm:px-6 py-5 sm:py-6 text-center">মিল</th>
                 <th className="px-4 sm:px-6 py-5 sm:py-6 text-right">খরচ (৳)</th>
-                <th className="px-4 sm:px-6 py-5 sm:py-6 text-right">জমা (৳)</th>
+                <th className="px-4 sm:px-6 py-5 sm:py-6 text-right">বাজার (৳)</th>
                 <th className="px-6 sm:px-8 py-5 sm:py-6 text-right">ব্যালেন্স</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
               {stats.userStats.map((u, index) => {
                 const foodExpense = u.mealCost;
-                const deposited = u.contribution;
-                const ledgerBalance = deposited - foodExpense;
+                const userBazar = db.bazars
+                  .filter(b => b.userId === u.userId && b.date.startsWith(month))
+                  .reduce((sum, b) => sum + b.amount, 0);
+                const ledgerBalance = userBazar - foodExpense;
 
                 return (
                   <tr key={u.userId} className="hover:bg-gray-800/20 transition-colors group">
@@ -145,7 +150,7 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
                       <span className="font-bold text-gray-400 text-xs sm:text-sm">৳{foodExpense.toFixed(2)}</span>
                     </td>
                     <td className="px-4 sm:px-6 py-4 sm:py-6 text-right">
-                      <span className="font-black text-green-500 text-xs sm:text-sm">৳{deposited.toFixed(2)}</span>
+                      <span className="font-black text-green-500 text-xs sm:text-sm">৳{userBazar.toFixed(2)}</span>
                     </td>
                     <td className="px-6 sm:px-8 py-4 sm:py-6 text-right">
                       <div className={`inline-flex items-center gap-1.5 px-3 py-1.5 sm:px-4 sm:py-2 rounded-xl sm:rounded-2xl font-black text-[10px] sm:text-xs ${ledgerBalance >= 0 ? 'bg-green-900/20 text-green-400 border border-green-500/20' : 'bg-red-900/20 text-red-400 border border-red-500/20'}`}>
@@ -163,7 +168,7 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
                   <td className="px-4 sm:px-6 py-5 sm:py-6 text-gray-500 text-[9px] sm:text-[10px] uppercase tracking-widest">মোট (সকল)</td>
                   <td className="px-4 sm:px-6 py-5 sm:py-6 text-center text-white text-xs sm:text-sm">{stats.totalMeals.toFixed(1)}</td>
                   <td className="px-4 sm:px-6 py-5 sm:py-6 text-right text-gray-400 text-xs sm:text-sm">৳{stats.userStats.reduce((s,u) => s + u.mealCost, 0).toFixed(2)}</td>
-                  <td className="px-4 sm:px-6 py-5 sm:py-6 text-right text-green-500 text-xs sm:text-sm">৳{stats.userStats.reduce((s,u) => s + u.contribution, 0).toFixed(2)}</td>
+                  <td className="px-4 sm:px-6 py-5 sm:py-6 text-right text-green-500 text-xs sm:text-sm">৳{stats.totalBazar.toFixed(2)}</td>
                   <td className="px-6 sm:px-8 py-5 sm:py-6"></td>
                </tr>
             </tfoot>

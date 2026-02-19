@@ -311,6 +311,15 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                  <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest">তারিখ</span>
                  <span className="text-gray-300 font-bold text-xs">{lastSavedEntry.date}</span>
                </div>
+               {/* Fixed: Display note in success modal if it exists */}
+               {lastSavedEntry.note && (
+                  <div className="pt-2 border-t border-gray-800 text-left">
+                     <p className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1 ml-1">নোট</p>
+                     <div className="bg-gray-950/50 p-3 rounded-xl border border-gray-800/50">
+                        <p className="text-[11px] text-gray-300 font-medium italic leading-relaxed">"{lastSavedEntry.note}"</p>
+                     </div>
+                  </div>
+               )}
             </div>
             
             <button 

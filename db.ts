@@ -69,70 +69,6 @@ export const getActiveResidentsInMonth = (db: MessSystemDB, month: string) => {
   });
 };
 
-// টেস্টিং এর জন্য ১ বছরের ডামি ডাটা জেনারেটর
-export const generateDemoData = (db: MessSystemDB): MessSystemDB => {
-  const newDB = { ...db };
-  const currentMonth = new Date();
-  const meals: Meal[] = [];
-  const bazars: Bazar[] = [];
-  const payments: Payment[] = [];
-
-  // গত ১২ মাসের ডাটা তৈরি
-  for (let m = 0; m < 12; m++) {
-    const d = new Date(currentMonth.getFullYear(), currentMonth.getMonth() - m, 1);
-    const mStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
-    const residents = getActiveResidentsInMonth(db, mStr);
-
-    if (residents.length === 0) continue;
-
-    // প্রতিদিনের মিল এবং বাজার
-    for (let day = 1; day <= 28; day++) {
-      const dateStr = `${mStr}-${String(day).padStart(2, '0')}`;
-      
-      // মিল
-      residents.forEach(u => {
-        meals.push({
-          id: crypto.randomUUID(),
-          userId: u.id,
-          date: dateStr,
-          breakfast: Math.random() > 0.2 ? 1 : 0,
-          lunch: Math.random() > 0.1 ? 1 : 0,
-          dinner: Math.random() > 0.1 ? 1 : 0,
-          guest: Math.random() > 0.9 ? 1 : 0
-        });
-      });
-
-      // বাজার (মাঝে মাঝে)
-      if (day % 3 === 0) {
-        const randomU = residents[Math.floor(Math.random() * residents.length)];
-        bazars.push({
-          id: crypto.randomUUID(),
-          userId: randomU.id,
-          date: dateStr,
-          amount: Math.floor(Math.random() * 500) + 200,
-          note: "Demo Market Cost"
-        });
-      }
-    }
-    
-    // পেমেন্ট
-    residents.forEach(u => {
-       payments.push({
-         id: crypto.randomUUID(),
-         userId: u.id,
-         date: `${mStr}-05`,
-         amount: 2000,
-         month: mStr
-       });
-    });
-  }
-
-  newDB.meals = meals;
-  newDB.bazars = bazars;
-  newDB.payments = payments;
-  return newDB;
-};
-
 export const getCalculations = (db: MessSystemDB, month: string, depth = 0): any => {
   const activeResidents = getActiveResidentsInMonth(db, month);
   const activeResidentIds = new Set(activeResidents.map(u => u.id));
@@ -173,6 +109,10 @@ export const getCalculations = (db: MessSystemDB, month: string, depth = 0): any
       : 0;
     
     const uMealCost = uTotalMeals * mealRate;
+    const uBazarAmt = monthBazars.filter(b => b.userId === user.id).reduce((sum, b) => sum + b.amount, 0);
+    
+    // mealBalance: বাজার খরচ - খাবার খরচ (এটিই পরবর্তী মাসের সমন্বয়ে যাবে)
+    const uMealBalance = uBazarAmt - uMealCost;
     
     let uRoomRent = 0;
     if (isActive) {
@@ -191,12 +131,13 @@ export const getCalculations = (db: MessSystemDB, month: string, depth = 0): any
     const uUtilityShare = isActive ? (utilityShares[user.id] || 0) : 0;
     const uCurrentMonthCost = uMealCost + uRoomRent + uUtilityShare;
     
-    const uContribution = monthPayments.filter(p => p.userId === user.id).reduce((sum, p) => sum + p.amount, 0) + 
-                         monthBazars.filter(b => b.userId === user.id).reduce((sum, b) => sum + b.amount, 0);
+    // গত মাসের সমন্বয় শুধুমাত্র গত মাসের mealBalance থেকে আসবে
+    const uPrevMealAdjustment = prevMonthStats?.userStats.find((s: any) => s.userId === user.id)?.mealBalance || 0;
 
-    const uPrevBalance = prevMonthStats?.userStats.find((s: any) => s.userId === user.id)?.balance || 0;
-    const uNetRequired = uCurrentMonthCost - uPrevBalance;
-    const uBalance = uContribution - uNetRequired;
+    const uNetRequired = (uRoomRent + uUtilityShare) - uPrevMealAdjustment;
+    
+    // পেমেন্ট হিসাব
+    const uPayments = monthPayments.filter(p => p.userId === user.id).reduce((sum, p) => sum + p.amount, 0);
 
     return {
       userId: user.id,
@@ -207,10 +148,11 @@ export const getCalculations = (db: MessSystemDB, month: string, depth = 0): any
       roomRent: uRoomRent,
       utilityShare: uUtilityShare,
       currentMonthCost: uCurrentMonthCost,
-      prevAdjustment: uPrevBalance,
+      prevAdjustment: uPrevMealAdjustment, // শুধুমাত্র বাজার-খাবার সমন্বয়
+      mealBalance: uMealBalance, // এটি পরবর্তী মাসে যাবে
       netRequired: uNetRequired,
-      contribution: uContribution,
-      balance: uBalance,
+      payments: uPayments,
+      balance: uPayments - uNetRequired, // এই মাসের চূড়ান্ত অবস্থা
       totalCost: uCurrentMonthCost
     };
   });

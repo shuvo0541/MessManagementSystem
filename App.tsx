@@ -314,7 +314,7 @@ const App: React.FC = () => {
       case 'analytics': return <Analytics db={db} user={user!} month={selectedMonth} />;
       case 'meals': return <MealEntry {...commonProps} role={userRole} userId={user?.id || ''} isAdmin={user?.isAdmin || false} />;
       case 'bazar': return <BazarEntry {...commonProps} userId={user?.id || ''} isAdmin={user?.isAdmin || false} />;
-      case 'reports': return <Reports {...commonProps} />;
+      case 'reports': return <Reports {...commonProps} isAdmin={user?.isAdmin || false} role={userRole} />;
       case 'profile': return (
         <Profile 
           user={user!} 
