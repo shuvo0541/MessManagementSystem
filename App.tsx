@@ -195,15 +195,23 @@ const App: React.FC = () => {
     initApp();
   }, []);
 
-  const updateDB = (updates: Partial<MessSystemDB>) => {
+  const updateDB = (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => {
     setDb(prev => {
-      const next = { ...prev, ...updates };
-      if (messId) {
-        syncDBToSupabase(next, messId);
-      }
+      const next = typeof updates === 'function' ? updates(prev) : { ...prev, ...updates };
       return next;
     });
   };
+
+  // Debounced Sync to Supabase
+  useEffect(() => {
+    if (!messId || db === INITIAL_DB) return;
+    
+    const timer = setTimeout(() => {
+      syncDBToSupabase(db, messId);
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timer);
+  }, [db, messId]);
 
   const handleLogout = async () => {
     await supabase.auth.signOut();
@@ -359,6 +367,7 @@ const App: React.FC = () => {
             selectedMonth={selectedMonth} 
             onMonthChange={setSelectedMonth} 
             onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} 
+            onViewChange={(v) => { setView(v); setIsSidebarOpen(false); }}
             hasActiveMess={!!messId}
           />
         </div>

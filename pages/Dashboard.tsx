@@ -38,7 +38,7 @@ import {
 interface DashboardProps {
   month: string;
   db: MessSystemDB;
-  updateDB: (updates: Partial<MessSystemDB>) => void;
+  updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
   user: User;
   messId: string | null;
   messAdminId: string | null;
@@ -190,6 +190,11 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
         <div className="min-w-0">
           <h3 className="text-gray-500 text-[8px] sm:text-[10px] uppercase font-black tracking-widest truncate mb-0.5">{title}</h3>
           <p className="text-base sm:text-xl font-black truncate text-white">{value}</p>
+          {onClick && (
+            <p className={`text-[7px] sm:text-[8px] font-black uppercase mt-1 flex items-center gap-0.5 text-${color}-500/80`}>
+              বিস্তারিত দেখুন <TrendingUp size={8} className="rotate-45" />
+            </p>
+          )}
         </div>
       </div>
     </div>

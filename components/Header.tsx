@@ -12,11 +12,12 @@ interface HeaderProps {
   selectedMonth: string;
   onMonthChange: (month: string) => void;
   onMenuToggle: () => void;
+  onViewChange: (view: string) => void;
   hasActiveMess: boolean;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  user, role, messName, messId, selectedMonth, onMonthChange, onMenuToggle, hasActiveMess
+  user, role, messName, messId, selectedMonth, onMonthChange, onMenuToggle, onViewChange, hasActiveMess
 }) => {
   const banglaMonths = [
     "জানুয়ারি", "ফেব্রুয়ারি", "মার্চ", "এপ্রিল", "মে", "জুন",
@@ -58,19 +59,22 @@ const Header: React.FC<HeaderProps> = ({
   return (
     <header className="bg-gray-900/80 backdrop-blur-xl border-b border-gray-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-30 w-full overflow-hidden">
       {/* Left Section: User Info & Menu */}
-      <div className="flex items-center gap-2 sm:gap-3 shrink-0 max-w-[35%] sm:max-w-none">
+      <div 
+        onClick={() => onViewChange('profile')}
+        className="flex items-center gap-1.5 sm:gap-3 shrink-0 max-w-[30%] sm:max-w-xs cursor-pointer group transition-all"
+      >
         <button 
-          onClick={onMenuToggle}
-          className="lg:hidden p-1.5 sm:p-2 hover:bg-gray-800 rounded-lg text-gray-300 transition-colors shrink-0"
+          onClick={(e) => { e.stopPropagation(); onMenuToggle(); }}
+          className="lg:hidden p-1 sm:p-2 hover:bg-gray-800 rounded-lg text-gray-300 transition-colors shrink-0"
         >
-          <Menu size={18} className="sm:w-5 sm:h-5" />
+          <Menu size={16} className="sm:w-5 sm:h-5" />
         </button>
-        <div className="flex flex-col min-w-0">
-          <div className="flex items-center gap-1.5 sm:gap-2 min-w-0">
-            <span className="font-black text-[11px] sm:text-base truncate text-gray-100 leading-tight">{user.name}</span>
+        <div className="flex flex-col min-w-0 group-hover:translate-x-0.5 transition-transform">
+          <div className="flex items-center gap-1 sm:gap-2 min-w-0">
+            <span className="font-black text-[10px] sm:text-base truncate text-gray-100 leading-tight group-hover:text-blue-400 transition-colors">{user.name}</span>
             {getRoleBadge()}
           </div>
-          <span className="text-[9px] sm:text-[10px] text-gray-500 truncate font-bold leading-none mt-0.5">
+          <span className="text-[8px] sm:text-[10px] text-gray-500 truncate font-bold leading-none mt-0.5">
             {user.userId || `@${user.username}`}
           </span>
         </div>
@@ -79,8 +83,11 @@ const Header: React.FC<HeaderProps> = ({
       {/* Middle Section: Mess Name */}
       {hasActiveMess ? (
         <>
-          <div className="flex-1 flex justify-center px-2 min-w-0">
-            <h1 className="text-[13px] sm:text-xl md:text-2xl lg:text-3xl font-black text-blue-500 tracking-tight truncate drop-shadow-sm text-center leading-tight">
+          <div className="flex-1 flex justify-center px-1 sm:px-2 min-w-0">
+            <h1 
+              onClick={() => onViewChange('dashboard')}
+              className="text-[12px] sm:text-xl md:text-2xl lg:text-3xl font-black text-blue-500 tracking-tight truncate drop-shadow-sm text-center leading-tight cursor-pointer hover:scale-105 transition-transform active:scale-95"
+            >
               {messName}
             </h1>
           </div>

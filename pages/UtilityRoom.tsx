@@ -24,7 +24,7 @@ import { getUserRoleInMonth, getCalculations } from '../db';
 
 interface UtilityRoomProps {
   db: MessSystemDB;
-  updateDB: (updates: Partial<MessSystemDB>) => void;
+  updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
   month: string;
   user: User;
   messId: string | null;

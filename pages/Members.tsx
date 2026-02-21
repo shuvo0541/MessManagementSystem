@@ -25,7 +25,7 @@ interface MembersProps {
   messId: string;
   messName: string;
   db: MessSystemDB;
-  updateDB: (updates: Partial<MessSystemDB>) => void;
+  updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
   user: User;
 }
 

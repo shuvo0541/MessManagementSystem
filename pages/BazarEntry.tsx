@@ -24,7 +24,7 @@ interface BazarEntryProps {
   userId: string;
   isAdmin: boolean;
   db: MessSystemDB;
-  updateDB: (updates: Partial<MessSystemDB>) => void;
+  updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
 }
 
 const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, updateDB }) => {
@@ -80,7 +80,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
 
     const selectedUser = db.users.find(u => u.id === newEntry.userId);
     
-    updateDB({ bazars: [...db.bazars, entry] });
+    updateDB((prev: MessSystemDB) => ({ ...prev, bazars: [...prev.bazars, entry] }));
     
     setLastSavedEntry({
       ...entry,
@@ -159,7 +159,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
               {isEditableView && (
                 <div className="flex justify-end pt-1">
                   <button 
-                    onClick={() => { if(window.confirm("মুছে ফেলতে চান?")) updateDB({ bazars: db.bazars.filter(x => x.id !== b.id) }); }}
+                    onClick={() => { if(window.confirm("মুছে ফেলতে চান?")) updateDB((prev: MessSystemDB) => ({ ...prev, bazars: prev.bazars.filter((x: Bazar) => x.id !== b.id) })); }}
                     className="flex items-center gap-2 px-3 py-1.5 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
                   >
                     <Trash2 size={14} /> মুছুন
@@ -204,7 +204,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                     <td className="px-8 py-6 text-right">
                       {isEditableView && (
                         <button 
-                          onClick={() => { if(window.confirm("মুছে ফেলতে চান?")) updateDB({ bazars: db.bazars.filter(x => x.id !== b.id) }); }}
+                          onClick={() => { if(window.confirm("মুছে ফেলতে চান?")) updateDB((prev: MessSystemDB) => ({ ...prev, bazars: prev.bazars.filter((x: Bazar) => x.id !== b.id) })); }}
                           className="p-2.5 text-red-500/30 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                         >
                           <Trash2 size={18} />

@@ -20,7 +20,7 @@ import {
 interface ReportsProps {
   month: string;
   db: MessSystemDB;
-  updateDB: (updates: Partial<MessSystemDB>) => void;
+  updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
   isAdmin: boolean;
   role: Role;
 }
@@ -40,18 +40,19 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
   const handleDepositChange = (userId: string, amount: number) => {
     if (!canEdit) return;
     
-    // নেগেটিভ ভ্যালু ইনপুট দিলে তা ০ হিসেবে গণ্য হবে
     const validAmount = Math.max(0, amount);
     
-    const otherPayments = db.payments.filter(p => !(p.userId === userId && p.month === month));
-    const newPayment: Payment = {
-      id: crypto.randomUUID(),
-      userId,
-      month,
-      amount: validAmount,
-      date: new Date().toISOString().split('T')[0]
-    };
-    updateDB({ payments: [...otherPayments, newPayment] });
+    updateDB((prev: MessSystemDB) => {
+      const otherPayments = prev.payments.filter((p: Payment) => !(p.userId === userId && p.month === month));
+      const newPayment: Payment = {
+        id: crypto.randomUUID(),
+        userId,
+        month,
+        amount: validAmount,
+        date: new Date().toISOString().split('T')[0]
+      };
+      return { ...prev, payments: [...otherPayments, newPayment] };
+    });
   };
 
   const reportData = useMemo(() => {

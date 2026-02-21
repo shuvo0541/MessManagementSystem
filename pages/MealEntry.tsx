@@ -11,7 +11,7 @@ interface MealEntryProps {
   userId: string;
   isAdmin: boolean;
   db: MessSystemDB;
-  updateDB: (updates: Partial<MessSystemDB>) => void;
+  updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
 }
 
 const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updateDB }) => {
@@ -69,24 +69,25 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
   };
 
   const updateMealInDB = (uId: string, field: keyof Omit<Meal, 'id' | 'userId' | 'date'>, value: number) => {
-    const mealIdx = db.meals.findIndex(m => m.userId === uId && m.date === selectedDate);
-    const newMeals = [...db.meals];
+    updateDB((prev: MessSystemDB) => {
+      const mealIdx = prev.meals.findIndex((m: Meal) => m.userId === uId && m.date === selectedDate);
+      const newMeals = [...prev.meals];
 
-    if (mealIdx > -1) {
-      newMeals[mealIdx] = { ...newMeals[mealIdx], [field]: value };
-    } else {
-      newMeals.push({
-        id: crypto.randomUUID(),
-        userId: uId,
-        date: selectedDate,
-        breakfast: field === 'breakfast' ? value : 0,
-        lunch: field === 'lunch' ? value : 0,
-        dinner: field === 'dinner' ? value : 0,
-        guest: field === 'guest' ? value : 0,
-      });
-    }
-
-    updateDB({ meals: newMeals });
+      if (mealIdx > -1) {
+        newMeals[mealIdx] = { ...newMeals[mealIdx], [field]: value };
+      } else {
+        newMeals.push({
+          id: crypto.randomUUID(),
+          userId: uId,
+          date: selectedDate,
+          breakfast: field === 'breakfast' ? value : 0,
+          lunch: field === 'lunch' ? value : 0,
+          dinner: field === 'dinner' ? value : 0,
+          guest: field === 'guest' ? value : 0,
+        });
+      }
+      return { ...prev, meals: newMeals };
+    });
   };
 
   return (
