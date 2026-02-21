@@ -128,7 +128,7 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {stats.userStats.map((u, index) => {
+              {stats.userStats.map((u: any, index: number) => {
                 const foodExpense = u.mealCost;
                 const userBazar = db.bazars
                   .filter(b => b.userId === u.userId && b.date.startsWith(month))
@@ -167,7 +167,7 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month }) => {
                   <td className="px-6 sm:px-8 py-5 sm:py-6"></td>
                   <td className="px-4 sm:px-6 py-5 sm:py-6 text-gray-500 text-[9px] sm:text-[10px] uppercase tracking-widest">মোট (সকল)</td>
                   <td className="px-4 sm:px-6 py-5 sm:py-6 text-center text-white text-xs sm:text-sm">{stats.totalMeals.toFixed(1)}</td>
-                  <td className="px-4 sm:px-6 py-5 sm:py-6 text-right text-gray-400 text-xs sm:text-sm">৳{stats.userStats.reduce((s,u) => s + u.mealCost, 0).toFixed(2)}</td>
+                  <td className="px-4 sm:px-6 py-5 sm:py-6 text-right text-gray-400 text-xs sm:text-sm">৳{stats.userStats.reduce((s: number, u: any) => s + u.mealCost, 0).toFixed(2)}</td>
                   <td className="px-4 sm:px-6 py-5 sm:py-6 text-right text-green-500 text-xs sm:text-sm">৳{stats.totalBazar.toFixed(2)}</td>
                   <td className="px-6 sm:px-8 py-5 sm:py-6"></td>
                </tr>

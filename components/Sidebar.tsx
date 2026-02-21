@@ -13,7 +13,8 @@ import {
   TableProperties,
   LineChart as LineChartIcon,
   LayoutGrid,
-  User as UserIcon
+  User as UserIcon,
+  CircleDollarSign
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -29,6 +30,7 @@ interface SidebarProps {
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, onSwitchMess, isAdmin, role, hasActiveMess }) => {
   const menuItems = [
     { id: 'profile', label: 'প্রোফাইল', icon: UserIcon, show: true },
+    { id: 'personal-account', label: 'ব্যক্তিগত হিসাব', icon: CircleDollarSign, show: hasActiveMess },
     { id: 'dashboard', label: T.dashboard, icon: LayoutDashboard, show: hasActiveMess },
     { id: 'members', label: T.members, icon: Users, show: hasActiveMess },
     { id: 'meals', label: T.meals, icon: UtensilsCrossed, show: hasActiveMess },

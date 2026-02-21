@@ -92,7 +92,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
     return yearlyData.map(d => {
       const entry: any = { month: d.month, monthName: d.monthName };
       top5Eaters.forEach(r => {
-        const uStat = d.userStats.find(us => us.userId === r.id);
+        const uStat = d.userStats.find((us: any) => us.userId === r.id);
         entry[r.name] = uStat ? uStat.totalMeals : 0;
       });
       return entry;

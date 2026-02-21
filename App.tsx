@@ -13,6 +13,7 @@ import UtilityRoom from './pages/UtilityRoom';
 import MealBazarLedger from './pages/MealBazarLedger';
 import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
+import PersonalAccount from './pages/PersonalAccount';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import { supabase } from './supabase';
@@ -308,6 +309,7 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'dashboard': return <Dashboard {...commonProps} />;
+      case 'personal-account': return <PersonalAccount db={db} user={user!} month={selectedMonth} />;
       case 'members': return <Members {...commonProps} role={userRole} isAdmin={user?.isAdmin || false} messAdminId={messAdminId} messId={messId!} messName={messName} user={user!} />;
       case 'utility': return <UtilityRoom {...commonProps} />;
       case 'meal-bazar-ledger': return <MealBazarLedger {...commonProps} />;

@@ -84,8 +84,8 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
   }, [currentStats]);
 
   const summary = useMemo(() => {
-    const totalNet = reportData.reduce((s, r) => s + r.netRequired, 0);
-    const totalDeposited = reportData.reduce((s, r) => s + r.deposited, 0);
+    const totalNet = reportData.reduce((s: number, r: any) => s + r.netRequired, 0);
+    const totalDeposited = reportData.reduce((s: number, r: any) => s + r.deposited, 0);
     return { totalNet, totalDeposited };
   }, [reportData]);
 
@@ -163,7 +163,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
 
         {/* Mobile-Friendly Card View (Hidden on Print & Desktop) */}
         <div className="sm:hidden space-y-4 no-print">
-          {reportData.map(u => (
+          {reportData.map((u: any) => (
             <div key={u.userId} className="bg-gray-800/30 border border-gray-800 p-5 rounded-2xl space-y-5">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
@@ -224,7 +224,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800 print:divide-gray-100">
-              {reportData.map(u => (
+              {reportData.map((u: any) => (
                 <tr key={u.userId} className="hover:bg-gray-800/20 transition-all group print:text-black">
                   <td className="px-4 py-8">
                      <span className="font-black text-white text-base print:text-black">{u.name}</span>
@@ -271,7 +271,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
             <tfoot className="border-t-2 border-gray-800 print:border-gray-200">
                <tr className="font-black">
                   <td className="px-4 py-8 text-gray-500 text-[10px] uppercase">সর্বমোট:</td>
-                  <td className="px-4 py-8 text-right text-white print:text-black">৳{reportData.reduce((s,r)=>s+r.fixedCost, 0).toFixed(2)}</td>
+                  <td className="px-4 py-8 text-right text-white print:text-black">৳{reportData.reduce((s: number, r: any)=>s+r.fixedCost, 0).toFixed(2)}</td>
                   <td className="px-4 py-8"></td>
                   <td className="px-4 py-8 text-center text-green-500">৳{summary.totalDeposited.toFixed(2)}</td>
                   <td className="px-4 py-8 text-right text-blue-500 text-xl">

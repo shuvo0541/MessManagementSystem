@@ -67,7 +67,7 @@ const FinalReport: React.FC<FinalReportProps> = ({ db, month }) => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-800">
-              {stats.userStats.map(u => {
+              {stats.userStats.map((u: any) => {
                 const currentFixedCost = u.roomRent + u.utilityShare;
                 const prevAdjustment = u.prevAdjustment; 
                 const finalPayable = currentFixedCost - prevAdjustment;
@@ -109,9 +109,9 @@ const FinalReport: React.FC<FinalReportProps> = ({ db, month }) => {
             <tfoot className="bg-gray-800/20 font-black border-t border-gray-800">
                <tr>
                   <td className="px-6 sm:px-8 py-5 sm:py-6 text-gray-500 text-[9px] sm:text-[10px] uppercase tracking-widest">সর্বমোট</td>
-                  <td className="px-4 sm:px-6 py-5 sm:py-6 text-right text-gray-300 text-xs sm:text-sm">৳{stats.userStats.reduce((s,u) => s + u.roomRent + u.utilityShare, 0).toFixed(2)}</td>
+                  <td className="px-4 sm:px-6 py-5 sm:py-6 text-right text-gray-300 text-xs sm:text-sm">৳{stats.userStats.reduce((s: number, u: any) => s + u.roomRent + u.utilityShare, 0).toFixed(2)}</td>
                   <td className="px-4 sm:px-6 py-5 sm:py-6"></td>
-                  <td className="px-6 sm:px-8 py-5 sm:py-6 text-right text-purple-400 text-sm sm:text-lg">৳{stats.userStats.reduce((s,u) => s + (u.roomRent + u.utilityShare - u.prevAdjustment), 0).toFixed(2)}</td>
+                  <td className="px-6 sm:px-8 py-5 sm:py-6 text-right text-purple-400 text-sm sm:text-lg">৳{stats.userStats.reduce((s: number, u: any) => s + (u.roomRent + u.utilityShare - u.prevAdjustment), 0).toFixed(2)}</td>
                </tr>
             </tfoot>
           </table>
