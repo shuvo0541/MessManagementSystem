@@ -283,7 +283,7 @@ const App: React.FC = () => {
     );
   }
 
-  const commonProps = { db, updateDB, month: selectedMonth, user: user!, messId, messAdminId };
+  const commonProps = { db, updateDB, month: selectedMonth, user: user!, messId, messAdminId, onViewChange: (v: string) => setView(v) };
 
   const renderContent = () => {
     if (view !== 'profile' && !isMonthAllowed) {

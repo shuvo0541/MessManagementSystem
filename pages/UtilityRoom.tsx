@@ -27,7 +27,8 @@ interface UtilityRoomProps {
   updateDB: (updates: Partial<MessSystemDB>) => void;
   month: string;
   user: User;
-  messId: string;
+  messId: string | null;
+  messAdminId: string | null;
 }
 
 const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, messId }) => {

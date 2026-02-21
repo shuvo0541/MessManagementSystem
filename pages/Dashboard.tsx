@@ -40,11 +40,12 @@ interface DashboardProps {
   db: MessSystemDB;
   updateDB: (updates: Partial<MessSystemDB>) => void;
   user: User;
-  messId: string;
+  messId: string | null;
   messAdminId: string | null;
+  onViewChange: (view: string) => void;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId, messAdminId }) => {
+const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId, messAdminId, onViewChange }) => {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -174,8 +175,11 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     );
   };
 
-  const SummaryCard = ({ title, value, icon: Icon, color }: any) => (
-    <div className="bg-gray-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-800 group relative overflow-hidden transition-all hover:shadow-xl">
+  const SummaryCard = ({ title, value, icon: Icon, color, onClick }: any) => (
+    <div 
+      onClick={onClick}
+      className={`bg-gray-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-800 group relative overflow-hidden transition-all hover:shadow-xl ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
+    >
       <div className={`absolute -right-2 -bottom-2 opacity-[0.05] group-hover:opacity-10 transition-opacity transform scale-150 text-${color}-500`}>
         <Icon size={80} />
       </div>
@@ -220,8 +224,8 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <SummaryCard title="মোট বাজার" value={`৳${stats.totalBazar.toFixed(2)}`} icon={Wallet} color="blue" />
-        <SummaryCard title="মোট মিল" value={stats.totalMeals.toFixed(1)} icon={Utensils} color="green" />
+        <SummaryCard title="মোট বাজার" value={`৳${stats.totalBazar.toFixed(2)}`} icon={Wallet} color="blue" onClick={() => onViewChange('bazar')} />
+        <SummaryCard title="মোট মিল" value={stats.totalMeals.toFixed(1)} icon={Utensils} color="green" onClick={() => onViewChange('meals')} />
         <SummaryCard title="মিল রেট" value={`৳${stats.mealRate.toFixed(2)}`} icon={TrendingUp} color="purple" />
         <SummaryCard title="আজকের খরচ" value={`৳${todayExpense.toFixed(2)}`} icon={Zap} color="amber" />
       </div>
