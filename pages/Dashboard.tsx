@@ -23,7 +23,8 @@ import {
   AtSign,
   User as UserIcon,
   Trash2,
-  Shield
+  Shield,
+  CircleDollarSign
 } from 'lucide-react';
 import { 
   BarChart, 
@@ -43,9 +44,11 @@ interface DashboardProps {
   messId: string | null;
   messAdminId: string | null;
   onViewChange: (view: string) => void;
+  t: any;
+  theme: string;
 }
 
-const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId, messAdminId, onViewChange }) => {
+const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId, messAdminId, onViewChange, t, theme }) => {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
@@ -178,22 +181,22 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
   const SummaryCard = ({ title, value, icon: Icon, color, onClick }: any) => (
     <div 
       onClick={onClick}
-      className={`bg-gray-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-800 group relative overflow-hidden transition-all hover:shadow-xl ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
+      className={`bg-white dark:bg-gray-900 p-4 sm:p-6 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-gray-800 group relative overflow-hidden transition-all hover:shadow-xl ${onClick ? 'cursor-pointer active:scale-95' : ''}`}
     >
       <div className={`absolute -right-2 -bottom-2 opacity-[0.05] group-hover:opacity-10 transition-opacity transform scale-150 text-${color}-500`}>
         <Icon size={80} />
       </div>
       <div className="flex items-center gap-3 sm:gap-5">
-        <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-${color}-900/20 text-${color}-400 shrink-0 border border-${color}-500/10`}>
+        <div className={`p-3 sm:p-4 rounded-xl sm:rounded-2xl bg-${color}-500/10 text-${color}-600 dark:text-${color}-400 shrink-0 border border-${color}-500/10`}>
           <Icon size={20} className="sm:w-6 sm:h-6" />
         </div>
         <div className="min-w-0">
           <h3 className="text-gray-500 text-[8px] sm:text-[10px] uppercase font-black tracking-widest truncate mb-0.5">{title}</h3>
-          <p className="text-base sm:text-xl font-black truncate text-white">{value}</p>
+          <p className="text-base sm:text-xl font-black truncate text-gray-900 dark:text-white">{value}</p>
           {onClick && (
             <p className={`text-[7px] sm:text-[8px] font-black uppercase mt-1 flex items-center gap-0.5 text-${color}-500/80`}>
-              বিস্তারিত দেখুন <TrendingUp size={8} className="rotate-45" />
-            </p>
+            {t.viewDetails} <TrendingUp size={8} className="rotate-45" />
+          </p>
           )}
         </div>
       </div>
@@ -204,10 +207,16 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     <div className="space-y-6 sm:space-y-8 pb-10 overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-           <h2 className="text-2xl sm:text-3xl font-black text-white">{user.isAdmin ? 'অ্যাডমিন প্যানেল' : `স্বাগতম, ${user.name}!`}</h2>
+           <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{user.isAdmin ? 'অ্যাডমিন প্যানেল' : `স্বাগতম, ${user.name}!`}</h2>
            <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">মেস ড্যাশবোর্ড ওভারভিউ</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:gap-3">
+           <button 
+             onClick={() => onViewChange('personal-account')}
+             className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3.5 bg-green-600/10 text-green-600 dark:text-green-400 border border-green-500/20 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-green-600 hover:text-white transition-all"
+           >
+             <CircleDollarSign size={14}/> ব্যক্তিগত হিসাব
+           </button>
            {user.id === messAdminId && (
               <button 
                 onClick={handleDeleteMess}
@@ -229,22 +238,22 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-        <SummaryCard title="মোট বাজার" value={`৳${stats.totalBazar.toFixed(2)}`} icon={Wallet} color="blue" onClick={() => onViewChange('bazar')} />
-        <SummaryCard title="মোট মিল" value={stats.totalMeals.toFixed(1)} icon={Utensils} color="green" onClick={() => onViewChange('meals')} />
-        <SummaryCard title="মিল রেট" value={`৳${stats.mealRate.toFixed(2)}`} icon={TrendingUp} color="purple" />
-        <SummaryCard title="আজকের খরচ" value={`৳${todayExpense.toFixed(2)}`} icon={Zap} color="amber" />
+        <SummaryCard title={t.totalBazar} value={`৳${stats.totalBazar.toFixed(2)}`} icon={Wallet} color="blue" onClick={() => onViewChange('bazar')} />
+        <SummaryCard title={t.totalMeals} value={stats.totalMeals.toFixed(1)} icon={Utensils} color="green" onClick={() => onViewChange('meals')} />
+        <SummaryCard title={t.mealRate} value={`৳${stats.mealRate.toFixed(2)}`} icon={TrendingUp} color="purple" />
+        <SummaryCard title={t.todayExpense} value={`৳${todayExpense.toFixed(2)}`} icon={Zap} color="amber" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 sm:gap-8">
-        <div className="lg:col-span-2 bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-800 shadow-2xl">
-           <h3 className="text-lg font-black text-white flex items-center gap-3 mb-8">
+        <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
+           <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
              <PieChartIcon size={20} className="text-blue-500" />
              মিল পরিসংখ্যান
            </h3>
            <div className="h-64 sm:h-80 w-full">
              <ResponsiveContainer width="100%" height="100%">
                <BarChart data={chartData} barCategoryGap="15%">
-                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
+                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="currentColor" className="text-gray-100 dark:text-gray-800" />
                  <XAxis 
                    dataKey="name" 
                    tick={renderCustomAxisTick}
@@ -256,7 +265,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                  <YAxis fontSize={9} stroke="#6b7280" tickLine={false} axisLine={false} />
                  <Tooltip 
                    cursor={{ fill: 'rgba(59, 130, 246, 0.05)' }}
-                   contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px', fontSize: '10px' }} 
+                   contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: '1px solid #e5e7eb', borderRadius: '12px', fontSize: '10px', color: theme === 'dark' ? '#ffffff' : '#111827' }} 
                  />
                  <Bar dataKey="meals" fill="#3b82f6" radius={[6, 6, 0, 0]} maxBarSize={40} barSize={24} />
                </BarChart>
@@ -268,16 +277,16 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
           {user.isAdmin && pendingRequests.length > 0 && (
             <div className="bg-blue-600/5 border border-blue-500/20 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] space-y-6">
                <div className="flex items-center justify-between">
-                  <h3 className="text-base font-black text-white flex items-center gap-3">
+                  <h3 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-3">
                     <Inbox size={18} className="text-blue-500" />
                     আবেদন ({pendingRequests.length})
                   </h3>
                </div>
                <div className="space-y-4">
                   {pendingRequests.map(req => (
-                    <div key={req.id} className="bg-gray-900 p-4 rounded-2xl border border-gray-800 flex items-center justify-between">
+                    <div key={req.id} className="bg-white dark:bg-gray-900 p-4 rounded-2xl border border-gray-100 dark:border-gray-800 flex items-center justify-between">
                        <div className="min-w-0">
-                          <p className="font-black text-white text-xs truncate">{req.user_name}</p>
+                          <p className="font-black text-gray-900 dark:text-white text-xs truncate">{req.user_name}</p>
                           <p className="text-[10px] text-gray-500 font-bold truncate">{req.user_username || `@${req.user_id.slice(0,5)}`}</p>
                        </div>
                        <button onClick={() => handleApprove(req)} className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all shadow-lg active:scale-95">
@@ -289,17 +298,17 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
             </div>
           )}
 
-          <div className="bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-800 space-y-6">
-             <h3 className="text-base font-black text-white flex items-center gap-3">
+          <div className="bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 space-y-6 shadow-xl">
+             <h3 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-3">
                <Shield size={18} className="text-purple-500" />
                মেস এক্সেস
              </h3>
              <div className="space-y-4">
                 <div className="space-y-1">
                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">মেস আইডি</p>
-                   <div className="flex items-center justify-between bg-gray-800 p-3.5 rounded-xl border border-gray-700">
-                      <code className="text-[10px] font-black text-blue-400 truncate pr-2">{messId}</code>
-                      <button onClick={() => copyToClipboard(messId || '', 'মেস আইডি')} className="text-gray-500 hover:text-white transition-colors">
+                   <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700">
+                      <code className="text-[10px] font-black text-blue-600 dark:text-blue-400 truncate pr-2">{messId}</code>
+                      <button onClick={() => copyToClipboard(messId || '', 'মেস আইডি')} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
                          <Copy size={14} />
                       </button>
                    </div>
@@ -307,9 +316,9 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                 {user.isAdmin && (
                   <div className="space-y-1">
                     <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">মেস পাসওয়ার্ড</p>
-                    <div className="flex items-center justify-between bg-gray-800 p-3.5 rounded-xl border border-gray-700">
-                       <code className="text-lg font-black text-green-500 tracking-widest">{db.messPassword}</code>
-                       <button onClick={() => copyToClipboard(db.messPassword || '', 'পাসওয়ার্ড')} className="text-gray-500 hover:text-white transition-colors">
+                    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700">
+                       <code className="text-lg font-black text-green-600 dark:text-green-500 tracking-widest">{db.messPassword}</code>
+                       <button onClick={() => copyToClipboard(db.messPassword || '', 'পাসওয়ার্ড')} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
                           <Copy size={14} />
                        </button>
                     </div>
@@ -322,10 +331,10 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
       {showQRModal && (
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
-          <div className="bg-gray-900 w-full max-w-sm rounded-[3rem] border border-gray-800 p-10 text-center space-y-8 animate-in zoom-in-95 duration-300">
+          <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[3rem] border border-gray-100 dark:border-gray-800 p-10 text-center space-y-8 animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center mb-4">
-               <h3 className="text-xl font-black text-white">মেস QR কোড</h3>
-               <button onClick={() => setShowQRModal(false)} className="text-gray-500 hover:text-white bg-gray-800 p-2 rounded-xl"><X size={20}/></button>
+               <h3 className="text-xl font-black text-gray-900 dark:text-white">মেস QR কোড</h3>
+               <button onClick={() => setShowQRModal(false)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-800 p-2 rounded-xl"><X size={20}/></button>
             </div>
             <div className="bg-white p-6 rounded-[2.5rem] shadow-2xl inline-block mx-auto">
                <img src={qrUrl} alt="Mess QR Code" className="w-48 h-48 sm:w-56 sm:h-56" />
@@ -333,7 +342,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
             <div className="space-y-2">
                <p className="text-[10px] text-gray-500 font-bold leading-relaxed">নতুন মেম্বার এই কিউআর কোড স্ক্যান করে সরাসরি মেসে যোগ দেওয়ার আবেদন পাঠাতে পারবে।</p>
             </div>
-            <button onClick={() => setShowQRModal(false)} className="w-full py-4 bg-gray-800 text-white rounded-2xl font-black uppercase text-xs">বন্ধ করুন</button>
+            <button onClick={() => setShowQRModal(false)} className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black uppercase text-xs">বন্ধ করুন</button>
           </div>
         </div>
       )}

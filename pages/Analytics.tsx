@@ -11,9 +11,11 @@ interface AnalyticsProps {
   db: MessSystemDB;
   user: User;
   month: string;
+  t: any;
+  theme: string;
 }
 
-const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
+const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
   // হেডারে সিলেক্ট করা মাস থেকে বছরটি নেওয়া হচ্ছে
   const selectedYear = parseInt(month.split('-')[0]);
 
@@ -108,32 +110,32 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
           <BarChart3 size={32} />
         </div>
         <div>
-          <h2 className="text-3xl font-black text-white">বার্ষিক অ্যানালিটিক্স</h2>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white">{t.yearlyAnalytics || 'বার্ষিক অ্যানালিটিক্স'}</h2>
           <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1">
-             {selectedYear} সালের ডাটা
+             {selectedYear} {t.yearlyData || 'সালের ডাটা'}
           </p>
         </div>
       </div>
 
       {yearlyData.filter(d => d.totalMeals > 0 || d.totalBazar > 0).length === 0 ? (
-        <div className="bg-gray-900 p-20 rounded-[3rem] border border-gray-800 text-center space-y-4">
-           <div className="w-20 h-20 bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-600">
+        <div className="bg-white dark:bg-gray-900 p-20 rounded-[3rem] border border-gray-100 dark:border-gray-800 text-center space-y-4 shadow-sm">
+           <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-400 dark:text-gray-600">
               <Calendar size={40} />
            </div>
-           <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">{selectedYear} সালে কোনো ডাটা পাওয়া যায়নি</p>
+           <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">{selectedYear} {t.noDataFound || 'সালে কোনো ডাটা পাওয়া যায়নি'}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Yearly Meal Rate Trend Graph */}
-          <div className="bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 shadow-2xl">
-            <h3 className="text-lg font-black text-white flex items-center gap-3 mb-8">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
               <TrendingUp size={20} className="text-blue-500" />
-              মিল রেট ট্রেন্ড (৳)
+              {t.mealRateTrend || 'মিল রেট ট্রেন্ড (৳)'}
             </h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={yearlyData} margin={{ bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#1f2937' : '#f1f5f9'} />
                   <XAxis 
                     dataKey="monthName" 
                     fontSize={10} 
@@ -145,13 +147,13 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
                   />
                   <YAxis fontSize={10} stroke="#6b7280" />
                   <Tooltip 
-                    contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px' }}
-                    labelStyle={{ fontWeight: 'bold', color: '#9ca3af' }}
+                    contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: theme === 'dark' ? '1px solid #374151' : '1px solid #e2e8f0', borderRadius: '12px', color: theme === 'dark' ? '#ffffff' : '#111827' }}
+                    labelStyle={{ fontWeight: 'bold', color: theme === 'dark' ? '#9ca3af' : '#64748b' }}
                   />
                   <Line 
                     type="monotone" 
                     dataKey="mealRate" 
-                    name="মিল রেট"
+                    name={t.mealRate}
                     stroke="#3b82f6" 
                     strokeWidth={4} 
                     dot={{ r: 4, fill: '#3b82f6' }} 
@@ -163,18 +165,18 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
           </div>
 
           {/* User Total Contribution */}
-          <div className="bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 shadow-2xl">
-            <h3 className="text-lg font-black text-white flex items-center gap-3 mb-8">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
               <Users size={20} className="text-green-500" />
-              মোট কন্ট্রিবিউশন (৳) - {selectedYear}
+              {t.totalContribution || 'মোট কন্ট্রিবিউশন (৳)'} - {selectedYear}
             </h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={userYearlyContribution} layout="vertical">
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#1f2937" />
+                  <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke={theme === 'dark' ? '#1f2937' : '#f1f5f9'} />
                   <XAxis type="number" hide />
                   <YAxis dataKey="name" type="category" fontSize={10} stroke="#6b7280" width={80} />
-                  <Tooltip cursor={{ fill: '#1f2937' }} contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px' }} />
+                  <Tooltip cursor={{ fill: theme === 'dark' ? '#1f2937' : '#f8fafc' }} contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: theme === 'dark' ? '1px solid #374151' : '1px solid #e2e8f0', borderRadius: '12px' }} />
                   <Bar dataKey="amount" fill="#10b981" radius={[0, 10, 10, 0]} barSize={20} />
                 </BarChart>
               </ResponsiveContainer>
@@ -182,15 +184,15 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
           </div>
 
           {/* Meal Consumption Analysis */}
-          <div className="bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 shadow-2xl">
-            <h3 className="text-lg font-black text-white flex items-center gap-3 mb-8">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
               <Calendar size={20} className="text-purple-500" />
-              মাসিক মিলের তুলনা (শীর্ষ ৫ মেম্বার)
+              {t.mealComparison || 'মাসিক মিলের তুলনা (শীর্ষ ৫ মেম্বার)'}
             </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={mealConsumptionTrend} margin={{ bottom: 40 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#1f2937" />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={theme === 'dark' ? '#1f2937' : '#f1f5f9'} />
                   <XAxis 
                     dataKey="monthName" 
                     fontSize={10} 
@@ -201,7 +203,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
                     height={60}
                   />
                   <YAxis fontSize={10} stroke="#6b7280" />
-                  <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px' }} />
+                  <Tooltip contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: theme === 'dark' ? '1px solid #374151' : '1px solid #e2e8f0', borderRadius: '12px' }} />
                   <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '10px' }} />
                   {top5Eaters.map((eater, idx) => (
                     <Area 
@@ -220,10 +222,10 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
           </div>
 
           {/* Utility Pie Chart */}
-          <div className="bg-gray-900 p-8 rounded-[2.5rem] border border-gray-800 shadow-2xl">
-            <h3 className="text-lg font-black text-white flex items-center gap-3 mb-8">
+          <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
+            <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
               <PieIcon size={20} className="text-yellow-500" />
-              ইউটিলিটি খরচ ব্রেকডাউন (%)
+              {t.utilityBreakdown || 'ইউটিলিটি খরচ ব্রেকডাউন (%)'}
             </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -233,7 +235,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month }) => {
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
-                  <Tooltip contentStyle={{ backgroundColor: '#111827', border: '1px solid #374151', borderRadius: '12px' }} />
+                  <Tooltip contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: theme === 'dark' ? '1px solid #374151' : '1px solid #e2e8f0', borderRadius: '12px' }} />
                   <Legend layout="vertical" align="right" verticalAlign="middle" wrapperStyle={{ fontSize: '12px', fontWeight: 'bold' }} />
                 </PieChart>
               </ResponsiveContainer>

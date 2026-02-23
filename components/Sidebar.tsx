@@ -14,7 +14,8 @@ import {
   LineChart as LineChartIcon,
   LayoutGrid,
   User as UserIcon,
-  CircleDollarSign
+  CircleDollarSign,
+  Settings as SettingsIcon
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -25,20 +26,21 @@ interface SidebarProps {
   isAdmin: boolean;
   role: Role;
   hasActiveMess: boolean;
+  t: any;
 }
 
-const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, onSwitchMess, isAdmin, role, hasActiveMess }) => {
+const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, onSwitchMess, isAdmin, role, hasActiveMess, t }) => {
   const menuItems = [
-    { id: 'profile', label: 'প্রোফাইল', icon: UserIcon, show: true },
-    { id: 'personal-account', label: 'ব্যক্তিগত হিসাব', icon: CircleDollarSign, show: hasActiveMess },
-    { id: 'dashboard', label: T.dashboard, icon: LayoutDashboard, show: hasActiveMess },
-    { id: 'members', label: T.members, icon: Users, show: hasActiveMess },
-    { id: 'meals', label: T.meals, icon: UtensilsCrossed, show: hasActiveMess },
-    { id: 'bazar', label: T.bazar, icon: ShoppingBag, show: hasActiveMess },
-    { id: 'utility', label: 'রুম ও ইউটিলিটি', icon: Home, show: hasActiveMess },
-    { id: 'meal-bazar-ledger', label: T.mealBazarLedger, icon: TableProperties, show: hasActiveMess },
-    { id: 'analytics', label: T.analytics, icon: LineChartIcon, show: hasActiveMess },
-    { id: 'reports', label: T.reports, icon: FileBarChart, show: hasActiveMess },
+    { id: 'profile', label: t.profile || 'প্রোফাইল', icon: UserIcon, show: true },
+    { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard, show: hasActiveMess },
+    { id: 'personal-account', label: t.personalAccount || 'ব্যক্তিগত হিসাব', icon: CircleDollarSign, show: hasActiveMess },
+    { id: 'members', label: t.members, icon: Users, show: hasActiveMess },
+    { id: 'meals', label: t.meals, icon: UtensilsCrossed, show: hasActiveMess },
+    { id: 'bazar', label: t.bazar, icon: ShoppingBag, show: hasActiveMess },
+    { id: 'utility', label: t.utility || 'রুম ও ইউটিলিটি', icon: Home, show: hasActiveMess },
+    { id: 'meal-bazar-ledger', label: t.mealBazarLedger, icon: TableProperties, show: hasActiveMess },
+    { id: 'analytics', label: t.analytics, icon: LineChartIcon, show: hasActiveMess },
+    { id: 'reports', label: t.reports, icon: FileBarChart, show: hasActiveMess },
   ];
 
   return (
@@ -52,7 +54,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
           <div className="bg-blue-600 p-2 rounded-2xl text-white shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
             <UtensilsCrossed size={28} />
           </div>
-          <span className="group-hover:text-blue-500 transition-colors">{T.appName}</span>
+          <span className="group-hover:text-blue-500 transition-colors">{t.appName}</span>
         </h1>
       </div>
       
@@ -80,15 +82,26 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
             className="w-full flex items-center gap-4 px-5 py-3.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
           >
             <LayoutGrid size={20} />
-            সুইচ মেস
+            {t.switchMess || 'সুইচ মেস'}
           </button>
         )}
+        <button
+          onClick={() => onViewChange('settings')}
+          className={`w-full flex items-center gap-4 px-5 py-3.5 rounded-2xl transition-all duration-300 group ${
+            currentView === 'settings'
+              ? 'bg-blue-600 text-white shadow-xl shadow-blue-500/20 font-black'
+              : 'text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 font-bold'
+          }`}
+        >
+          <SettingsIcon size={20} className={currentView === 'settings' ? 'scale-110' : 'group-hover:scale-110 transition-transform'} />
+          <span className="truncate text-sm uppercase tracking-wide">{t.settings}</span>
+        </button>
         <button
           onClick={onLogout}
           className="w-full flex items-center gap-4 px-5 py-4 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
         >
           <LogOut size={20} />
-          {T.logout}
+          {t.logout}
         </button>
       </div>
     </div>

@@ -23,9 +23,11 @@ interface ReportsProps {
   updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
   isAdmin: boolean;
   role: Role;
+  t: any;
+  theme: string;
 }
 
-const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role }) => {
+const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t, theme }) => {
   const currentStats = useMemo(() => getCalculations(db, month), [db, month]);
   
   const isMonthLocked = (db.lockedMonths || []).includes(month);
@@ -108,8 +110,8 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
       {/* Page Header */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
         <div>
-          <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-3">
-            <ClipboardCheck className="text-blue-500" /> চূড়ান্ত রিপোর্ট ও সমন্বয়
+          <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
+            <ClipboardCheck className="text-blue-500" /> {t.finalReport || 'চূড়ান্ত রিপোর্ট ও সমন্বয়'}
           </h2>
           <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1">স্থির খরচ ও পূর্ববর্তী মাসের সমন্বিত রিপোর্ট</p>
         </div>
@@ -117,95 +119,95 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
           onClick={handlePrint}
           className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3.5 rounded-xl font-black shadow-lg shadow-blue-500/20 text-[10px] uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
         >
-          <Printer size={16} /> প্রিন্ট রিপোর্ট (PDF)
+          <Printer size={16} /> {t.printReport || 'প্রিন্ট রিপোর্ট (PDF)'}
         </button>
       </div>
 
       {/* Info Notice */}
-      <div className="bg-blue-900/10 border border-blue-500/20 p-4 sm:p-5 rounded-2xl flex items-start gap-4 no-print">
-         <Info className="text-blue-400 shrink-0 mt-0.5" size={18} />
-         <div className="text-[10px] sm:text-xs font-medium text-blue-300/80 leading-relaxed">
-           <p className="font-black text-blue-400 uppercase tracking-widest mb-1">সমন্বয় ও জমা লজিক</p>
-           নিট প্রদেয় = (স্থির খরচ) - (গত মাসের মিল সমন্বয়)।<br/>
-           অবস্থা = (জমা টাকা) - (নিট প্রদেয়)। পজিটিভ হলে <b>'ফেরত'</b> এবং নেগেটিভ হলে <b>'বকেয়া'</b>।
+      <div className="bg-blue-600/10 dark:bg-blue-900/10 border border-blue-500/20 p-4 sm:p-5 rounded-2xl flex items-start gap-4 no-print">
+         <Info className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" size={18} />
+         <div className="text-[10px] sm:text-xs font-medium text-blue-700 dark:text-blue-300/80 leading-relaxed">
+            <p className="font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">সমন্বয় ও জমা লজিক</p>
+            নিট প্রদেয় = (স্থির খরচ) - (গত মাসের মিল সমন্বয়)।<br/>
+            অবস্থা = (জমা টাকা) - (নিট প্রদেয়)। পজিটিভ হলে <b>'ফেরত'</b> এবং নেগেটিভ হলে <b>'বকেয়া'</b>।
          </div>
       </div>
 
       {/* Summary Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
-        <div className="bg-gray-900 border border-gray-800 p-5 rounded-2xl text-center shadow-xl">
-           <p className="text-[9px] font-black text-blue-500 uppercase mb-1 tracking-widest">মোট নিট প্রদেয়</p>
-           <h4 className="text-xl font-black text-white">৳{summary.totalNet.toFixed(2)}</h4>
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 rounded-2xl text-center shadow-xl">
+           <p className="text-[9px] font-black text-blue-600 dark:text-blue-500 uppercase mb-1 tracking-widest">{t.totalNetRequired || 'মোট নিট প্রদেয়'}</p>
+           <h4 className="text-xl font-black text-gray-900 dark:text-white">৳{summary.totalNet.toFixed(2)}</h4>
         </div>
-        <div className="bg-gray-900 border border-gray-800 p-5 rounded-2xl text-center shadow-xl">
-           <p className="text-[9px] font-black text-green-500 uppercase mb-1 tracking-widest">মোট জমা (পেমেন্ট)</p>
-           <h4 className="text-xl font-black text-white">৳{summary.totalDeposited.toFixed(2)}</h4>
+        <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 rounded-2xl text-center shadow-xl">
+           <p className="text-[9px] font-black text-green-600 dark:text-green-500 uppercase mb-1 tracking-widest">{t.totalDeposited || 'মোট জমা (পেমেন্ট)'}</p>
+           <h4 className="text-xl font-black text-gray-900 dark:text-white">৳{summary.totalDeposited.toFixed(2)}</h4>
         </div>
-        <div className={`bg-gray-900 border p-5 rounded-2xl text-center shadow-xl ${summary.totalNet > summary.totalDeposited ? 'border-red-500/20' : 'border-gray-800'}`}>
-           <p className="text-[9px] font-black text-gray-500 uppercase mb-1 tracking-widest">অবশিষ্ট বকেয়া</p>
-           <h4 className="text-xl font-black text-white">৳{Math.max(0, summary.totalNet - summary.totalDeposited).toFixed(2)}</h4>
+        <div className={`bg-white dark:bg-gray-900 border p-5 rounded-2xl text-center shadow-xl ${summary.totalNet > summary.totalDeposited ? 'border-red-500/20' : 'border-gray-100 dark:border-gray-800'}`}>
+           <p className="text-[9px] font-black text-gray-500 uppercase mb-1 tracking-widest">{t.totalArrears || 'অবশিষ্ট বকেয়া'}</p>
+           <h4 className="text-xl font-black text-gray-900 dark:text-white">৳{Math.max(0, summary.totalNet - summary.totalDeposited).toFixed(2)}</h4>
         </div>
       </div>
 
       {/* Report Container (Table/Card View) */}
-      <div id="report-container" className="bg-[#0f172a] rounded-[2rem] sm:rounded-[2.5rem] border border-gray-800 p-4 sm:p-10 shadow-2xl print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
+      <div id="report-container" className="bg-white dark:bg-[#0f172a] rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-4 sm:p-10 shadow-2xl print:bg-white print:text-black print:border-none print:shadow-none print:p-0">
         
         {/* Document Header (Always Visible) */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12 gap-4">
            <div className="text-center sm:text-left space-y-1">
-              <h3 className="text-xl sm:text-2xl font-black text-blue-500">মেস ম্যানেজমেন্ট</h3>
-              <p className="text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest">চূড়ান্ত মাসিক রিপোর্ট ও সমন্বয়</p>
+              <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-500">{t.messManagement || 'মেস ম্যানেজমেন্ট'}</h3>
+              <p className="text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest">{t.finalMonthlyReport || 'চূড়ান্ত মাসিক রিপোর্ট ও সমন্বয়'}</p>
            </div>
-           <div className="bg-gray-800/50 px-6 py-3 rounded-2xl border border-gray-700 text-center print:border-gray-200">
-              <p className="text-[8px] font-black text-gray-500 uppercase">রিপোর্টিং মাস</p>
-              <p className="text-base sm:text-lg font-black text-white print:text-black">{month}</p>
+           <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center print:border-gray-200">
+              <p className="text-[8px] font-black text-gray-500 uppercase">{t.reportingMonth || 'রিপোর্টিং মাস'}</p>
+              <p className="text-base sm:text-lg font-black text-gray-900 dark:text-white print:text-black">{month}</p>
            </div>
         </div>
 
         {/* Mobile-Friendly Card View (Hidden on Print & Desktop) */}
         <div className="sm:hidden space-y-4 no-print">
           {reportData.map((u: any) => (
-            <div key={u.userId} className="bg-gray-800/30 border border-gray-800 p-5 rounded-2xl space-y-5">
+            <div key={u.userId} className="bg-gray-50 dark:bg-gray-800/30 border border-gray-100 dark:border-gray-800 p-5 rounded-2xl space-y-5">
               <div className="flex justify-between items-start">
                 <div className="flex items-center gap-3">
-                   <div className="w-10 h-10 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center font-black">{u.name[0]}</div>
+                   <div className="w-10 h-10 bg-blue-600/20 text-blue-600 dark:text-blue-500 rounded-xl flex items-center justify-center font-black">{u.name[0]}</div>
                    <div>
-                      <h4 className="font-black text-white text-sm">{u.name}</h4>
-                      <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase ${u.finalStatus >= 0 ? 'bg-green-900/20 text-green-400' : 'bg-red-900/20 text-red-400'}`}>
-                         {u.finalStatus >= 0 ? 'ফেরত পাবে' : 'বকেয়া আছে'}
+                      <h4 className="font-black text-gray-900 dark:text-white text-sm">{u.name}</h4>
+                      <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase ${u.finalStatus >= 0 ? 'bg-green-600/10 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-red-600/10 dark:bg-red-900/20 text-red-600 dark:text-red-400'}`}>
+                         {u.finalStatus >= 0 ? (t.willReceive || 'ফেরত পাবে') : (t.arrears || 'বকেয়া আছে')}
                       </div>
                    </div>
                 </div>
                 <div className="text-right">
-                   <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">অবস্থা</p>
-                   <p className={`text-base font-black ${u.finalStatus >= 0 ? 'text-green-500' : 'text-red-500'}`}>৳{Math.abs(u.finalStatus).toFixed(2)}</p>
+                   <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{t.status || 'অবস্থা'}</p>
+                   <p className={`text-base font-black ${u.finalStatus >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>৳{Math.abs(u.finalStatus).toFixed(2)}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-[10px] font-bold">
-                 <div className="bg-gray-900 p-3 rounded-xl border border-gray-800">
-                    <p className="text-gray-500 text-[8px] uppercase mb-1">স্থির খরচ</p>
-                    <p className="text-white">৳{u.fixedCost.toFixed(2)}</p>
+                 <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <p className="text-gray-500 text-[8px] uppercase mb-1">{t.fixedCost || 'স্থির খরচ'}</p>
+                    <p className="text-gray-900 dark:text-white">৳{u.fixedCost.toFixed(2)}</p>
                  </div>
-                 <div className="bg-gray-900 p-3 rounded-xl border border-gray-800">
-                    <p className="text-gray-500 text-[8px] uppercase mb-1">সমন্বয়</p>
-                    <p className={u.mealAdjustment >= 0 ? 'text-green-400' : 'text-red-400'}>৳{Math.abs(u.mealAdjustment).toFixed(2)} {u.mealAdjustment >= 0 ? 'পাবে' : 'বকেয়া'}</p>
+                 <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <p className="text-gray-500 text-[8px] uppercase mb-1">{t.adjustment || 'সমন্বয়'}</p>
+                    <p className={u.mealAdjustment >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>৳{Math.abs(u.mealAdjustment).toFixed(2)} {u.mealAdjustment >= 0 ? (t.receive || 'পাবে') : (t.arrears || 'বকেয়া')}</p>
                  </div>
               </div>
 
               <div className="space-y-1.5 pt-1">
-                 <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest ml-1">জমা টাকা (Payment)</p>
+                 <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1">{t.deposited || 'জমা টাকা (Payment)'}</p>
                  {canEdit ? (
                     <input 
                       type="number" min="0"
-                      className="w-full bg-gray-900 border border-gray-700 rounded-xl px-4 py-3 text-sm font-black text-white focus:ring-1 focus:ring-blue-500 outline-none"
+                      className="w-full bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm font-black text-gray-900 dark:text-white focus:ring-1 focus:ring-blue-500 outline-none"
                       value={u.deposited || ''}
                       placeholder="0.00"
                       onFocus={(e) => e.target.select()}
                       onChange={(e) => handleDepositChange(u.userId, parseFloat(e.target.value) || 0)}
                     />
                  ) : (
-                    <div className="bg-gray-900 p-3 rounded-xl border border-gray-800 text-white font-black text-sm">৳{u.deposited.toFixed(2)}</div>
+                    <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800 text-gray-900 dark:text-white font-black text-sm">৳{u.deposited.toFixed(2)}</div>
                  )}
               </div>
             </div>
@@ -216,66 +218,66 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
         <div className="hidden sm:block overflow-x-auto no-scrollbar print:block">
           <table className="w-full text-left min-w-[850px] print:min-w-0">
             <thead>
-              <tr className="text-[10px] uppercase font-black text-gray-500 border-b border-gray-800 print:border-gray-200">
-                <th className="px-4 py-6">মেম্বারের নাম</th>
-                <th className="px-4 py-6 text-right">স্থির খরচ</th>
-                <th className="px-4 py-6 text-center">মিল সমন্বয়</th>
-                <th className="px-4 py-6 text-center bg-gray-800/20 print:bg-transparent">জমা (৳)</th>
-                <th className="px-4 py-6 text-right text-blue-400">সর্বমোট (৳)</th>
+              <tr className="text-[10px] uppercase font-black text-gray-500 border-b border-gray-100 dark:border-gray-800 print:border-gray-200">
+                <th className="px-4 py-6">{t.memberName || 'মেম্বারের নাম'}</th>
+                <th className="px-4 py-6 text-right">{t.fixedCost || 'স্থির খরচ'}</th>
+                <th className="px-4 py-6 text-center">{t.mealAdjustment || 'মিল সমন্বয়'}</th>
+                <th className="px-4 py-6 text-center bg-gray-50 dark:bg-gray-800/20 print:bg-transparent">{t.deposited || 'জমা'} (৳)</th>
+                <th className="px-4 py-6 text-right text-blue-600 dark:text-blue-400">{t.total || 'সর্বমোট'} (৳)</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-800 print:divide-gray-100">
+            <tbody className="divide-y divide-gray-100 dark:divide-gray-800 print:divide-gray-100">
               {reportData.map((u: any) => (
-                <tr key={u.userId} className="hover:bg-gray-800/20 transition-all group print:text-black">
+                <tr key={u.userId} className="hover:bg-gray-50 dark:hover:bg-gray-800/20 transition-all group print:text-black">
                   <td className="px-4 py-8">
-                     <span className="font-black text-white text-base print:text-black">{u.name}</span>
+                     <span className="font-black text-gray-900 dark:text-white text-base print:text-black">{u.name}</span>
                   </td>
                   <td className="px-4 py-8 text-right">
                     <div className="flex flex-col">
-                       <span className="font-black text-white text-base print:text-black">৳{u.fixedCost.toFixed(2)}</span>
-                       <span className="text-[9px] text-gray-500 font-bold uppercase">রুম+ইউটি</span>
+                       <span className="font-black text-gray-900 dark:text-white text-base print:text-black">৳{u.fixedCost.toFixed(2)}</span>
+                       <span className="text-[9px] text-gray-500 font-bold uppercase">{t.roomPlusUtility || 'রুম+ইউটি'}</span>
                     </div>
                   </td>
                   <td className="px-4 py-8 text-center">
-                    <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black ${u.mealAdjustment >= 0 ? 'bg-green-900/10 text-green-400' : 'bg-red-900/10 text-red-400'} print:bg-transparent`}>
-                       ৳{Math.abs(u.mealAdjustment).toFixed(2)} {u.mealAdjustment >= 0 ? 'পাবে' : 'বকেয়া'}
+                    <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black ${u.mealAdjustment >= 0 ? 'bg-green-600/10 dark:bg-green-900/10 text-green-600 dark:text-green-400' : 'bg-red-600/10 dark:bg-red-900/10 text-red-600 dark:text-red-400'} print:bg-transparent`}>
+                       ৳{Math.abs(u.mealAdjustment).toFixed(2)} {u.mealAdjustment >= 0 ? (t.receive || 'পাবে') : (t.arrears || 'বকেয়া')}
                     </div>
                   </td>
-                  <td className="px-4 py-8 text-center bg-gray-800/10 print:bg-transparent">
+                  <td className="px-4 py-8 text-center bg-gray-50 dark:bg-gray-800/10 print:bg-transparent">
                      {canEdit ? (
                        <input 
                          type="number" min="0"
-                         className="w-24 bg-gray-800 border border-gray-700 rounded-xl px-3 py-2 text-center font-black text-white focus:ring-2 focus:ring-blue-600 outline-none no-print"
+                         className="w-24 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl px-3 py-2 text-center font-black text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-600 outline-none no-print"
                          value={u.deposited || ''}
                          placeholder="0.00"
                          onFocus={(e) => e.target.select()}
                          onChange={(e) => handleDepositChange(u.userId, parseFloat(e.target.value) || 0)}
                        />
                      ) : (
-                       <span className="font-black text-white">৳{u.deposited.toFixed(2)}</span>
+                       <span className="font-black text-gray-900 dark:text-white">৳{u.deposited.toFixed(2)}</span>
                      )}
                      <span className="hidden print:inline font-black">৳{u.deposited.toFixed(2)}</span>
                   </td>
                   <td className="px-4 py-8 text-right">
                      <div className="flex flex-col items-end">
-                        <span className={`text-xl font-black ${u.finalStatus >= 0 ? 'text-green-500' : 'text-red-500'} print:text-black`}>
+                        <span className={`text-xl font-black ${u.finalStatus >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'} print:text-black`}>
                           ৳{Math.abs(u.finalStatus).toFixed(2)}
                         </span>
-                        <span className={`text-[9px] font-black uppercase ${u.finalStatus >= 0 ? 'text-green-500/60' : 'text-red-500/60'} print:text-black`}>
-                          {u.finalStatus >= 0 ? 'ফেরত পাবে' : 'বকেয়া আছে'}
+                        <span className={`text-[9px] font-black uppercase ${u.finalStatus >= 0 ? 'text-green-600/60 dark:text-green-500/60' : 'text-red-600/60 dark:text-red-500/60'} print:text-black`}>
+                          {u.finalStatus >= 0 ? (t.willReceive || 'ফেরত পাবে') : (t.arrears || 'বকেয়া আছে')}
                         </span>
                      </div>
                   </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="border-t-2 border-gray-800 print:border-gray-200">
+            <tfoot className="border-t-2 border-gray-100 dark:border-gray-800 print:border-gray-200">
                <tr className="font-black">
-                  <td className="px-4 py-8 text-gray-500 text-[10px] uppercase">সর্বমোট:</td>
-                  <td className="px-4 py-8 text-right text-white print:text-black">৳{reportData.reduce((s: number, r: any)=>s+r.fixedCost, 0).toFixed(2)}</td>
+                  <td className="px-4 py-8 text-gray-500 text-[10px] uppercase">{t.total || 'সর্বমোট'}:</td>
+                  <td className="px-4 py-8 text-right text-gray-900 dark:text-white print:text-black">৳{reportData.reduce((s: number, r: any)=>s+r.fixedCost, 0).toFixed(2)}</td>
                   <td className="px-4 py-8"></td>
-                  <td className="px-4 py-8 text-center text-green-500">৳{summary.totalDeposited.toFixed(2)}</td>
-                  <td className="px-4 py-8 text-right text-blue-500 text-xl">
+                  <td className="px-4 py-8 text-center text-green-600 dark:text-green-500">৳{summary.totalDeposited.toFixed(2)}</td>
+                  <td className="px-4 py-8 text-right text-blue-600 dark:text-blue-500 text-xl">
                     ৳{Math.abs(summary.totalDeposited - summary.totalNet).toFixed(2)}
                   </td>
                </tr>
@@ -286,20 +288,20 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role })
         {/* Footer Signatures & Generation Time */}
         <div className="mt-12 sm:mt-20 flex flex-col sm:flex-row justify-between items-end gap-10">
            <div className="text-center sm:text-left space-y-2 w-full sm:w-auto">
-              <div className="w-full sm:w-48 border-t border-gray-700 pt-2 print:border-black">
-                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">ম্যানেজার</p>
-                 <p className="text-sm font-black text-white print:text-black">{monthManager}</p>
+              <div className="w-full sm:w-48 border-t border-gray-200 dark:border-gray-700 pt-2 print:border-black">
+                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.manager || 'ম্যানেজার'}</p>
+                 <p className="text-sm font-black text-gray-900 dark:text-white print:text-black">{monthManager}</p>
               </div>
            </div>
            
            <div className="text-right space-y-4 w-full sm:w-auto">
               <div className="bg-blue-600/10 px-4 py-2 rounded-xl border border-blue-500/20 inline-flex items-center gap-2 print:border-none no-print">
-                 <CheckCircle2 size={14} className="text-blue-500"/>
-                 <span className="text-[9px] font-black text-blue-400 uppercase tracking-widest">ভেরিফাইড রিপোর্ট</span>
+                 <CheckCircle2 size={14} className="text-blue-600 dark:text-blue-500"/>
+                 <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">{t.verifiedReport || 'ভেরিফাইড রিপোর্ট'}</span>
               </div>
               <div className="text-right">
-                 <p className="text-[8px] font-black text-gray-600 uppercase tracking-[0.2em] flex items-center justify-end gap-1">
-                    <Clock size={10}/> রিপোর্ট তৈরির সময়:
+                 <p className="text-[8px] font-black text-gray-500 dark:text-gray-600 uppercase tracking-[0.2em] flex items-center justify-end gap-1">
+                    <Clock size={10}/> {t.reportGenerationTime || 'রিপোর্ট তৈরির সময়'}:
                  </p>
                  <p className="text-[10px] font-black text-gray-400 mt-1">{generationTime}</p>
               </div>

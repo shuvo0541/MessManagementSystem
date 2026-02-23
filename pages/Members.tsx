@@ -27,9 +27,11 @@ interface MembersProps {
   db: MessSystemDB;
   updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
   user: User;
+  t: any;
+  theme: string;
 }
 
-const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db, updateDB }) => {
+const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db, updateDB, t, theme }) => {
   const [search, setSearch] = useState('');
   const [viewType, setViewType] = useState<'list' | 'timeline'>('list');
   const canManageCritical = isAdmin;
@@ -38,7 +40,8 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
   const filteredUsers = useMemo(() => {
     return db.users.filter(u => 
       u.name.toLowerCase().includes(search.toLowerCase()) || 
-      (u.username && u.username.toLowerCase().includes(search.toLowerCase()))
+      (u.username && u.username.toLowerCase().includes(search.toLowerCase())) ||
+      (u.userId && u.userId.toLowerCase().includes(search.toLowerCase()))
     );
   }, [db.users, search]);
 
@@ -79,35 +82,35 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
     <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-500 pb-10">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
-          <h2 className="text-xl sm:text-3xl font-black text-white flex items-center gap-3">
+          <h2 className="text-xl sm:text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3">
             <Shield className="text-blue-500" /> সদস্য তালিকা
           </h2>
           <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] mt-1 tracking-widest">প্রোফাইল ও টাইমলাইন ম্যানেজমেন্ট</p>
         </div>
 
-        <div className="flex bg-gray-900 p-1 rounded-xl sm:rounded-2xl border border-gray-800 self-start sm:self-auto">
+        <div className="flex bg-white dark:bg-gray-900 p-1 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-800 self-start sm:self-auto shadow-sm">
            <button 
              onClick={() => setViewType('list')}
              className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all ${viewType === 'list' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500'}`}
            >
-              <List size={14}/> লিস্ট
+              <List size={14}/> {t.list}
            </button>
            <button 
              onClick={() => setViewType('timeline')}
              className={`px-3 sm:px-4 py-2 sm:py-2.5 rounded-lg sm:rounded-xl font-black text-[9px] sm:text-[10px] uppercase tracking-widest flex items-center gap-2 transition-all ${viewType === 'timeline' ? 'bg-blue-600 text-white shadow-lg' : 'text-gray-500'}`}
            >
-              <Calendar size={14}/> টাইমলাইন
+              <Calendar size={14}/> {t.timeline}
            </button>
         </div>
       </div>
 
-      <div className="bg-gray-900 rounded-2xl sm:rounded-[2.5rem] border border-gray-800 overflow-hidden shadow-2xl">
-        <div className="p-4 sm:p-6 border-b border-gray-800 flex items-center gap-3">
+      <div className="bg-white dark:bg-gray-900 rounded-2xl sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-2xl">
+        <div className="p-4 sm:p-6 border-b border-gray-100 dark:border-gray-800 flex items-center gap-3">
           <Search className="text-gray-500 shrink-0" size={18} />
           <input 
             type="text" 
-            placeholder="নাম দিয়ে খুঁজুন..." 
-            className="flex-1 bg-transparent border-none focus:ring-0 text-base sm:text-lg font-bold text-white placeholder:text-gray-700"
+            placeholder={t.searchPlaceholder} 
+            className="flex-1 bg-transparent border-none focus:ring-0 text-base sm:text-lg font-bold text-gray-900 dark:text-white placeholder:text-gray-300 dark:placeholder:text-gray-700"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -119,36 +122,37 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
             <div className="hidden sm:block overflow-x-auto">
               <table className="w-full">
                 <thead>
-                  <tr className="bg-gray-800/50 text-left text-[10px] uppercase font-black text-gray-500 border-b border-gray-800">
-                    <th className="px-8 py-6">সদস্য ও স্ট্যাটাস</th>
-                    <th className="px-4 py-6">যোগদান</th>
-                    <th className="px-4 py-6">বিদায়</th>
-                    <th className="px-4 py-6">রোল</th>
-                    <th className="px-8 py-6 text-right">অ্যাকশন</th>
+                  <tr className="bg-gray-50 dark:bg-gray-800/50 text-left text-[10px] uppercase font-black text-gray-500 border-b border-gray-100 dark:border-gray-800">
+                    <th className="px-8 py-6">{t.memberStatus}</th>
+                    <th className="px-4 py-6">{t.joining}</th>
+                    <th className="px-4 py-6">{t.leaving}</th>
+                    <th className="px-4 py-6">{t.role}</th>
+                    <th className="px-8 py-6 text-right">{t.action}</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-800">
+                <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                   {filteredUsers.map(u => (
-                    <tr key={u.id} className="hover:bg-gray-800/40 transition-all">
+                    <tr key={u.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/40 transition-all">
                       <td className="px-8 py-6">
                         <div className="flex flex-col">
-                          <span className="font-black text-white">{u.name}</span>
-                          <span className="text-[10px] uppercase mt-1 font-bold">{getUserStatusLabel(u)}</span>
+                          <span className="font-black text-gray-900 dark:text-white">{u.name}</span>
+                          {u.userId && <span className="text-[9px] text-blue-600 dark:text-blue-500/70 font-bold">{u.userId}</span>}
+                          <span className="text-[10px] uppercase mt-1 font-bold text-gray-500">{getUserStatusLabel(u)}</span>
                         </div>
                       </td>
                       <td className="px-4 py-6">
-                        <input type="month" disabled={!canManageGeneral || u.id === messAdminId} className="bg-gray-800 border-gray-700 rounded-lg text-[10px] p-2 text-white" value={u.joiningMonth || ''} onChange={(e) => updateMemberDates(u.id, 'joiningMonth', e.target.value)} />
+                        <input type="month" disabled={!canManageGeneral || u.id === messAdminId} className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2 text-gray-900 dark:text-white" value={u.joiningMonth || ''} onChange={(e) => updateMemberDates(u.id, 'joiningMonth', e.target.value)} />
                       </td>
                       <td className="px-4 py-6">
-                        <input type="month" disabled={!canManageCritical || u.id === messAdminId} className="bg-gray-800 border-gray-700 rounded-lg text-[10px] p-2 text-white" value={u.leavingMonth || ''} onChange={(e) => updateMemberDates(u.id, 'leavingMonth', e.target.value || null)} />
+                        <input type="month" disabled={!canManageCritical || u.id === messAdminId} className="bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2 text-gray-900 dark:text-white" value={u.leavingMonth || ''} onChange={(e) => updateMemberDates(u.id, 'leavingMonth', e.target.value || null)} />
                       </td>
                       <td className="px-4 py-6">
                         {u.id === messAdminId ? (
-                          <span className="text-[9px] font-black text-purple-400 uppercase bg-purple-900/10 px-2 py-1.5 rounded-lg border border-purple-500/10">এডমিন</span>
+                          <span className="text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase bg-purple-50 dark:bg-purple-900/10 px-2 py-1.5 rounded-lg border border-purple-200 dark:border-purple-500/10">এডমিন</span>
                         ) : (
-                          <select disabled={!canManageCritical} className="bg-gray-800 border-gray-700 rounded-lg text-[10px] p-2 text-white font-bold" value={db.monthlyRoles.find(r => r.userId === u.id && r.month === month)?.role || Role.MEMBER} onChange={(e) => setRole(u.id, e.target.value as Role)}>
-                            <option value={Role.MEMBER}>মেম্বার</option>
-                            <option value={Role.MANAGER}>ম্যানেজার</option>
+                          <select disabled={!canManageCritical} className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2 text-gray-900 dark:text-white font-bold outline-none focus:ring-1 focus:ring-blue-500" value={db.monthlyRoles.find(r => r.userId === u.id && r.month === month)?.role || Role.MEMBER} onChange={(e) => setRole(u.id, e.target.value as Role)}>
+                            <option value={Role.MEMBER} className="bg-white dark:bg-gray-900">মেম্বার</option>
+                            <option value={Role.MANAGER} className="bg-white dark:bg-gray-900">ম্যানেজার</option>
                           </select>
                         )}
                       </td>
@@ -168,12 +172,13 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
             {/* Mobile View Cards */}
             <div className="grid grid-cols-1 gap-4 sm:hidden">
                {filteredUsers.map(u => (
-                 <div key={u.id} className="bg-gray-800/30 p-5 rounded-2xl border border-gray-800 space-y-5">
+                 <div key={u.id} className="bg-white dark:bg-gray-800/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-5 shadow-sm">
                     <div className="flex justify-between items-start">
                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-600/20 text-blue-500 rounded-xl flex items-center justify-center font-black">{u.name[0]}</div>
+                          <div className="w-10 h-10 bg-blue-600/20 text-blue-600 dark:text-blue-500 rounded-xl flex items-center justify-center font-black">{u.name[0]}</div>
                           <div>
-                             <h4 className="font-black text-white text-sm">{u.name}</h4>
+                             <h4 className="font-black text-gray-900 dark:text-white text-sm">{u.name}</h4>
+                             {u.userId && <p className="text-[9px] text-blue-600 dark:text-blue-500/70 font-bold">{u.userId}</p>}
                              <p className="text-[9px] uppercase font-bold text-gray-500 mt-0.5">{getUserStatusLabel(u)}</p>
                           </div>
                        </div>
@@ -186,21 +191,21 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
                        <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
                              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">যোগদান</p>
-                             <input type="month" disabled={!canManageGeneral || u.id === messAdminId} className="w-full bg-gray-900 border border-gray-700 rounded-lg text-[10px] p-2.5 text-white outline-none focus:ring-1 focus:ring-blue-500" value={u.joiningMonth || ''} onChange={(e) => updateMemberDates(u.id, 'joiningMonth', e.target.value)} />
+                             <input type="month" disabled={!canManageGeneral || u.id === messAdminId} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2.5 text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500" value={u.joiningMonth || ''} onChange={(e) => updateMemberDates(u.id, 'joiningMonth', e.target.value)} />
                           </div>
                           <div className="space-y-1.5">
                              <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">বিদায়</p>
-                             <input type="month" disabled={!canManageCritical || u.id === messAdminId} className="w-full bg-gray-900 border border-gray-700 rounded-lg text-[10px] p-2.5 text-white outline-none focus:ring-1 focus:ring-red-500" value={u.leavingMonth || ''} onChange={(e) => updateMemberDates(u.id, 'leavingMonth', e.target.value || null)} />
+                             <input type="month" disabled={!canManageCritical || u.id === messAdminId} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2.5 text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-red-500" value={u.leavingMonth || ''} onChange={(e) => updateMemberDates(u.id, 'leavingMonth', e.target.value || null)} />
                           </div>
                        </div>
                        <div className="space-y-1.5">
                           <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">রোল ({month})</p>
                           {u.id === messAdminId ? (
-                             <div className="w-full bg-purple-900/10 border border-purple-500/10 rounded-lg text-[10px] p-2.5 text-purple-400 font-black text-center uppercase">Admin</div>
+                             <div className="w-full bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-500/10 rounded-lg text-[10px] p-2.5 text-purple-600 dark:text-purple-400 font-black text-center uppercase">Admin</div>
                           ) : (
-                            <select disabled={!canManageCritical} className="w-full bg-gray-900 border border-gray-700 rounded-lg text-[10px] p-2.5 text-white font-bold outline-none focus:ring-1 focus:ring-blue-500" value={db.monthlyRoles.find(r => r.userId === u.id && r.month === month)?.role || Role.MEMBER} onChange={(e) => setRole(u.id, e.target.value as Role)}>
-                               <option value={Role.MEMBER}>Member</option>
-                               <option value={Role.MANAGER}>Manager</option>
+                            <select disabled={!canManageCritical} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2.5 text-gray-900 dark:text-white font-bold outline-none focus:ring-1 focus:ring-blue-500" value={db.monthlyRoles.find(r => r.userId === u.id && r.month === month)?.role || Role.MEMBER} onChange={(e) => setRole(u.id, e.target.value as Role)}>
+                               <option value={Role.MEMBER} className="bg-white dark:bg-gray-900">Member</option>
+                               <option value={Role.MANAGER} className="bg-white dark:bg-gray-900">Manager</option>
                             </select>
                           )}
                        </div>
@@ -213,21 +218,21 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
           <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
              {filteredUsers.map(u => {
                const start = u.joiningMonth || 'N/A';
-               const end = u.leavingMonth || 'চলছে';
-               const isCurrent = start <= month && (end === 'চলছে' || end >= month);
+               const end = u.leavingMonth || (t.active === 'সক্রিয়' ? 'চলছে' : 'Ongoing');
+               const isCurrent = start <= month && (end === 'চলছে' || end === 'Ongoing' || end >= month);
 
                return (
-                 <div key={u.id} className={`p-4 sm:p-6 rounded-2xl sm:rounded-3xl border ${isCurrent ? 'bg-blue-600/5 border-blue-500/20 shadow-lg' : 'bg-gray-800/20 border-gray-800'} space-y-3 sm:space-y-4`}>
+                 <div key={u.id} className={`p-4 sm:p-6 rounded-2xl sm:rounded-3xl border ${isCurrent ? 'bg-blue-600/5 border-blue-500/20 shadow-lg' : 'bg-white dark:bg-gray-800/20 border-gray-100 dark:border-gray-800 shadow-sm'} space-y-3 sm:space-y-4`}>
                     <div className="flex justify-between items-center">
-                       <span className="font-black text-white text-sm sm:text-base">{u.name}</span>
-                       <span className={`text-[8px] sm:text-[9px] font-black uppercase px-2 py-1 rounded-lg ${isCurrent ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-800 text-gray-500'}`}>{isCurrent ? 'Active' : 'Inactive'}</span>
+                       <span className="font-black text-gray-900 dark:text-white text-sm sm:text-base">{u.name}</span>
+                       <span className={`text-[8px] sm:text-[9px] font-black uppercase px-2 py-1 rounded-lg ${isCurrent ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20' : 'bg-gray-100 dark:bg-gray-800 text-gray-500'}`}>{isCurrent ? t.active : t.inactive}</span>
                     </div>
-                    <div className="relative h-1.5 sm:h-2 bg-gray-800 rounded-full overflow-hidden">
+                    <div className="relative h-1.5 sm:h-2 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
                        <div className="absolute inset-y-0 left-0 bg-blue-500 rounded-full" style={{ width: isCurrent ? '70%' : '100%' }} />
                     </div>
                     <div className="flex justify-between text-[8px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-widest">
-                       <span>জয়েন: {start}</span>
-                       <span>ছেড়েছেন: {end}</span>
+                       <span>{t.joining}: {start}</span>
+                       <span>{t.leaving}: {end}</span>
                     </div>
                  </div>
                );

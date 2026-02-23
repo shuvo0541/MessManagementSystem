@@ -30,6 +30,8 @@ interface ProfileProps {
   onSelectMess: (mess: any) => void;
   onLogout: () => void;
   onPending: () => void;
+  t: any;
+  theme: string;
 }
 
 const Profile: React.FC<ProfileProps> = ({ 
@@ -38,7 +40,9 @@ const Profile: React.FC<ProfileProps> = ({
   userMesses, 
   onSelectMess, 
   onLogout, 
-  onPending 
+  onPending,
+  t,
+  theme
 }) => {
   const [view, setView] = useState<'info' | 'create' | 'join' | 'success'>('info');
   const [messName, setMessName] = useState('');
@@ -181,20 +185,20 @@ const Profile: React.FC<ProfileProps> = ({
     <div className="max-w-6xl mx-auto space-y-8 sm:space-y-12 pb-20 animate-in fade-in duration-700 px-2 sm:px-0">
       {/* Header Profile Section */}
       <div className="flex flex-col sm:flex-row gap-6 sm:gap-10 items-center sm:items-start text-center sm:text-left">
-        <div className="w-24 h-24 sm:w-40 sm:h-40 bg-blue-600 rounded-[2rem] sm:rounded-[3rem] flex items-center justify-center text-white shadow-2xl text-4xl sm:text-5xl font-black border-4 border-gray-900 shrink-0">
+        <div className="w-24 h-24 sm:w-40 sm:h-40 bg-blue-600 rounded-[2rem] sm:rounded-[3rem] flex items-center justify-center text-white shadow-2xl text-4xl sm:text-5xl font-black border-4 border-gray-50 dark:border-gray-900 shrink-0">
           {user.name[0]}
         </div>
         <div className="space-y-4 pt-2 sm:pt-4 flex-1 w-full overflow-hidden">
           <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4 overflow-hidden">
-            <h1 className="text-2xl sm:text-4xl font-black text-white truncate max-w-full px-4 sm:px-0">{user.name}</h1>
-            <span className="px-3 py-1 bg-blue-900/40 text-blue-400 text-[8px] sm:text-[10px] font-black uppercase rounded-full border border-blue-500/20 whitespace-nowrap">ইউজার প্রোফাইল</span>
+            <h1 className="text-2xl sm:text-4xl font-black text-gray-900 dark:text-white truncate max-w-full px-4 sm:px-0">{user.name}</h1>
+            <span className="px-3 py-1 bg-blue-600/10 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-[8px] sm:text-[10px] font-black uppercase rounded-full border border-blue-500/20 whitespace-nowrap">{t.userProfile || 'ইউজার প্রোফাইল'}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 max-w-2xl px-4 sm:px-0">
-            <div className="flex items-center gap-3 text-gray-400 font-bold bg-gray-900/50 px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-800">
+            <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400 font-bold bg-white dark:bg-gray-900/50 px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
               <Mail size={16} className="text-blue-500 shrink-0" />
               <span className="truncate text-xs sm:text-sm">{authEmail}</span>
             </div>
-            <div className="flex items-center gap-3 text-gray-400 font-bold bg-gray-900/50 px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-800">
+            <div className="flex items-center gap-3 text-gray-600 dark:text-gray-400 font-bold bg-white dark:bg-gray-900/50 px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm">
               <AtSign size={16} className="text-purple-500 shrink-0" />
               <span className="truncate text-xs sm:text-sm">{user.userId || `@${user.username}`}</span>
             </div>
@@ -212,13 +216,13 @@ const Profile: React.FC<ProfileProps> = ({
         <div className="space-y-8 sm:space-y-12">
           {/* Action Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-6 px-4 sm:px-0">
-            <h3 className="text-xl sm:text-2xl font-black text-white flex items-center gap-3"><Building className="text-blue-500" /> আপনার মেসসমূহ</h3>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3"><Building className="text-blue-500" /> {t.yourMesses || 'আপনার মেসসমূহ'}</h3>
             <div className="flex gap-3 w-full sm:w-auto">
-              <button onClick={() => setView('join')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-gray-900 border border-gray-800 text-gray-300 px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-gray-800 transition-all">
-                <UserPlus size={16} className="hidden xs:block"/> যোগ দিন
+              <button onClick={() => setView('join')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 text-gray-600 dark:text-gray-300 px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-gray-50 dark:hover:bg-gray-800 transition-all shadow-sm">
+                <UserPlus size={16} className="hidden xs:block"/> {t.join || 'যোগ দিন'}
               </button>
               <button onClick={() => setView('create')} className="flex-1 sm:flex-none flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-3 sm:px-6 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all">
-                <PlusCircle size={16} className="hidden xs:block"/> নতুন মেস
+                <PlusCircle size={16} className="hidden xs:block"/> {t.newMess || 'নতুন মেস'}
               </button>
             </div>
           </div>
@@ -226,14 +230,14 @@ const Profile: React.FC<ProfileProps> = ({
           {/* Mess Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 px-4 sm:px-0">
             {userMesses.map(mess => (
-              <div key={mess.id} onClick={() => onSelectMess(mess)} className="group bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-800 hover:border-blue-500/50 hover:shadow-2xl transition-all cursor-pointer space-y-5 sm:space-y-6">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-900/20 text-blue-500 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-xl sm:text-2xl">{mess.mess_name[0].toUpperCase()}</div>
+              <div key={mess.id} onClick={() => onSelectMess(mess)} className="group bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 hover:border-blue-500/50 hover:shadow-2xl transition-all cursor-pointer space-y-5 sm:space-y-6 shadow-sm">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-600/10 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-xl sm:text-2xl">{mess.mess_name[0].toUpperCase()}</div>
                 <div>
-                  <h4 className="text-lg sm:text-2xl font-black text-white truncate">{mess.mess_name}</h4>
+                  <h4 className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white truncate">{mess.mess_name}</h4>
                   <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1.5 sm:mt-2 flex items-center gap-2"><Hash size={12}/> ID: {mess.id.slice(0, 8)}...</p>
                 </div>
                 <div className="flex items-center justify-between pt-1">
-                   <span className={`px-2.5 py-1 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${mess.admin_id === user.id ? 'bg-purple-900/30 text-purple-400 border-purple-500/20' : 'bg-blue-900/30 text-blue-400 border-blue-500/20'} border`}>
+                   <span className={`px-2.5 py-1 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${mess.admin_id === user.id ? 'bg-purple-600/10 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-500/20' : 'bg-blue-600/10 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-500/20'} border`}>
                       {mess.admin_id === user.id ? 'Admin' : 'Member'}
                    </span>
                    <ArrowRight size={18} className="text-blue-500 group-hover:translate-x-2 transition-transform" />
@@ -241,7 +245,7 @@ const Profile: React.FC<ProfileProps> = ({
               </div>
             ))}
             {userMesses.length === 0 && (
-              <div className="col-span-full py-16 sm:py-20 text-center bg-gray-900/50 rounded-[2rem] sm:rounded-[3rem] border border-gray-800 border-dashed text-gray-500 font-bold text-xs sm:text-sm px-6">আপনি এখনো কোনো মেসে যুক্ত হননি। নতুন মেস তৈরি করুন অথবা যোগ দিন।</div>
+              <div className="col-span-full py-16 sm:py-20 text-center bg-white dark:bg-gray-900/50 rounded-[2rem] sm:rounded-[3rem] border border-gray-200 dark:border-gray-800 border-dashed text-gray-500 font-bold text-xs sm:text-sm px-6 shadow-inner">{t.noMessJoined || 'আপনি এখনো কোনো মেসে যুক্ত হননি। নতুন মেস তৈরি করুন অথবা যোগ দিন।'}</div>
             )}
           </div>
 

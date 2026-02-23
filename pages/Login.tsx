@@ -19,9 +19,10 @@ import {
 
 interface LoginProps {
   onLogin: () => void;
+  t: any;
 }
 
-const Login: React.FC<LoginProps> = ({ onLogin }) => {
+const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
   const [isRegistering, setIsRegistering] = useState(false);
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
@@ -136,7 +137,29 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         setPassword('');
         setConfirmPassword('');
       } else {
-        const { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
+        let loginEmail = email;
+        if (email.startsWith('@')) {
+          setLoading(true);
+          try {
+            // Search for email by userId in the public profiles table
+            const { data: profile, error: fetchError } = await supabase
+              .from('profiles')
+              .select('email')
+              .eq('user_id', email)
+              .single();
+            
+            if (fetchError || !profile) {
+              throw new Error('এই ইউজার আইডি দিয়ে কোনো একাউন্ট পাওয়া যায়নি।');
+            }
+            loginEmail = profile.email;
+          } catch (err: any) {
+            setError(err.message);
+            setLoading(false);
+            return;
+          }
+        }
+
+        const { error: signInError } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (signInError) {
           if (signInError.message.includes('Invalid login credentials')) {
              throw new Error('ইমেইল অথবা পাসওয়ার্ড ভুল! পুনরায় চেষ্টা করুন।');
@@ -166,7 +189,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
           <div className="inline-flex items-center justify-center p-4 bg-blue-600 text-white rounded-[2rem] shadow-2xl shadow-blue-500/20 mb-4">
             <UtensilsCrossed size={40} />
           </div>
-          <h1 className="text-4xl font-black text-white tracking-tight">{T.appName}</h1>
+          <h1 className="text-4xl font-black text-white tracking-tight">{t.appName}</h1>
           <p className="text-gray-400 font-bold mt-2 uppercase text-[10px] tracking-[0.2em]">
             {isRegistering ? 'নতুন একাউন্ট তৈরি করুন' : 'আপনার একাউন্টে লগইন করুন'}
           </p>
@@ -200,13 +223,13 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             )}
             
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">ইমেইল এড্রেস</label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">ইমেইল অথবা ইউজার আইডি</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input 
-                  type="email" required
+                  type="text" required
                   className="w-full pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 text-white rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-bold placeholder:text-gray-700 transition-all"
-                  placeholder="name@example.com"
+                  placeholder="যেমন: name@example.com অথবা @user123"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -214,7 +237,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             </div>
 
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">পাসওয়ার্ড</label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{t.password}</label>
               <div className="relative group">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input 

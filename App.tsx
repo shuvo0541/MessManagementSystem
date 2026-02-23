@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { fetchMessDB, syncDBToSupabase, getCurrentMonthStr, getUserRoleInMonth, INITIAL_DB } from './db';
 import { User, Role, MessSystemDB } from './types';
-import { T } from './translations';
+import { translations, Language } from './translations';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 import Members from './pages/Members';
@@ -13,6 +13,7 @@ import UtilityRoom from './pages/UtilityRoom';
 import MealBazarLedger from './pages/MealBazarLedger';
 import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
+import Settings from './pages/Settings';
 import PersonalAccount from './pages/PersonalAccount';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -33,6 +34,19 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [userMesses, setUserMesses] = useState<any[]>([]);
+  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('lang') as Language) || 'bn');
+  const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
+
+  const T = translations[lang];
+
+  useEffect(() => {
+    document.documentElement.classList.toggle('dark', theme === 'dark');
+    localStorage.setItem('theme', theme);
+  }, [theme]);
+
+  useEffect(() => {
+    localStorage.setItem('lang', lang);
+  }, [lang]);
 
   // Internal helper to ensure ID compliance
   const generateUserIdFromRules = (name: string) => {
@@ -70,7 +84,20 @@ const App: React.FC = () => {
     }
   };
 
-  const syncUserNameGlobally = async (userId: string, metaName: string, metaUserId: string, messes: any[]) => {
+  const syncUserNameGlobally = async (userId: string, metaName: string, metaUserId: string, email: string, phone: string | undefined, messes: any[]) => {
+    // Update public profile table
+    try {
+      await supabase.from('profiles').upsert({
+        id: userId,
+        full_name: metaName,
+        user_id: metaUserId,
+        email: email,
+        phone: phone
+      });
+    } catch (err) {
+      console.error("Error syncing profile:", err);
+    }
+
     for (const mess of messes) {
       const messDB = { ...mess.db_json } as MessSystemDB;
       const uIdx = messDB.users.findIndex(u => u.id === userId);
@@ -85,6 +112,14 @@ const App: React.FC = () => {
            messDB.users[uIdx].userId = metaUserId;
            changed = true;
         }
+        if (messDB.users[uIdx].email !== email) {
+           messDB.users[uIdx].email = email;
+           changed = true;
+        }
+        if (messDB.users[uIdx].phone !== phone) {
+           messDB.users[uIdx].phone = phone;
+           changed = true;
+        }
         if (changed) {
           await syncDBToSupabase(messDB, mess.id);
         }
@@ -92,16 +127,18 @@ const App: React.FC = () => {
     }
   };
 
-  const enterMess = async (messData: any, userId: string, metaName: string, metaUsername: string, metaUserId: string) => {
+  const enterMess = async (messData: any, userId: string, metaName: string, metaUsername: string, metaUserId: string, email: string, phone: string | undefined) => {
     const messDB = { ...messData.db_json } as MessSystemDB;
     const userIdx = messDB.users.findIndex(u => u.id === userId);
     
     if (userIdx > -1) {
       let changed = false;
-      if (messDB.users[userIdx].name !== metaName || messDB.users[userIdx].username !== metaUsername || messDB.users[userIdx].userId !== metaUserId) {
+      if (messDB.users[userIdx].name !== metaName || messDB.users[userIdx].username !== metaUsername || messDB.users[userIdx].userId !== metaUserId || messDB.users[userIdx].email !== email || messDB.users[userIdx].phone !== phone) {
         messDB.users[userIdx].name = metaName;
         messDB.users[userIdx].username = metaUsername;
         messDB.users[userIdx].userId = metaUserId;
+        messDB.users[userIdx].email = email;
+        messDB.users[userIdx].phone = phone;
         changed = true;
       }
       
@@ -116,6 +153,8 @@ const App: React.FC = () => {
       const adminUser: User = { 
         id: userId, 
         name: metaName, 
+        email: email,
+        phone: phone,
         username: metaUsername, 
         userId: metaUserId,
         isAdmin: true, 
@@ -161,20 +200,24 @@ const App: React.FC = () => {
              await supabase.auth.updateUser({
                 data: { user_id: metaUserId }
              });
+             // Also update profiles table
+             await supabase.from('profiles').update({ user_id: metaUserId }).eq('id', userId);
           }
 
           const messes = await fetchUserMesses(userId);
-          await syncUserNameGlobally(userId, metaName, metaUserId, messes);
+          await syncUserNameGlobally(userId, metaName, metaUserId, session.user.email || '', metadata?.phone || '', messes);
 
           const lastMessId = localStorage.getItem('ACTIVE_MESS_ID');
           const lastMess = messes.find(m => m.id === lastMessId);
           
           if (lastMess) {
-            await enterMess(lastMess, userId, metaName, metaUsername, metaUserId);
+            await enterMess(lastMess, userId, metaName, metaUsername, metaUserId, session.user.email || '', metadata?.phone || '');
           } else {
             const baseUser: User = { 
               id: userId, 
               name: metaName, 
+              email: session.user.email || '',
+              phone: metadata?.phone || '',
               username: metaUsername, 
               userId: metaUserId,
               isAdmin: false,
@@ -244,7 +287,7 @@ const App: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-screen bg-gray-950 flex flex-col items-center justify-center gap-4">
+      <div className="h-screen bg-white dark:bg-gray-950 flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-blue-500" size={48} />
         <p className="text-gray-400 font-bold uppercase tracking-widest text-xs animate-pulse">লোড হচ্ছে...</p>
       </div>
@@ -253,11 +296,11 @@ const App: React.FC = () => {
 
   if (initError) {
     return (
-      <div className="h-screen bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
-        <div className="w-20 h-20 bg-red-900/20 text-red-500 rounded-full flex items-center justify-center mb-6 border border-red-500/20">
+      <div className="h-screen bg-white dark:bg-gray-950 flex flex-col items-center justify-center p-6 text-center">
+        <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-500 rounded-full flex items-center justify-center mb-6 border border-red-200 dark:border-red-500/20">
           <AlertTriangle size={40} />
         </div>
-        <h1 className="text-2xl font-black text-white mb-2">সংযোগ বিচ্ছিন্ন!</h1>
+        <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-2">সংযোগ বিচ্ছিন্ন!</h1>
         <p className="text-gray-500 max-w-xs mb-8 font-bold">{initError}</p>
         <button onClick={() => window.location.reload()} className="flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm shadow-xl shadow-blue-500/20">
           <RefreshCcw size={18} /> রিফ্রেশ করুন
@@ -267,16 +310,16 @@ const App: React.FC = () => {
   }
 
   if (!authEmail) {
-    return <Login onLogin={() => window.location.reload()} />;
+    return <Login onLogin={() => window.location.reload()} t={T} />;
   }
 
   if (isPending) {
     return (
-      <div className="h-screen bg-gray-950 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-700">
+      <div className="h-screen bg-white dark:bg-gray-950 flex flex-col items-center justify-center p-8 text-center animate-in fade-in duration-700">
         <div className="w-24 h-24 bg-blue-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl shadow-blue-500/20 mb-8 animate-bounce">
           <Clock size={48} />
         </div>
-        <h2 className="text-3xl font-black text-white mb-3">অনুমোদনের জন্য অপেক্ষা করুন</h2>
+        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">অনুমোদনের জন্য অপেক্ষা করুন</h2>
         <p className="text-gray-500 max-sm mx-auto font-bold mb-10 leading-relaxed">
           আপনার যোগদানের অনুরোধ মেস এডমিনের কাছে পাঠানো হয়েছে। এডমিন অনুমতি দিলে আপনি স্বয়ংক্রিয়ভাবে ড্যাশবোর্ড দেখতে পাবেন।
         </p>
@@ -292,7 +335,26 @@ const App: React.FC = () => {
     );
   }
 
-  const commonProps = { db, updateDB, month: selectedMonth, user: user!, messId, messAdminId, onViewChange: (v: string) => setView(v) };
+  const commonProps = { db, updateDB, month: selectedMonth, user: user!, messId, messAdminId, onViewChange: (v: string) => setView(v), t: T, theme };
+
+  const handleUpdateUser = async (updates: Partial<User>) => {
+    if (!user) return;
+    
+    const updatedUser = { ...user, ...updates };
+    setUser(updatedUser);
+
+    // 1. Update Auth Metadata
+    const { error: authError } = await supabase.auth.updateUser({
+      data: { 
+        full_name: updatedUser.name,
+        phone: updatedUser.phone
+      }
+    });
+    if (authError) throw authError;
+
+    // 2. Sync globally across all messes and profiles table
+    await syncUserNameGlobally(user.id, updatedUser.name, user.userId || '', user.email || '', updatedUser.phone, userMesses);
+  };
 
   const renderContent = () => {
     if (view !== 'profile' && !isMonthAllowed) {
@@ -301,7 +363,7 @@ const App: React.FC = () => {
             <div className="w-24 h-24 bg-red-900/10 border border-red-500/20 text-red-500 rounded-[2.5rem] flex items-center justify-center mb-6">
                <Lock size={40} />
             </div>
-            <h3 className="text-2xl font-black text-white">অ্যাক্সেস রেস্ট্রিক্টেড</h3>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white">অ্যাক্সেস রেস্ট্রিক্টেড</h3>
             <p className="text-gray-500 max-w-xs mx-auto mt-2 font-bold leading-relaxed">
                আপনি {selectedMonth} মাসে এই মেসে অ্যাক্টিভ ছিলেন না। তাই এই মাসের কোনো ডাটা আপনার জন্য দৃশ্যমান নয়।
             </p>
@@ -317,11 +379,11 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'dashboard': return <Dashboard {...commonProps} />;
-      case 'personal-account': return <PersonalAccount db={db} user={user!} month={selectedMonth} />;
+      case 'personal-account': return <PersonalAccount {...commonProps} />;
       case 'members': return <Members {...commonProps} role={userRole} isAdmin={user?.isAdmin || false} messAdminId={messAdminId} messId={messId!} messName={messName} user={user!} />;
       case 'utility': return <UtilityRoom {...commonProps} />;
       case 'meal-bazar-ledger': return <MealBazarLedger {...commonProps} />;
-      case 'analytics': return <Analytics db={db} user={user!} month={selectedMonth} />;
+      case 'analytics': return <Analytics {...commonProps} />;
       case 'meals': return <MealEntry {...commonProps} role={userRole} userId={user?.id || ''} isAdmin={user?.isAdmin || false} />;
       case 'bazar': return <BazarEntry {...commonProps} userId={user?.id || ''} isAdmin={user?.isAdmin || false} />;
       case 'reports': return <Reports {...commonProps} isAdmin={user?.isAdmin || false} role={userRole} />;
@@ -330,9 +392,22 @@ const App: React.FC = () => {
           user={user!} 
           authEmail={authEmail} 
           userMesses={userMesses} 
-          onSelectMess={(m) => enterMess(m, user?.id || '', user?.name || '', user?.username || '', user?.userId || '')} 
+          onSelectMess={(m) => enterMess(m, user?.id || '', user?.name || '', user?.username || '', user?.userId || '', authEmail || '', user?.phone || '')} 
           onLogout={handleLogout} 
           onPending={() => setIsPending(true)} 
+          t={T}
+          theme={theme}
+        />
+      );
+      case 'settings': return (
+        <Settings 
+          user={user!} 
+          onUpdateUser={handleUpdateUser} 
+          onLanguageChange={(l) => setLang(l)} 
+          currentLang={lang} 
+          theme={theme}
+          onThemeChange={setTheme}
+          t={T}
         />
       );
       default: return <Dashboard {...commonProps} />;
@@ -340,7 +415,7 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="flex h-screen overflow-hidden text-gray-100 bg-gray-950">
+    <div className="flex h-screen overflow-hidden text-gray-900 dark:text-gray-100 bg-gray-50 dark:bg-gray-950 transition-colors duration-300">
       {isSidebarOpen && (
         <div className="fixed inset-0 bg-black/60 z-40 lg:hidden backdrop-blur-sm animate-in fade-in duration-300 no-print" onClick={() => setIsSidebarOpen(false)} />
       )}
@@ -354,6 +429,7 @@ const App: React.FC = () => {
           isAdmin={user?.isAdmin || false} 
           role={userRole} 
           hasActiveMess={!!messId}
+          t={T}
         />
       </div>
 
