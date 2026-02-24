@@ -64,11 +64,11 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
 
   const addBazar = () => {
     if (!newEntry.userId) {
-      alert("দয়া করে মেম্বার সিলেক্ট করুন।");
+      alert(t.selectMemberAlert);
       return;
     }
     if (!newEntry.amount || newEntry.amount <= 0) {
-      alert("সঠিক টাকার পরিমাণ প্রদান করুন।");
+      alert(t.validAmountAlert);
       return;
     }
 
@@ -86,7 +86,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
     
     setLastSavedEntry({
       ...entry,
-      userName: selectedUser?.name || 'অজানা'
+      userName: selectedUser?.name || t.unknown
     });
 
     setNewEntry({ 
@@ -108,7 +108,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
           <h2 className="text-xl sm:text-3xl font-black flex items-center gap-3 text-gray-900 dark:text-white">
             <ShoppingBag className="text-green-500" /> {t.bazar} ({month})
           </h2>
-          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">সব মেম্বারের বাজারের হিসাব</p>
+          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">{t.bazarCostAllMembers}</p>
         </div>
 
         {isEditableView && (
@@ -116,7 +116,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
             onClick={() => setShowModal(true)}
             className="bg-green-600 hover:bg-green-700 text-white px-5 sm:px-8 py-3.5 sm:py-4 rounded-xl sm:rounded-2xl font-black uppercase text-[10px] sm:text-xs shadow-xl shadow-green-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 sm:gap-3 w-full sm:w-auto"
           >
-            <PlusCircle size={18} /> {t.addBazar || 'বাজার যোগ করুন'}
+            <PlusCircle size={18} /> {t.addBazar}
           </button>
         )}
       </div>
@@ -128,7 +128,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
             <Sigma size={24} className="sm:w-8 sm:h-8" />
           </div>
           <div>
-            <p className="text-[9px] sm:text-[11px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-1">এই মাসের মোট বাজার খরচ</p>
+            <p className="text-[9px] sm:text-[11px] font-black text-green-600 dark:text-green-400 uppercase tracking-widest mb-1">{t.totalMonthBazarLabel}</p>
             <h3 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">৳ {totalMonthBazar.toFixed(2)}</h3>
           </div>
         </div>
@@ -137,7 +137,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
       {/* Mobile Card Layout */}
       <div className="grid grid-cols-1 gap-4 sm:hidden">
         {monthBazars.length === 0 ? (
-          <div className="bg-white dark:bg-gray-900/50 p-12 rounded-2xl border border-gray-100 dark:border-gray-800 text-center text-gray-500 font-bold italic shadow-sm">কোনো বাজার খরচ নেই</div>
+          <div className="bg-white dark:bg-gray-900/50 p-12 rounded-2xl border border-gray-100 dark:border-gray-800 text-center text-gray-500 font-bold italic shadow-sm">{t.noBazarRecords}</div>
         ) : (
           monthBazars.map(b => (
             <div key={b.id} className="bg-white dark:bg-gray-900 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 space-y-4 relative shadow-sm">
@@ -146,7 +146,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                    <div className="flex items-center gap-2 text-[10px] text-gray-500 font-black uppercase tracking-tight">
                       <Calendar size={12} className="text-green-500/60"/> {b.date}
                    </div>
-                   <h4 className="font-black text-gray-900 dark:text-white text-sm mt-1">{db.users.find(u => u.id === b.userId)?.name || 'অজানা'}</h4>
+                   <h4 className="font-black text-gray-900 dark:text-white text-sm mt-1">{db.users.find(u => u.id === b.userId)?.name || t.unknown}</h4>
                 </div>
                 <div className="text-right">
                    <p className="text-lg font-black text-green-500">৳{b.amount.toFixed(2)}</p>
@@ -161,10 +161,10 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
               {isEditableView && (
                 <div className="flex justify-end pt-1">
                   <button 
-                    onClick={() => { if(window.confirm("মুছে ফেলতে চান?")) updateDB((prev: MessSystemDB) => ({ ...prev, bazars: prev.bazars.filter((x: Bazar) => x.id !== b.id) })); }}
+                    onClick={() => { if(window.confirm(t.confirmDelete)) updateDB((prev: MessSystemDB) => ({ ...prev, bazars: prev.bazars.filter((x: Bazar) => x.id !== b.id) })); }}
                     className="flex items-center gap-2 px-3 py-1.5 text-red-500/40 hover:text-red-500 hover:bg-red-500/10 rounded-lg text-[10px] font-black uppercase tracking-widest transition-all"
                   >
-                    <Trash2 size={14} /> মুছুন
+                    <Trash2 size={14} /> {t.delete}
                   </button>
                 </div>
               )}
@@ -188,7 +188,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {monthBazars.length === 0 ? (
-                <tr><td colSpan={5} className="px-8 py-16 text-center text-gray-600 font-bold italic">কোনো বাজার খরচ পাওয়া যায়নি</td></tr>
+                <tr><td colSpan={5} className="px-8 py-16 text-center text-gray-600 font-bold italic">{t.noBazarRecords}</td></tr>
               ) : (
                 monthBazars.map(b => (
                   <tr key={b.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors group">
@@ -196,7 +196,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                     <td className="px-6 py-6">
                        <div className="flex items-center gap-2">
                           <UserCheck size={14} className="text-green-500/50" />
-                          <span className="font-black text-gray-900 dark:text-white">{db.users.find(u => u.id === b.userId)?.name || 'অজানা'}</span>
+                          <span className="font-black text-gray-900 dark:text-white">{db.users.find(u => u.id === b.userId)?.name || t.unknown}</span>
                        </div>
                     </td>
                     <td className="px-6 py-6">
@@ -206,7 +206,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                     <td className="px-8 py-6 text-right">
                       {isEditableView && (
                         <button 
-                          onClick={() => { if(window.confirm("মুছে ফেলতে চান?")) updateDB((prev: MessSystemDB) => ({ ...prev, bazars: prev.bazars.filter((x: Bazar) => x.id !== b.id) })); }}
+                          onClick={() => { if(window.confirm(t.confirmDelete)) updateDB((prev: MessSystemDB) => ({ ...prev, bazars: prev.bazars.filter((x: Bazar) => x.id !== b.id) })); }}
                           className="p-2.5 text-red-500/30 hover:text-red-500 hover:bg-red-500/10 rounded-xl transition-all"
                         >
                           <Trash2 size={18} />
@@ -230,26 +230,26 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                 <div className="p-2.5 bg-green-600 rounded-xl text-white shadow-lg shadow-green-500/20">
                   <PlusCircle size={20} />
                 </div>
-                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">নতুন বাজার এন্ট্রি</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{t.newBazarEntry}</h3>
               </div>
               <button onClick={() => setShowModal(false)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white p-2 bg-gray-100 dark:bg-gray-800 rounded-xl transition-colors"><X size={18} /></button>
             </div>
             <div className="space-y-5 sm:space-y-6">
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 block">মেম্বার সিলেক্ট করুন</label>
+                <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 block">{t.selectMember}</label>
                 <select 
                   className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-green-600 transition-all appearance-none" 
                   value={newEntry.userId} 
                   onChange={e => setNewEntry({...newEntry, userId: e.target.value})}
                 >
-                  <option value="" className="bg-white dark:bg-gray-900">মেম্বার বাছাই করুন...</option>
+                  <option value="" className="bg-white dark:bg-gray-900">{t.selectMemberPlaceholder}</option>
                   {activeResidents.map(u => <option key={u.id} value={u.id} className="bg-white dark:bg-gray-900">{u.name}</option>)}
                 </select>
               </div>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 block">পরিমাণ (৳)</label>
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 block">{t.amountLabel}</label>
                   <input 
                     type="number" step="0.01" placeholder="0.00" 
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 text-gray-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-green-600" 
@@ -259,7 +259,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                   />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 block">তারিখ</label>
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 block">{t.dateLabel}</label>
                   <input 
                     type="date" 
                     className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-green-600" 
@@ -270,9 +270,9 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
               </div>
 
               <div className="space-y-2">
-                <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 block">নোট/বিবরণ (ঐচ্ছিক)</label>
+                <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 block">{t.noteLabel}</label>
                 <textarea 
-                  placeholder="বাজারের বিবরণ..." 
+                  placeholder={t.notePlaceholder} 
                   className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl p-4 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-green-600 min-h-[100px] resize-none" 
                   value={newEntry.note} 
                   onChange={e => setNewEntry({...newEntry, note: e.target.value})} 
@@ -283,7 +283,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                 onClick={addBazar} 
                 className="w-full bg-green-600 hover:bg-green-700 text-white py-4 sm:py-5 rounded-xl sm:rounded-[2rem] font-black uppercase text-xs shadow-xl shadow-green-500/20 transition-all active:scale-95 flex items-center justify-center gap-2 mt-2"
               >
-                সেভ করুন
+                {t.save}
               </button>
             </div>
           </div>
@@ -297,26 +297,26 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
             <div className="w-16 h-16 sm:w-20 sm:h-20 bg-green-600 rounded-full flex items-center justify-center text-white mx-auto mb-6 shadow-xl shadow-green-500/20">
               <CheckCircle2 size={32} className="sm:w-12 sm:h-12" />
             </div>
-            <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-2">সফল হয়েছে!</h3>
-            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-6">বাজার খরচ রেকর্ড করা হয়েছে</p>
+            <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white mb-2">{t.success}</h3>
+            <p className="text-gray-500 text-[10px] font-bold uppercase tracking-widest mb-6">{t.bazarRecorded}</p>
             
             <div className="bg-gray-50 dark:bg-gray-800/50 rounded-2xl sm:rounded-3xl border border-gray-100 dark:border-gray-800 p-5 sm:p-6 space-y-4 mb-8">
                <div className="flex justify-between items-center">
-                 <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest">সদস্য</span>
+                 <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest">{t.member}</span>
                  <span className="text-gray-900 dark:text-white font-black text-sm">{lastSavedEntry.userName}</span>
                </div>
                <div className="flex justify-between items-center">
-                 <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest">পরিমাণ</span>
+                 <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest">{t.amount}</span>
                  <span className="text-green-600 dark:text-green-500 font-black text-lg">৳{lastSavedEntry.amount.toFixed(2)}</span>
                </div>
                <div className="flex justify-between items-center">
-                 <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest">তারিখ</span>
+                 <span className="text-gray-500 text-[9px] font-black uppercase tracking-widest">{t.date}</span>
                  <span className="text-gray-700 dark:text-gray-300 font-bold text-xs">{lastSavedEntry.date}</span>
                </div>
                {/* Fixed: Display note in success modal if it exists */}
                {lastSavedEntry.note && (
                   <div className="pt-2 border-t border-gray-100 dark:border-gray-800 text-left">
-                     <p className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1 ml-1">নোট</p>
+                     <p className="text-gray-500 text-[9px] font-black uppercase tracking-widest mb-1 ml-1">{t.note}</p>
                      <div className="bg-gray-50 dark:bg-gray-950/50 p-3 rounded-xl border border-gray-100 dark:border-gray-800/50">
                         <p className="text-[11px] text-gray-700 dark:text-gray-300 font-medium italic leading-relaxed">"{lastSavedEntry.note}"</p>
                      </div>
@@ -328,7 +328,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
               onClick={() => setShowSuccessModal(false)} 
               className="w-full bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white py-4 sm:py-5 rounded-xl sm:rounded-2xl font-black uppercase text-[10px] sm:text-xs tracking-widest transition-all"
             >
-              ঠিক আছে
+              {t.ok}
             </button>
           </div>
         </div>

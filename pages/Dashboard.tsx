@@ -73,7 +73,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
   const handleApprove = async (req: any) => {
     setLoadingRequests(true);
     try {
-      const actualName = req.user_name || "সদস্য";
+      const actualName = req.user_name || t.memberLabel;
       const uniqueUserId = req.user_username || ("@user" + req.user_id.slice(0, 5));
       const newUser: User = {
         id: req.user_id,
@@ -95,18 +95,16 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
       await supabase.from('join_requests').delete().eq('id', req.id);
       updateDB({ users: updatedUsers });
       setPendingRequests(prev => prev.filter(r => r.id !== req.id));
-      alert(`${actualName} এখন মেম্বার!`);
+      alert(`${actualName} ${t.approveSuccess}`);
     } catch (err: any) {
-      alert("অনুমোদন করা যায়নি: " + err.message);
+      alert(`${t.approveFail}: ${err.message}`);
     } finally {
       setLoadingRequests(false);
     }
   };
 
   const handleDeleteMess = async () => {
-    const confirmDelete = window.confirm(
-      "আপনি কি নিশ্চিতভাবে এই মেসটি ডিলিট করতে চান?\n\nসতর্কতা: মেস ডিলিট করলে এর সকল হিসাব, মেম্বার ডাটা এবং রেকর্ড চিরতরে মুছে যাবে। এটি আর ফিরে পাওয়া সম্ভব নয়।"
-    );
+    const confirmDelete = window.confirm(t.deleteMessConfirm);
     
     if (confirmDelete) {
       setLoadingRequests(true);
@@ -121,17 +119,17 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
         const { error: messError } = await supabase.from('messes').delete().eq('id', messId);
         if (messError) {
           if (messError.message.includes("policy")) {
-            throw new Error("আপনার ডাটাবেসে 'DELETE' পারমিশন সেট করা নেই। দয়া করে Supabase SQL Editor-এ পারমিশন কোডটি রান করুন।");
+            throw new Error(t.deletePermissionError);
           }
           throw messError;
         }
         
         localStorage.removeItem('ACTIVE_MESS_ID');
-        alert("মেসটি সফলভাবে ডিলিট করা হয়েছে।");
+        alert(t.deleteMessSuccess);
         window.location.reload();
       } catch (err: any) {
         console.error("Delete Fail:", err);
-        alert("ডিলিট করা যায়নি: " + (err.message || "Unknown Database Error"));
+        alert(`${t.deleteMessFail}: ${err.message || "Unknown Database Error"}`);
       } finally {
         setLoadingRequests(false);
       }
@@ -148,7 +146,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
   
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
-    alert(`${label} কপি হয়েছে!`);
+    alert(`${label} ${t.copied}`);
   };
 
   const qrData = `${messId}|${db.messPassword || ''}`;
@@ -207,15 +205,15 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     <div className="space-y-6 sm:space-y-8 pb-10 overflow-x-hidden">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
-           <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{user.isAdmin ? 'অ্যাডমিন প্যানেল' : `স্বাগতম, ${user.name}!`}</h2>
-           <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">মেস ড্যাশবোর্ড ওভারভিউ</p>
+           <h2 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{user.isAdmin ? t.adminPanel : `${t.welcome}, ${user.name}!`}</h2>
+           <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">{t.messDashboardOverview}</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:gap-3">
            <button 
              onClick={() => onViewChange('personal-account')}
              className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3.5 bg-green-600/10 text-green-600 dark:text-green-400 border border-green-500/20 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-green-600 hover:text-white transition-all"
            >
-             <CircleDollarSign size={14}/> ব্যক্তিগত হিসাব
+             <CircleDollarSign size={14}/> {t.personalAccount}
            </button>
            {user.id === messAdminId && (
               <button 
@@ -223,14 +221,14 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                 disabled={loadingRequests}
                 className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
               >
-                {loadingRequests ? <RefreshCcw className="animate-spin" size={14}/> : <Trash2 size={14}/>} মেস ডিলিট
+                {loadingRequests ? <RefreshCcw className="animate-spin" size={14}/> : <Trash2 size={14}/>} {t.deleteMess}
               </button>
            )}
            {user.isAdmin && (
               <>
                  <button onClick={() => setShowQRModal(true)} className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-blue-600 transition-all"><QrCode size={14} className="sm:w-4 sm:h-4"/> QR</button>
-                 <button onClick={() => { if(window.confirm(isMonthLocked ? "আনলক করতে চান?" : " ক্লোজ করতে চান?")) updateDB({ lockedMonths: isMonthLocked ? db.lockedMonths?.filter(m => m !== month) : [...(db.lockedMonths || []), month] }); }} className={`flex items-center gap-2 sm:gap-3 px-5 sm:px-6 py-2.5 sm:py-3.5 ${isMonthLocked ? 'bg-amber-600/10 text-amber-500 border-amber-500/20' : 'bg-red-600/10 text-red-500 border-red-500/20'} rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all`}>
-                    {isMonthLocked ? <Unlock size={14}/> : <Lock size={14}/>} {isMonthLocked ? 'আনলক মাস' : 'মাস ক্লোজ'}
+                 <button onClick={() => { if(window.confirm(isMonthLocked ? t.unlockMonth + "?" : t.closeMonth + "?")) updateDB({ lockedMonths: isMonthLocked ? db.lockedMonths?.filter(m => m !== month) : [...(db.lockedMonths || []), month] }); }} className={`flex items-center gap-2 sm:gap-3 px-5 sm:px-6 py-2.5 sm:py-3.5 ${isMonthLocked ? 'bg-amber-600/10 text-amber-500 border-amber-500/20' : 'bg-red-600/10 text-red-500 border-red-500/20'} rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all`}>
+                    {isMonthLocked ? <Unlock size={14}/> : <Lock size={14}/>} {isMonthLocked ? t.unlockMonth : t.closeMonth}
                  </button>
               </>
            )}
@@ -248,7 +246,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
         <div className="lg:col-span-2 bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
            <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
              <PieChartIcon size={20} className="text-blue-500" />
-             মিল পরিসংখ্যান
+             {t.mealStatistics}
            </h3>
            <div className="h-64 sm:h-80 w-full">
              <ResponsiveContainer width="100%" height="100%">
@@ -279,7 +277,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                <div className="flex items-center justify-between">
                   <h3 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-3">
                     <Inbox size={18} className="text-blue-500" />
-                    আবেদন ({pendingRequests.length})
+                    {t.applications} ({pendingRequests.length})
                   </h3>
                </div>
                <div className="space-y-4">
@@ -301,24 +299,24 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
           <div className="bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 space-y-6 shadow-xl">
              <h3 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-3">
                <Shield size={18} className="text-purple-500" />
-               মেস এক্সেস
+               {t.messAccess}
              </h3>
              <div className="space-y-4">
                 <div className="space-y-1">
-                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">মেস আইডি</p>
+                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">{t.messIdLabel}</p>
                    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700">
                       <code className="text-[10px] font-black text-blue-600 dark:text-blue-400 truncate pr-2">{messId}</code>
-                      <button onClick={() => copyToClipboard(messId || '', 'মেস আইডি')} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+                      <button onClick={() => copyToClipboard(messId || '', t.messIdLabel)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
                          <Copy size={14} />
                       </button>
                    </div>
                 </div>
                 {user.isAdmin && (
                   <div className="space-y-1">
-                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">মেস পাসওয়ার্ড</p>
+                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">{t.messPasswordLabel}</p>
                     <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700">
                        <code className="text-lg font-black text-green-600 dark:text-green-500 tracking-widest">{db.messPassword}</code>
-                       <button onClick={() => copyToClipboard(db.messPassword || '', 'পাসওয়ার্ড')} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
+                       <button onClick={() => copyToClipboard(db.messPassword || '', t.messPasswordLabel)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
                           <Copy size={14} />
                        </button>
                     </div>
@@ -333,16 +331,16 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
         <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[3rem] border border-gray-100 dark:border-gray-800 p-10 text-center space-y-8 animate-in zoom-in-95 duration-300">
             <div className="flex justify-between items-center mb-4">
-               <h3 className="text-xl font-black text-gray-900 dark:text-white">মেস QR কোড</h3>
+               <h3 className="text-xl font-black text-gray-900 dark:text-white">{t.messQRCode}</h3>
                <button onClick={() => setShowQRModal(false)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-800 p-2 rounded-xl"><X size={20}/></button>
             </div>
             <div className="bg-white p-6 rounded-[2.5rem] shadow-2xl inline-block mx-auto">
                <img src={qrUrl} alt="Mess QR Code" className="w-48 h-48 sm:w-56 sm:h-56" />
             </div>
             <div className="space-y-2">
-               <p className="text-[10px] text-gray-500 font-bold leading-relaxed">নতুন মেম্বার এই কিউআর কোড স্ক্যান করে সরাসরি মেসে যোগ দেওয়ার আবেদন পাঠাতে পারবে।</p>
+               <p className="text-[10px] text-gray-500 font-bold leading-relaxed">{t.qrCodeDesc}</p>
             </div>
-            <button onClick={() => setShowQRModal(false)} className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black uppercase text-xs">বন্ধ করুন</button>
+            <button onClick={() => setShowQRModal(false)} className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black uppercase text-xs">{t.close}</button>
           </div>
         </div>
       )}

@@ -100,7 +100,7 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
             <Utensils className="text-blue-500" />
             {t.meals}
           </h2>
-          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">তারিখ অনুযায়ী মিল ইনপুট দিন</p>
+          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">{t.mealInputDesc}</p>
         </div>
         
         <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm self-start sm:self-auto w-full sm:w-auto">
@@ -120,7 +120,7 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
             <Sigma size={24} className="sm:w-8 sm:h-8" />
           </div>
           <div>
-            <p className="text-[9px] sm:text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">{t.todaysTotalMeals || 'আজকের মোট মিল'}</p>
+            <p className="text-[9px] sm:text-[11px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">{t.todaysTotalMeals}</p>
             <h3 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{globalTotalMeals.toFixed(1)}</h3>
           </div>
         </div>
@@ -129,7 +129,7 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
       {/* মোবাইল ভিউ (Card Layout) */}
       <div className="sm:hidden space-y-4">
         {mealData.length === 0 ? (
-          <div className="bg-white dark:bg-gray-900/50 p-10 rounded-2xl border border-gray-100 dark:border-gray-800 text-center text-gray-500 font-bold italic shadow-sm">{t.noMemberFound || 'সদস্য পাওয়া যায়নি'}</div>
+          <div className="bg-white dark:bg-gray-900/50 p-10 rounded-2xl border border-gray-100 dark:border-gray-800 text-center text-gray-500 font-bold italic shadow-sm">{t.noMemberFound}</div>
         ) : (
           mealData.map(m => {
             const rowTotal = m.breakfast + m.lunch + m.dinner + m.guest;
@@ -147,10 +147,10 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
                 
                 <div className="grid grid-cols-2 gap-4">
                   {[
-                    { id: 'breakfast', label: t.breakfast || 'সকাল' },
-                    { id: 'lunch', label: t.lunch || 'দুপুর' },
-                    { id: 'dinner', label: t.dinner || 'রাত' },
-                    { id: 'guest', label: t.guest || 'অতিথি' }
+                    { id: 'breakfast', label: t.breakfast },
+                    { id: 'lunch', label: t.lunch },
+                    { id: 'dinner', label: t.dinner },
+                    { id: 'guest', label: t.guest }
                   ].map(field => (
                     <div key={field.id} className="space-y-1.5">
                       <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">{field.label}</label>
@@ -187,7 +187,7 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
               {mealData.length === 0 ? (
-                <tr><td colSpan={6} className="px-8 py-12 text-center text-gray-600 italic font-bold">{t.noMemberFound || 'সদস্য পাওয়া যায়নি'}</td></tr>
+                <tr><td colSpan={6} className="px-8 py-12 text-center text-gray-600 italic font-bold">{t.noMemberFound}</td></tr>
               ) : (
                 mealData.map(m => {
                   const rowTotal = m.breakfast + m.lunch + m.dinner + m.guest;

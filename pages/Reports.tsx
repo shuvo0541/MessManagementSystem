@@ -35,8 +35,8 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
 
   const monthManager = useMemo(() => {
     const managerRole = db.monthlyRoles.find(r => r.month === month && r.role === Role.MANAGER);
-    if (managerRole) return db.users.find(u => u.id === managerRole.userId)?.name || 'নির্ধারিত নয়';
-    return db.users.find(u => u.isAdmin)?.name || 'মেস এডমিন';
+    if (managerRole) return db.users.find(u => u.id === managerRole.userId)?.name || t.notAssigned;
+    return db.users.find(u => u.isAdmin)?.name || t.messAdmin;
   }, [db, month]);
 
   const handleDepositChange = (userId: string, amount: number) => {
@@ -98,11 +98,12 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
 
   const generationTime = useMemo(() => {
     const now = new Date();
-    return now.toLocaleString('bn-BD', { 
+    const locale = t.months[0] === 'জানুয়ারি' ? 'bn-BD' : 'en-US';
+    return now.toLocaleString(locale, { 
       year: 'numeric', month: 'long', day: 'numeric',
       hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true 
     });
-  }, []);
+  }, [t.months]);
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-10 animate-in fade-in duration-500 overflow-x-hidden px-2 sm:px-0">
@@ -111,15 +112,15 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 no-print">
         <div>
           <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white flex items-center gap-3">
-            <ClipboardCheck className="text-blue-500" /> {t.finalReport || 'চূড়ান্ত রিপোর্ট ও সমন্বয়'}
+            <ClipboardCheck className="text-blue-500" /> {t.finalReport}
           </h2>
-          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1">স্থির খরচ ও পূর্ববর্তী মাসের সমন্বিত রিপোর্ট</p>
+          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1">{t.fixedCostAndPrevMonthReport}</p>
         </div>
         <button 
           onClick={handlePrint}
           className="flex items-center justify-center gap-2 bg-blue-600 text-white px-6 py-3.5 rounded-xl font-black shadow-lg shadow-blue-500/20 text-[10px] uppercase tracking-widest active:scale-95 transition-all w-full sm:w-auto"
         >
-          <Printer size={16} /> {t.printReport || 'প্রিন্ট রিপোর্ট (PDF)'}
+          <Printer size={16} /> {t.printReport}
         </button>
       </div>
 
@@ -127,24 +128,24 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
       <div className="bg-blue-600/10 dark:bg-blue-900/10 border border-blue-500/20 p-4 sm:p-5 rounded-2xl flex items-start gap-4 no-print">
          <Info className="text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" size={18} />
          <div className="text-[10px] sm:text-xs font-medium text-blue-700 dark:text-blue-300/80 leading-relaxed">
-            <p className="font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">সমন্বয় ও জমা লজিক</p>
-            নিট প্রদেয় = (স্থির খরচ) - (গত মাসের মিল সমন্বয়)।<br/>
-            অবস্থা = (জমা টাকা) - (নিট প্রদেয়)। পজিটিভ হলে <b>'ফেরত'</b> এবং নেগেটিভ হলে <b>'বকেয়া'</b>।
+            <p className="font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">{t.adjustmentAndDepositLogic}</p>
+            {t.netRequiredFormula}<br/>
+            {t.statusLogicDesc}
          </div>
       </div>
 
       {/* Summary Stats Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 no-print">
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 rounded-2xl text-center shadow-xl">
-           <p className="text-[9px] font-black text-blue-600 dark:text-blue-500 uppercase mb-1 tracking-widest">{t.totalNetRequired || 'মোট নিট প্রদেয়'}</p>
+           <p className="text-[9px] font-black text-blue-600 dark:text-blue-500 uppercase mb-1 tracking-widest">{t.totalNetRequired}</p>
            <h4 className="text-xl font-black text-gray-900 dark:text-white">৳{summary.totalNet.toFixed(2)}</h4>
         </div>
         <div className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 p-5 rounded-2xl text-center shadow-xl">
-           <p className="text-[9px] font-black text-green-600 dark:text-green-500 uppercase mb-1 tracking-widest">{t.totalDeposited || 'মোট জমা (পেমেন্ট)'}</p>
+           <p className="text-[9px] font-black text-green-600 dark:text-green-500 uppercase mb-1 tracking-widest">{t.totalDeposited}</p>
            <h4 className="text-xl font-black text-gray-900 dark:text-white">৳{summary.totalDeposited.toFixed(2)}</h4>
         </div>
         <div className={`bg-white dark:bg-gray-900 border p-5 rounded-2xl text-center shadow-xl ${summary.totalNet > summary.totalDeposited ? 'border-red-500/20' : 'border-gray-100 dark:border-gray-800'}`}>
-           <p className="text-[9px] font-black text-gray-500 uppercase mb-1 tracking-widest">{t.totalArrears || 'অবশিষ্ট বকেয়া'}</p>
+           <p className="text-[9px] font-black text-gray-500 uppercase mb-1 tracking-widest">{t.totalArrears}</p>
            <h4 className="text-xl font-black text-gray-900 dark:text-white">৳{Math.max(0, summary.totalNet - summary.totalDeposited).toFixed(2)}</h4>
         </div>
       </div>
@@ -155,11 +156,11 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
         {/* Document Header (Always Visible) */}
         <div className="flex flex-col sm:flex-row justify-between items-center mb-8 sm:mb-12 gap-4">
            <div className="text-center sm:text-left space-y-1">
-              <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-500">{t.messManagement || 'মেস ম্যানেজমেন্ট'}</h3>
-              <p className="text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest">{t.finalMonthlyReport || 'চূড়ান্ত মাসিক রিপোর্ট ও সমন্বয়'}</p>
+              <h3 className="text-xl sm:text-2xl font-black text-blue-600 dark:text-blue-500">{t.messManagement}</h3>
+              <p className="text-[9px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-widest">{t.finalMonthlyReport}</p>
            </div>
            <div className="bg-gray-50 dark:bg-gray-800/50 px-6 py-3 rounded-2xl border border-gray-200 dark:border-gray-700 text-center print:border-gray-200">
-              <p className="text-[8px] font-black text-gray-500 uppercase">{t.reportingMonth || 'রিপোর্টিং মাস'}</p>
+              <p className="text-[8px] font-black text-gray-500 uppercase">{t.reportingMonth}</p>
               <p className="text-base sm:text-lg font-black text-gray-900 dark:text-white print:text-black">{month}</p>
            </div>
         </div>
@@ -174,29 +175,29 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
                    <div>
                       <h4 className="font-black text-gray-900 dark:text-white text-sm">{u.name}</h4>
                       <div className={`mt-1 inline-flex items-center gap-1 px-2 py-0.5 rounded-lg text-[8px] font-black uppercase ${u.finalStatus >= 0 ? 'bg-green-600/10 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-red-600/10 dark:bg-red-900/20 text-red-600 dark:text-red-400'}`}>
-                         {u.finalStatus >= 0 ? (t.willReceive || 'ফেরত পাবে') : (t.arrears || 'বকেয়া আছে')}
+                         {u.finalStatus >= 0 ? t.willReceive : t.arrearsExist}
                       </div>
                    </div>
                 </div>
                 <div className="text-right">
-                   <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{t.status || 'অবস্থা'}</p>
+                   <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{t.status}</p>
                    <p className={`text-base font-black ${u.finalStatus >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>৳{Math.abs(u.finalStatus).toFixed(2)}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3 text-[10px] font-bold">
                  <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
-                    <p className="text-gray-500 text-[8px] uppercase mb-1">{t.fixedCost || 'স্থির খরচ'}</p>
+                    <p className="text-gray-500 text-[8px] uppercase mb-1">{t.fixedCost}</p>
                     <p className="text-gray-900 dark:text-white">৳{u.fixedCost.toFixed(2)}</p>
                  </div>
                  <div className="bg-white dark:bg-gray-900 p-3 rounded-xl border border-gray-100 dark:border-gray-800">
-                    <p className="text-gray-500 text-[8px] uppercase mb-1">{t.adjustment || 'সমন্বয়'}</p>
-                    <p className={u.mealAdjustment >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>৳{Math.abs(u.mealAdjustment).toFixed(2)} {u.mealAdjustment >= 0 ? (t.receive || 'পাবে') : (t.arrears || 'বকেয়া')}</p>
+                    <p className="text-gray-500 text-[8px] uppercase mb-1">{t.adjustment}</p>
+                    <p className={u.mealAdjustment >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}>৳{Math.abs(u.mealAdjustment).toFixed(2)} {u.mealAdjustment >= 0 ? t.receive : t.arrears}</p>
                  </div>
               </div>
 
               <div className="space-y-1.5 pt-1">
-                 <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1">{t.deposited || 'জমা টাকা (Payment)'}</p>
+                 <p className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest ml-1">{t.deposited}</p>
                  {canEdit ? (
                     <input 
                       type="number" min="0"
@@ -219,11 +220,11 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
           <table className="w-full text-left min-w-[850px] print:min-w-0">
             <thead>
               <tr className="text-[10px] uppercase font-black text-gray-500 border-b border-gray-100 dark:border-gray-800 print:border-gray-200">
-                <th className="px-4 py-6">{t.memberName || 'মেম্বারের নাম'}</th>
-                <th className="px-4 py-6 text-right">{t.fixedCost || 'স্থির খরচ'}</th>
-                <th className="px-4 py-6 text-center">{t.mealAdjustment || 'মিল সমন্বয়'}</th>
-                <th className="px-4 py-6 text-center bg-gray-50 dark:bg-gray-800/20 print:bg-transparent">{t.deposited || 'জমা'} (৳)</th>
-                <th className="px-4 py-6 text-right text-blue-600 dark:text-blue-400">{t.total || 'সর্বমোট'} (৳)</th>
+                <th className="px-4 py-6">{t.memberName}</th>
+                <th className="px-4 py-6 text-right">{t.fixedCost}</th>
+                <th className="px-4 py-6 text-center">{t.mealAdjustment}</th>
+                <th className="px-4 py-6 text-center bg-gray-50 dark:bg-gray-800/20 print:bg-transparent">{t.deposited} (৳)</th>
+                <th className="px-4 py-6 text-right text-blue-600 dark:text-blue-400">{t.total} (৳)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 print:divide-gray-100">
@@ -235,12 +236,12 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
                   <td className="px-4 py-8 text-right">
                     <div className="flex flex-col">
                        <span className="font-black text-gray-900 dark:text-white text-base print:text-black">৳{u.fixedCost.toFixed(2)}</span>
-                       <span className="text-[9px] text-gray-500 font-bold uppercase">{t.roomPlusUtility || 'রুম+ইউটি'}</span>
+                       <span className="text-[9px] text-gray-500 font-bold uppercase">{t.roomPlusUtility}</span>
                     </div>
                   </td>
                   <td className="px-4 py-8 text-center">
                     <div className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-xl text-[10px] font-black ${u.mealAdjustment >= 0 ? 'bg-green-600/10 dark:bg-green-900/10 text-green-600 dark:text-green-400' : 'bg-red-600/10 dark:bg-red-900/10 text-red-600 dark:text-red-400'} print:bg-transparent`}>
-                       ৳{Math.abs(u.mealAdjustment).toFixed(2)} {u.mealAdjustment >= 0 ? (t.receive || 'পাবে') : (t.arrears || 'বকেয়া')}
+                       ৳{Math.abs(u.mealAdjustment).toFixed(2)} {u.mealAdjustment >= 0 ? t.receive : t.arrears}
                     </div>
                   </td>
                   <td className="px-4 py-8 text-center bg-gray-50 dark:bg-gray-800/10 print:bg-transparent">
@@ -264,7 +265,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
                           ৳{Math.abs(u.finalStatus).toFixed(2)}
                         </span>
                         <span className={`text-[9px] font-black uppercase ${u.finalStatus >= 0 ? 'text-green-600/60 dark:text-green-500/60' : 'text-red-600/60 dark:text-red-500/60'} print:text-black`}>
-                          {u.finalStatus >= 0 ? (t.willReceive || 'ফেরত পাবে') : (t.arrears || 'বকেয়া আছে')}
+                          {u.finalStatus >= 0 ? t.willReceive : t.arrearsExist}
                         </span>
                      </div>
                   </td>
@@ -273,7 +274,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
             </tbody>
             <tfoot className="border-t-2 border-gray-100 dark:border-gray-800 print:border-gray-200">
                <tr className="font-black">
-                  <td className="px-4 py-8 text-gray-500 text-[10px] uppercase">{t.total || 'সর্বমোট'}:</td>
+                  <td className="px-4 py-8 text-gray-500 text-[10px] uppercase">{t.total}:</td>
                   <td className="px-4 py-8 text-right text-gray-900 dark:text-white print:text-black">৳{reportData.reduce((s: number, r: any)=>s+r.fixedCost, 0).toFixed(2)}</td>
                   <td className="px-4 py-8"></td>
                   <td className="px-4 py-8 text-center text-green-600 dark:text-green-500">৳{summary.totalDeposited.toFixed(2)}</td>
@@ -289,7 +290,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
         <div className="mt-12 sm:mt-20 flex flex-col sm:flex-row justify-between items-end gap-10">
            <div className="text-center sm:text-left space-y-2 w-full sm:w-auto">
               <div className="w-full sm:w-48 border-t border-gray-200 dark:border-gray-700 pt-2 print:border-black">
-                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.manager || 'ম্যানেজার'}</p>
+                 <p className="text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.manager}</p>
                  <p className="text-sm font-black text-gray-900 dark:text-white print:text-black">{monthManager}</p>
               </div>
            </div>
@@ -297,11 +298,11 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
            <div className="text-right space-y-4 w-full sm:w-auto">
               <div className="bg-blue-600/10 px-4 py-2 rounded-xl border border-blue-500/20 inline-flex items-center gap-2 print:border-none no-print">
                  <CheckCircle2 size={14} className="text-blue-600 dark:text-blue-500"/>
-                 <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">{t.verifiedReport || 'ভেরিফাইড রিপোর্ট'}</span>
+                 <span className="text-[9px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">{t.verifiedReport}</span>
               </div>
               <div className="text-right">
                  <p className="text-[8px] font-black text-gray-500 dark:text-gray-600 uppercase tracking-[0.2em] flex items-center justify-end gap-1">
-                    <Clock size={10}/> {t.reportGenerationTime || 'রিপোর্ট তৈরির সময়'}:
+                    <Clock size={10}/> {t.reportGenerationTime}:
                  </p>
                  <p className="text-[10px] font-black text-gray-400 mt-1">{generationTime}</p>
               </div>
@@ -311,7 +312,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
       </div>
 
       <div className="flex items-center justify-center gap-2 text-gray-700 text-[8px] font-black uppercase tracking-[0.3em] pt-4 no-print">
-         <ShieldCheck size={14}/> চূড়ান্ত রিপোর্ট অটোমেটেড সিস্টেম দ্বারা জেনারেটেড
+         <ShieldCheck size={14}/> {t.finalReportAutomatedNotice}
       </div>
     </div>
   );

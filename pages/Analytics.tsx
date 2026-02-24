@@ -22,10 +22,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
   // ১. সিলেক্ট করা বছরের ডাটা সংগ্রহ (জানুয়ারি থেকে ডিসেম্বর)
   const yearlyData = useMemo(() => {
     const months = [];
-    const monthNames = [
-      'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 
-      'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-    ];
+    const monthNames = t.months;
 
     for (let i = 0; i < 12; i++) {
       const mStr = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
@@ -110,9 +107,9 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
           <BarChart3 size={32} />
         </div>
         <div>
-          <h2 className="text-3xl font-black text-gray-900 dark:text-white">{t.yearlyAnalytics || 'বার্ষিক অ্যানালিটিক্স'}</h2>
+          <h2 className="text-3xl font-black text-gray-900 dark:text-white">{t.yearlyAnalytics}</h2>
           <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1">
-             {selectedYear} {t.yearlyData || 'সালের ডাটা'}
+             {selectedYear} {t.yearlyData}
           </p>
         </div>
       </div>
@@ -122,7 +119,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
            <div className="w-20 h-20 bg-gray-50 dark:bg-gray-800 rounded-full flex items-center justify-center mx-auto text-gray-400 dark:text-gray-600">
               <Calendar size={40} />
            </div>
-           <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">{selectedYear} {t.noDataFound || 'সালে কোনো ডাটা পাওয়া যায়নি'}</p>
+           <p className="text-gray-500 font-bold uppercase text-xs tracking-widest">{selectedYear} {t.noDataFound}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -130,7 +127,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
           <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
             <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
               <TrendingUp size={20} className="text-blue-500" />
-              {t.mealRateTrend || 'মিল রেট ট্রেন্ড (৳)'}
+              {t.mealRateTrend}
             </h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -168,7 +165,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
           <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
             <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
               <Users size={20} className="text-green-500" />
-              {t.totalContribution || 'মোট কন্ট্রিবিউশন (৳)'} - {selectedYear}
+              {t.totalContribution} - {selectedYear}
             </h3>
             <div className="h-72">
               <ResponsiveContainer width="100%" height="100%">
@@ -187,7 +184,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
           <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
             <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
               <Calendar size={20} className="text-purple-500" />
-              {t.mealComparison || 'মাসিক মিলের তুলনা (শীর্ষ ৫ মেম্বার)'}
+              {t.mealComparison}
             </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
@@ -225,7 +222,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
           <div className="bg-white dark:bg-gray-900 p-8 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 shadow-2xl">
             <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-8">
               <PieIcon size={20} className="text-yellow-500" />
-              {t.utilityBreakdown || 'ইউটিলিটি খরচ ব্রেকডাউন (%)'}
+              {t.utilityBreakdown}
             </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">

@@ -363,15 +363,15 @@ const App: React.FC = () => {
             <div className="w-24 h-24 bg-red-900/10 border border-red-500/20 text-red-500 rounded-[2.5rem] flex items-center justify-center mb-6">
                <Lock size={40} />
             </div>
-            <h3 className="text-2xl font-black text-gray-900 dark:text-white">অ্যাক্সেস রেস্ট্রিক্টেড</h3>
+            <h3 className="text-2xl font-black text-gray-900 dark:text-white">{T.accessRestricted}</h3>
             <p className="text-gray-500 max-w-xs mx-auto mt-2 font-bold leading-relaxed">
-               আপনি {selectedMonth} মাসে এই মেসে অ্যাক্টিভ ছিলেন না। তাই এই মাসের কোনো ডাটা আপনার জন্য দৃশ্যমান নয়।
+               {T.accessRestrictedMonthDesc.replace('{month}', selectedMonth)}
             </p>
             <button 
               onClick={() => setSelectedMonth(user?.joiningMonth || getCurrentMonthStr())}
               className="mt-8 px-8 py-3 bg-blue-600 text-white rounded-xl font-black uppercase text-[10px] tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
             >
-               অ্যাক্টিভ মাসে ফিরে যান
+               {T.backToActiveMonth}
             </button>
          </div>
        );

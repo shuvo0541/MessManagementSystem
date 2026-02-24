@@ -85,25 +85,25 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
     setError('');
 
     if (!email || !password) {
-      setError('ইমেইল এবং পাসওয়ার্ড দিন');
+      setError(t.emailPasswordRequired);
       return;
     }
 
     if (isRegistering) {
       if (!fullName.trim()) {
-        setError('আপনার পুরো নাম প্রদান করা আবশ্যিক');
+        setError(t.fullNameRequired);
         return;
       }
       if (!requirements.length) {
-        setError('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে');
+        setError(t.passwordMinChars);
         return;
       }
       if (!isPasswordStrong) {
-        setError('দয়া করে একটি শক্তিশালী পাসওয়ার্ড দিন (বড়/ছোট অক্ষর, সংখ্যা ও চিহ্নসহ)');
+        setError(t.passwordStrengthMsg);
         return;
       }
       if (password !== confirmPassword) {
-        setError('পাসওয়ার্ড দুটি মিলছে না! পুনরায় চেক করুন।');
+        setError(t.passwordsDoNotMatch);
         return;
       }
     }
@@ -127,12 +127,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
         
         if (signUpError) {
           if (signUpError.message.includes('already registered')) {
-            throw new Error('এই ইমেইল দিয়ে ইতিমধ্যে একটি একাউন্ট খোলা আছে। সরাসরি লগইন করুন।');
+            throw new Error(t.emailAlreadyRegistered);
           }
           throw signUpError;
         }
         
-        alert('রেজিস্ট্রেশন সফল! সরাসরি লগইন করার চেষ্টা করুন।');
+        alert(t.registrationSuccess);
         setIsRegistering(false);
         setPassword('');
         setConfirmPassword('');
@@ -149,7 +149,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
               .single();
             
             if (fetchError || !profile) {
-              throw new Error('এই ইউজার আইডি দিয়ে কোনো একাউন্ট পাওয়া যায়নি।');
+              throw new Error(t.userIdNotFound);
             }
             loginEmail = profile.email;
           } catch (err: any) {
@@ -162,7 +162,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
         const { error: signInError } = await supabase.auth.signInWithPassword({ email: loginEmail, password });
         if (signInError) {
           if (signInError.message.includes('Invalid login credentials')) {
-             throw new Error('ইমেইল অথবা পাসওয়ার্ড ভুল! পুনরায় চেষ্টা করুন।');
+             throw new Error(t.invalidCredentials);
           }
           throw signInError;
         }
@@ -191,7 +191,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
           </div>
           <h1 className="text-4xl font-black text-white tracking-tight">{t.appName}</h1>
           <p className="text-gray-400 font-bold mt-2 uppercase text-[10px] tracking-[0.2em]">
-            {isRegistering ? 'নতুন একাউন্ট তৈরি করুন' : 'আপনার একাউন্টে লগইন করুন'}
+            {isRegistering ? t.createAccount : t.loginToAccount}
           </p>
         </div>
 
@@ -208,13 +208,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
 
             {isRegistering && (
               <div className="space-y-2">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">আপনার পুরো নাম *</label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{t.fullNameLabel}</label>
                 <div className="relative group">
                   <UserIcon className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                   <input 
                     type="text" required
                     className="w-full pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 text-white rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-bold placeholder:text-gray-700 transition-all"
-                    placeholder="যেমন: আরিয়ান আহমেদ"
+                    placeholder={t.fullNamePlaceholder}
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
                   />
@@ -223,13 +223,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
             )}
             
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">ইমেইল অথবা ইউজার আইডি</label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{t.emailOrUserIdLabel}</label>
               <div className="relative group">
                 <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-blue-500 transition-colors" size={18} />
                 <input 
                   type="text" required
                   className="w-full pl-12 pr-4 py-4 bg-gray-800 border border-gray-700 text-white rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-bold placeholder:text-gray-700 transition-all"
-                  placeholder="যেমন: name@example.com অথবা @user123"
+                  placeholder={t.emailOrUserIdPlaceholder}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                 />
@@ -259,14 +259,14 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
               {isRegistering && password.length > 0 && (
                 <div className="p-4 bg-gray-950/50 rounded-2xl border border-gray-800 space-y-2 mt-2 animate-in fade-in slide-in-from-top-1">
                    <p className="text-[9px] font-black text-gray-500 uppercase mb-2 flex items-center gap-2">
-                     <ShieldCheck size={12} className="text-blue-500"/> পাসওয়ার্ড রিকোয়ারমেন্ট:
+                     <ShieldCheck size={12} className="text-blue-500"/> {t.passwordRequirements}
                    </p>
                    <div className="grid grid-cols-2 gap-x-4 gap-y-1">
-                      <RequirementItem met={requirements.length} text="৬+ অক্ষর" />
-                      <RequirementItem met={requirements.upper} text="বড় হাতের অক্ষর" />
-                      <RequirementItem met={requirements.lower} text="ছোট হাতের অক্ষর" />
-                      <RequirementItem met={requirements.number} text="সংখ্যা (০-৯)" />
-                      <RequirementItem met={requirements.special} text="চিহ্ন (@#$%)" />
+                      <RequirementItem met={requirements.length} text={t.char6Plus} />
+                      <RequirementItem met={requirements.upper} text={t.upperCase} />
+                      <RequirementItem met={requirements.lower} text={t.lowerCase} />
+                      <RequirementItem met={requirements.number} text={t.number09} />
+                      <RequirementItem met={requirements.special} text={t.specialChar} />
                    </div>
                 </div>
               )}
@@ -274,13 +274,13 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
 
             {isRegistering && (
               <div className="space-y-2 animate-in slide-in-from-top-2 duration-300">
-                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">পাসওয়ার্ড নিশ্চিত করুন</label>
+                <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{t.confirmPasswordLabel}</label>
                 <div className="relative group">
                   <CheckCircle2 className={`absolute left-4 top-1/2 -translate-y-1/2 transition-colors ${passwordsMatch ? 'text-green-500' : 'text-gray-500'}`} size={18} />
                   <input 
                     type={showConfirmPassword ? "text" : "password"} required
                     className={`w-full pl-12 pr-12 py-4 bg-gray-800 border ${passwordsMatch ? 'border-green-500/50' : (showMatchError ? 'border-red-500/50' : 'border-gray-700')} text-white rounded-2xl focus:ring-2 focus:ring-blue-600 outline-none font-bold placeholder:text-gray-700 transition-all`}
-                    placeholder="পুনরায় পাসওয়ার্ড দিন"
+                    placeholder={t.confirmPasswordPlaceholder}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                   />
@@ -294,12 +294,12 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
                 </div>
                 {showMatchError && (
                   <p className="text-[10px] font-black text-red-500 uppercase tracking-widest ml-2 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <X size={10} strokeWidth={4} /> পাসওয়ার্ড দুটি মিলছে না
+                    <X size={10} strokeWidth={4} /> {t.passwordsDoNotMatch}
                   </p>
                 )}
                 {passwordsMatch && (
                   <p className="text-[10px] font-black text-green-500 uppercase tracking-widest ml-2 flex items-center gap-1 animate-in fade-in slide-in-from-top-1">
-                    <Check size={10} strokeWidth={4} /> পাসওয়ার্ড মিলেছে
+                    <Check size={10} strokeWidth={4} /> {t.passwordsMatch}
                   </p>
                 )}
               </div>
@@ -310,7 +310,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
               className={`w-full py-5 rounded-[1.5rem] font-black text-sm shadow-xl transition-all active:scale-95 uppercase mt-4 flex items-center justify-center gap-3 ${isRegistering ? 'bg-green-600 hover:bg-green-700 shadow-green-500/20' : 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'} text-white disabled:opacity-50`}
             >
               {loading ? <Loader2 className="animate-spin" size={20} /> : null}
-              {loading ? 'প্রসেস হচ্ছে...' : (isRegistering ? 'একাউন্ট তৈরি করুন' : 'লগইন করুন')}
+              {loading ? t.processing : (isRegistering ? t.createAccount : t.login)}
             </button>
             
             <button 
@@ -318,7 +318,7 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
               onClick={() => { setIsRegistering(!isRegistering); setError(''); setPassword(''); setConfirmPassword(''); setShowPassword(false); setShowConfirmPassword(false); }}
               className="w-full text-gray-500 py-2 rounded-2xl font-black text-[10px] hover:text-blue-500 transition-colors uppercase tracking-[0.2em]"
             >
-              {isRegistering ? 'ইতিমধ্যে অ্যাকাউন্ট আছে? লগইন করুন' : 'নতুন অ্যাকাউন্ট তৈরি করতে এখানে ক্লিক করুন'}
+              {isRegistering ? t.alreadyHaveAccount : t.createNewAccountLink}
             </button>
           </form>
         </div>

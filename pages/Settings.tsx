@@ -44,10 +44,10 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
     setMessage(null);
     try {
       await onUpdateUser({ name, phone });
-      setMessage({ type: 'success', text: currentLang === 'bn' ? 'প্রোফাইল সফলভাবে আপডেট করা হয়েছে!' : 'Profile updated successfully!' });
+      setMessage({ type: 'success', text: t.profileUpdated });
       setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || (currentLang === 'bn' ? 'আপডেট করতে সমস্যা হয়েছে' : 'Update failed') });
+      setMessage({ type: 'error', text: err.message || t.updateFailed });
     } finally {
       setLoading(false);
     }
@@ -56,7 +56,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     if (newPassword.length < 6) {
-      setMessage({ type: 'error', text: currentLang === 'bn' ? 'পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে' : 'Password must be at least 6 characters' });
+      setMessage({ type: 'error', text: t.passwordMinChars });
       return;
     }
     setLoading(true);
@@ -64,12 +64,12 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) throw error;
-      setMessage({ type: 'success', text: currentLang === 'bn' ? 'পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!' : 'Password changed successfully!' });
+      setMessage({ type: 'success', text: t.passwordChanged });
       setNewPassword('');
       setCurrentPassword('');
       setTimeout(() => setMessage(null), 3000);
     } catch (err: any) {
-      setMessage({ type: 'error', text: err.message || (currentLang === 'bn' ? 'পাসওয়ার্ড পরিবর্তন করতে সমস্যা হয়েছে' : 'Password change failed') });
+      setMessage({ type: 'error', text: err.message || t.passwordChangeFailed });
     } finally {
       setLoading(false);
     }
@@ -87,7 +87,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
         </div>
         <div>
           <h1 className="text-2xl sm:text-3xl font-black text-gray-900 dark:text-white">{t.settings}</h1>
-          <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1">{currentLang === 'bn' ? 'প্রোফাইল ও অ্যাপ প্রেফারেন্স' : 'Profile & App Preferences'}</p>
+          <p className="text-gray-500 font-bold uppercase text-[10px] tracking-widest mt-1">{t.profileAppPreferences}</p>
         </div>
       </div>
 
@@ -103,11 +103,11 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
         <section className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-8 space-y-6 shadow-xl">
           <div className="flex items-center gap-3 mb-2">
             <UserIcon className="text-blue-500" size={20} />
-            <h2 className="text-lg font-black text-gray-900 dark:text-white">{currentLang === 'bn' ? 'প্রোফাইল এডিট' : 'Edit Profile'}</h2>
+            <h2 className="text-lg font-black text-gray-900 dark:text-white">{t.editProfile}</h2>
           </div>
           <form onSubmit={handleProfileUpdate} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{currentLang === 'bn' ? 'আপনার নাম' : 'Your Name'}</label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{t.yourName}</label>
               <input 
                 type="text" 
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-bold transition-all"
@@ -116,7 +116,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
               />
             </div>
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{currentLang === 'bn' ? 'মোবাইল নম্বর (ঐচ্ছিক)' : 'Phone Number (Optional)'}</label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{t.phoneNumberOptional}</label>
               <div className="relative">
                 <Phone className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={16} />
                 <input 
@@ -142,11 +142,11 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
         <section className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-8 space-y-6 shadow-xl">
           <div className="flex items-center gap-3 mb-2">
             <Lock className="text-red-500" size={20} />
-            <h2 className="text-lg font-black text-gray-900 dark:text-white">{currentLang === 'bn' ? 'সিকিউরিটি' : 'Security'}</h2>
+            <h2 className="text-lg font-black text-gray-900 dark:text-white">{t.security}</h2>
           </div>
           <form onSubmit={handlePasswordChange} className="space-y-4">
             <div className="space-y-2">
-              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{currentLang === 'bn' ? 'নতুন পাসওয়ার্ড' : 'New Password'}</label>
+              <label className="text-[10px] font-black text-gray-500 uppercase tracking-widest ml-2">{t.newPasswordLabel}</label>
               <input 
                 type="password" 
                 className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-bold transition-all"
@@ -160,7 +160,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
               className="w-full py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-black text-xs uppercase tracking-widest shadow-lg shadow-red-500/20 transition-all active:scale-95 flex items-center justify-center gap-2"
             >
               {loading ? <Loader2 className="animate-spin" size={16} /> : <Lock size={16} />}
-              {currentLang === 'bn' ? 'পাসওয়ার্ড পরিবর্তন করুন' : 'Change Password'}
+              {t.changePasswordBtn}
             </button>
           </form>
         </section>
@@ -169,13 +169,13 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
         <section className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-8 space-y-6 shadow-xl">
           <div className="flex items-center gap-3 mb-2">
             <Languages className="text-emerald-500" size={20} />
-            <h2 className="text-lg font-black text-gray-900 dark:text-white">{currentLang === 'bn' ? 'থিম ও ল্যাংগুয়েজ' : 'Theme & Language'}</h2>
+            <h2 className="text-lg font-black text-gray-900 dark:text-white">{t.themeAndLanguage}</h2>
           </div>
           <div className="space-y-4">
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
                 {isDarkMode ? <Moon size={18} className="text-blue-400" /> : <Sun size={18} className="text-amber-500" />}
-                <span className="font-bold text-sm text-gray-900 dark:text-white">{currentLang === 'bn' ? 'ডার্ক মোড' : 'Dark Mode'}</span>
+                <span className="font-bold text-sm text-gray-900 dark:text-white">{t.darkMode}</span>
               </div>
               <button 
                 onClick={toggleTheme}
@@ -188,7 +188,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
             <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700">
               <div className="flex items-center gap-3">
                 <Languages size={18} className="text-emerald-500" />
-                <span className="font-bold text-sm text-gray-900 dark:text-white">{currentLang === 'bn' ? 'ভাষা (Language)' : 'Language'}</span>
+                <span className="font-bold text-sm text-gray-900 dark:text-white">{t.language}</span>
               </div>
               <select 
                 value={currentLang}
@@ -209,11 +209,11 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
           </div>
           <div className="flex items-center gap-3 mb-2">
             <HelpCircle className="text-purple-500" size={20} />
-            <h2 className="text-lg font-black text-gray-900 dark:text-white">{currentLang === 'bn' ? 'অ্যাপ টিউটোরিয়াল' : 'App Tutorial'}</h2>
+            <h2 className="text-lg font-black text-gray-900 dark:text-white">{t.appTutorial}</h2>
           </div>
           <div className="p-10 border-2 border-dashed border-gray-100 dark:border-gray-800 rounded-3xl flex flex-col items-center justify-center text-center space-y-4">
             <HelpCircle size={48} className="text-gray-300 dark:text-gray-800" />
-            <p className="text-gray-400 dark:text-gray-600 font-bold text-sm">{currentLang === 'bn' ? 'এই ফিচারটি খুব শীঘ্রই আসছে। এখানে আপনি অ্যাপ ব্যবহারের গাইড পাবেন।' : 'This feature is coming soon. You will find app usage guides here.'}</p>
+            <p className="text-gray-400 dark:text-gray-600 font-bold text-sm">{t.comingSoonTutorial}</p>
           </div>
         </section>
       </div>

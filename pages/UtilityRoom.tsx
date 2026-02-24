@@ -142,7 +142,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
 
   const performDeleteRoom = (roomId: string) => {
     if (!isAdminUser || isMonthLocked) return;
-    if (window.confirm("রুম ডিলিট করতে চান? এটি মেম্বারদের রুম অ্যাসাইনমেন্ট রিমুভ করবে।")) {
+    if (window.confirm(t.roomDeleteConfirm)) {
       updateDB({ 
         rooms: db.rooms.filter(room => room.id !== roomId),
         users: db.users.map(u => u.roomId === roomId ? { ...u, roomId: undefined } : u)
@@ -152,7 +152,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
 
   const performDeleteUtility = (id: string, isLocal: boolean) => {
     if (!canManage || isMonthLocked) return;
-    if (window.confirm("মুছে ফেলতে চান?")) {
+    if (window.confirm(t.confirmDelete)) {
       if (isLocal) {
         updateDB({ localUtilities: (db.localUtilities || []).filter(u => u.id !== id) });
       } else {
@@ -232,9 +232,9 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
           <div>
             <h2 className="text-xl sm:text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3 sm:gap-4">
               <TableIcon size={24} className="text-purple-500 sm:w-8 sm:h-8" />
-              {t.billRecord || 'বিল রেকর্ড'} ({month})
+              {t.billRecord} ({month})
             </h2>
-            <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">সব মেম্বারের বিল ডিটেইলস (দশমিকসহ)</p>
+            <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">{t.billDetailsDesc}</p>
           </div>
         </div>
 
@@ -244,8 +244,8 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
               <Lock size={18}/>
             </div>
             <div>
-              <p className="text-[10px] font-black text-red-600 dark:text-red-500 uppercase tracking-widest">{t.locked || 'বিল রেকর্ড লকড (Locked)'}</p>
-              <p className="text-[11px] text-red-700 dark:text-red-200/70 font-bold">এই মাসে কোনো তথ্য পরিবর্তন সম্ভব নয়।</p>
+              <p className="text-[10px] font-black text-red-600 dark:text-red-500 uppercase tracking-widest">{t.billRecordLocked}</p>
+              <p className="text-[11px] text-red-700 dark:text-red-200/70 font-bold">{t.lockedMonthDesc}</p>
             </div>
           </div>
         )}
@@ -267,18 +267,18 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                     </div>
                     <div>
                       <h4 className={`font-black text-sm ${isCurrent ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>{u.name}</h4>
-                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{userRoom?.name || (t.noRoom || 'রুমহীন')}</p>
+                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-widest">{userRoom?.name || t.noRoom}</p>
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{t.totalBill || 'মোট বিল'}</p>
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{t.totalBill}</p>
                     <p className="text-lg font-black text-blue-600 dark:text-blue-500">৳{totalWithRent.toFixed(2)}</p>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-y-3 gap-x-6 text-[11px]">
                   <div className="flex justify-between items-center">
-                    <span className="text-gray-500 font-bold">{t.roomRent || 'রুম ভাড়া'}</span>
+                    <span className="text-gray-500 font-bold">{t.roomRent}</span>
                     <span className="text-gray-900 dark:text-gray-200 font-black">৳{u.roomRent.toFixed(2)}</span>
                   </div>
                   {utilityBreakdown.map(util => (
@@ -299,12 +299,12 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
             <table className="w-full text-left min-w-[700px] sm:min-w-0">
               <thead>
                 <tr className="bg-gray-50 dark:bg-gray-800/40 text-[9px] sm:text-[10px] uppercase font-black text-gray-500 border-b border-gray-100 dark:border-gray-800">
-                  <th className="px-6 sm:px-8 py-5 sm:py-7">{t.member || 'সদস্য'}</th>
-                  <th className="px-4 sm:px-6 py-5 sm:py-7 text-right">{t.rent || 'ভাড়া'}</th>
+                  <th className="px-6 sm:px-8 py-5 sm:py-7">{t.member}</th>
+                  <th className="px-4 sm:px-6 py-5 sm:py-7 text-right">{t.rent}</th>
                   {utilityBreakdown.map(u => (
                     <th key={u.id} className="px-3 sm:px-4 py-5 sm:py-7 text-right whitespace-nowrap">{u.name}</th>
                   ))}
-                  <th className="px-6 sm:px-8 py-5 sm:py-7 text-right text-blue-600 dark:text-white bg-blue-50 dark:bg-blue-900/20">{t.total || 'মোট'} (৳)</th>
+                  <th className="px-6 sm:px-8 py-5 sm:py-7 text-right text-blue-600 dark:text-white bg-blue-50 dark:bg-blue-900/20">{t.total} (৳)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -318,7 +318,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                         <div className="flex flex-col">
                           <span className={`font-black text-xs sm:text-sm ${isCurrent ? 'text-blue-600 dark:text-blue-400' : 'text-gray-900 dark:text-white'}`}>{u.name}</span>
                           <span className="text-[8px] sm:text-[10px] text-gray-500 font-bold uppercase tracking-wider">
-                            {db.rooms.find(r => r.id === db.users.find(usr => usr.id === u.userId)?.roomId)?.name || (t.noRoom || 'রুমহীন')}
+                            {db.rooms.find(r => r.id === db.users.find(usr => usr.id === u.userId)?.roomId)?.name || t.noRoom}
                           </span>
                         </div>
                       </td>
@@ -347,8 +347,8 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                <ShieldCheck size={24} className="sm:w-7 sm:h-7" />
             </div>
             <div>
-              <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">অ্যাডমিন ম্যানেজমেন্ট</p>
-              <p className="text-[11px] sm:text-sm text-blue-700 dark:text-blue-300/80 font-bold mt-1 leading-tight">রুম এবং ইউটিলিটি কনফিগারেশন করুন।</p>
+              <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">{t.adminManagement}</p>
+              <p className="text-[11px] sm:text-sm text-blue-700 dark:text-blue-300/80 font-bold mt-1 leading-tight">{t.adminManagementDesc}</p>
             </div>
           </div>
 
@@ -356,7 +356,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
             {/* রুম সেটিংস */}
             <div className="space-y-4 sm:space-y-6">
               <div className="flex items-center justify-between px-2 sm:px-4">
-                <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><Home className="text-blue-500" size={18}/> রুম সেটিংস</h3>
+                <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><Home className="text-blue-500" size={18}/> {t.roomSettings}</h3>
                 {isAdminUser && !isMonthLocked && (
                   <button onClick={() => setShowRoomAdd(true)} className="p-2 sm:p-3 bg-blue-600 rounded-lg sm:rounded-2xl text-white hover:bg-blue-700 transition-all shadow-lg active:scale-95">
                     <Plus size={18}/>
@@ -370,7 +370,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                     <div key={r.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 flex justify-between items-center">
                        <div>
                           <p className="font-black text-gray-900 dark:text-white text-xs">{r.name}</p>
-                          <p className="text-[8px] text-gray-500 uppercase font-bold tracking-widest mt-1">রুম আইডি: {r.id.slice(0,5)}</p>
+                          <p className="text-[8px] text-gray-500 uppercase font-bold tracking-widest mt-1">{t.roomIdLabel}: {r.id.slice(0,5)}</p>
                        </div>
                        <div className="flex items-center gap-3">
                           <input 
@@ -388,9 +388,9 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-800/40 text-[9px] sm:text-[10px] uppercase font-black text-gray-500 border-b border-gray-100 dark:border-gray-800">
                     <tr>
-                      <th className="px-5 sm:px-6 py-4 sm:py-5 text-left">নাম</th>
-                      <th className="px-5 sm:px-6 py-4 sm:py-5 text-right">ভাড়া</th>
-                      <th className="px-5 sm:px-6 py-4 sm:py-5 text-right">অ্যাকশন</th>
+                      <th className="px-5 sm:px-6 py-4 sm:py-5 text-left">{t.name}</th>
+                      <th className="px-5 sm:px-6 py-4 sm:py-5 text-right">{t.rent}</th>
+                      <th className="px-5 sm:px-6 py-4 sm:py-5 text-right">{t.action}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -423,7 +423,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
             {/* ইউটিলিটি বিল */}
             <div className="space-y-4 sm:space-y-6">
               <div className="flex items-center justify-between px-2 sm:px-4">
-                <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><Zap className="text-yellow-500" size={18}/> ইউটিলিটি বিল</h3>
+                <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><Zap className="text-yellow-500" size={18}/> {t.utilityBill}</h3>
                 <div className="flex gap-2">
                    {isAdminUser && !isMonthLocked && (
                      <button onClick={() => setShowUtilityAdd(true)} className="p-2 bg-yellow-600 rounded-lg sm:rounded-2xl text-white shadow-lg"><Plus size={18}/></button>
@@ -438,7 +438,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                   <div key={u.id} className="bg-white dark:bg-gray-900 p-4 rounded-xl border border-gray-100 dark:border-gray-800 flex justify-between items-center">
                     <div>
                       <p className="font-black text-gray-900 dark:text-white text-xs">{u.name}</p>
-                      <p className={`text-[7px] font-black uppercase tracking-widest mt-0.5 ${u.isLocal ? 'text-blue-600 dark:text-blue-400' : 'text-yellow-600 dark:text-yellow-500'}`}>{u.isLocal ? 'মাসিক' : 'মাস্টার'}</p>
+                      <p className={`text-[7px] font-black uppercase tracking-widest mt-0.5 ${u.isLocal ? 'text-blue-600 dark:text-blue-400' : 'text-yellow-600 dark:text-yellow-500'}`}>{u.isLocal ? t.monthly : t.master}</p>
                     </div>
                     <div className="flex items-center gap-3">
                       <p className="font-black text-gray-900 dark:text-white text-xs">৳{u.amount.toFixed(2)}</p>
@@ -462,7 +462,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                         <td className="px-5 sm:px-6 py-4 sm:py-5">
                            <div className="flex flex-col">
                               <span className="font-bold text-gray-700 dark:text-gray-200 text-xs sm:text-sm">{u.name}</span>
-                              <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest ${u.isLocal ? 'text-blue-600 dark:text-blue-400' : 'text-yellow-600 dark:text-yellow-500'}`}>{u.isLocal ? 'মাসিক' : 'মাস্টার'}</span>
+                              <span className={`text-[7px] sm:text-[8px] font-black uppercase tracking-widest ${u.isLocal ? 'text-blue-600 dark:text-blue-400' : 'text-yellow-600 dark:text-yellow-500'}`}>{u.isLocal ? t.monthly : t.master}</span>
                            </div>
                         </td>
                         <td className="px-5 sm:px-6 py-4 sm:py-5 text-right font-black text-gray-900 dark:text-white text-xs sm:text-sm">৳{u.amount.toFixed(2)}</td>
@@ -489,7 +489,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
           {/* মেম্বার রুম বরাদ্দ */}
           <div className="space-y-4 sm:space-y-6">
             <div className="px-2 sm:px-4">
-               <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><UserCheck className="text-green-500" size={18}/> মেম্বার রুম বরাদ্দ</h3>
+               <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><UserCheck className="text-green-500" size={18}/> {t.memberRoomAssignment}</h3>
             </div>
             <div className="grid grid-cols-1 sm:hidden gap-3">
               {activeResidents.map(resUser => (
@@ -501,7 +501,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                     value={resUser.roomId || ''} 
                     onChange={(e) => assignRoom(resUser.id, e.target.value)}
                   >
-                    <option value="">বরাদ্দ নেই</option>
+                    <option value="">{t.noAssignment}</option>
                     {db.rooms.map(room => <option key={room.id} value={room.id}>{room.name}</option>)}
                   </select>
                 </div>
@@ -524,7 +524,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                           value={resUser.roomId || ''} 
                           onChange={(e) => assignRoom(resUser.id, e.target.value)}
                         >
-                          <option value="">বরাদ্দ নেই</option>
+                          <option value="">{t.noAssignment}</option>
                           {db.rooms.map(room => <option key={room.id} value={room.id}>{room.name}</option>)}
                         </select>
                       </td>
@@ -541,8 +541,8 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
              <ShieldAlert size={24} />
           </div>
           <div>
-            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">অ্যাক্সেস সীমিত</p>
-            <p className="text-[11px] text-amber-200/60 font-bold mt-1">রুম সেটিিংস শুধুমাত্র অ্যাডমিন বা ম্যানেজারের জন্য।</p>
+            <p className="text-[10px] font-black text-amber-500 uppercase tracking-widest">{t.accessRestricted}</p>
+            <p className="text-[11px] text-amber-200/60 font-bold mt-1">{t.adminManagerOnly}</p>
           </div>
         </div>
       )}
@@ -552,19 +552,19 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
         <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-gray-800 p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300">
              <div className="flex justify-between items-center mb-6 sm:mb-8">
-                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">নতুন রুম</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{t.newRoom}</h3>
                 <button onClick={() => setShowRoomAdd(false)} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-white"><X size={20}/></button>
              </div>
              <div className="space-y-4 sm:space-y-6">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">নাম</label>
-                  <input type="text" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder="যেমন: রুম ১০১"/>
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.name}</label>
+                  <input type="text" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" value={roomName} onChange={e=>setRoomName(e.target.value)} placeholder={t.roomNamePlaceholder}/>
                 </div>
                 <div className="space-y-1.5">
-                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">ডিফল্ট ভাড়া</label>
-                   <input type="number" step="0.01" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={roomRent || ''} onChange={e=>setRoomRent(parseFloat(e.target.value)||0)} placeholder="৳ ০০০.০০"/>
+                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.defaultRent}</label>
+                   <input type="number" step="0.01" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={roomRent || ''} onChange={e=>setRoomRent(parseFloat(e.target.value)||0)} placeholder={t.rentPlaceholder}/>
                 </div>
-                <button onClick={performAddRoom} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">সংরক্ষণ করুন</button>
+                <button onClick={performAddRoom} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">{t.save}</button>
              </div>
           </div>
         </div>
@@ -574,19 +574,19 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
         <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-gray-800 p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300">
              <div className="flex justify-between items-center mb-6 sm:mb-8">
-                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">মাস্টার ইউটিলিটি</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{t.masterUtility}</h3>
                 <button onClick={() => setShowUtilityAdd(false)} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-white"><X size={20}/></button>
              </div>
              <div className="space-y-4 sm:space-y-6">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">নাম</label>
-                  <input type="text" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" value={utilityName} onChange={e=>setUtilityName(e.target.value)} placeholder="যেমন: ওয়াইফাই"/>
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.name}</label>
+                  <input type="text" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" value={utilityName} onChange={e=>setUtilityName(e.target.value)} placeholder={t.utilityNamePlaceholder}/>
                 </div>
                 <div className="space-y-1.5">
-                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">ডিফল্ট বিল</label>
-                   <input type="number" step="0.01" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={utilityAmount || ''} onChange={e=>setUtilityAmount(parseFloat(e.target.value)||0)} placeholder="৳ ০০০.০০"/>
+                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.defaultBill}</label>
+                   <input type="number" step="0.01" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={utilityAmount || ''} onChange={e=>setUtilityAmount(parseFloat(e.target.value)||0)} placeholder={t.rentPlaceholder}/>
                 </div>
-                <button onClick={performAddGlobalUtility} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">সংরক্ষণ করুন</button>
+                <button onClick={performAddGlobalUtility} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">{t.save}</button>
              </div>
           </div>
         </div>
@@ -596,19 +596,19 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
         <div className="fixed inset-0 bg-black/60 dark:bg-black/90 backdrop-blur-xl z-[200] flex items-center justify-center p-4">
           <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[2rem] sm:rounded-[3rem] border border-gray-100 dark:border-gray-800 p-8 sm:p-10 shadow-2xl animate-in zoom-in-95 duration-300">
              <div className="flex justify-between items-center mb-6 sm:mb-8">
-                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">মাসিক ইউটিলিটি ({month})</h3>
+                <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{t.monthlyUtility} ({month})</h3>
                 <button onClick={() => setShowLocalUtilityAdd(false)} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-white"><X size={20}/></button>
              </div>
              <div className="space-y-4 sm:space-y-6">
                 <div className="space-y-1.5">
-                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">নাম</label>
-                  <input type="text" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" value={utilityName} onChange={e=>setUtilityName(e.target.value)} placeholder="যেমন: কারেন্ট বিল"/>
+                  <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.name}</label>
+                  <input type="text" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-600" value={utilityName} onChange={e=>setUtilityName(e.target.value)} placeholder={t.utilityNamePlaceholder}/>
                 </div>
                 <div className="space-y-1.5">
-                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">বিল পরিমাণ</label>
-                   <input type="number" step="0.01" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={utilityAmount || ''} onChange={e=>setUtilityAmount(parseFloat(e.target.value)||0)} placeholder="৳ ০০০.০০"/>
+                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.billAmount}</label>
+                   <input type="number" step="0.01" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-4 py-3.5 text-gray-900 dark:text-white font-black outline-none focus:ring-2 focus:ring-blue-600" value={utilityAmount || ''} onChange={e=>setUtilityAmount(parseFloat(e.target.value)||0)} placeholder={t.rentPlaceholder}/>
                 </div>
-                <button onClick={performAddLocalUtility} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">সংরক্ষণ করুন</button>
+                <button onClick={performAddLocalUtility} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs shadow-lg active:scale-95 transition-all">{t.save}</button>
              </div>
           </div>
         </div>
@@ -620,14 +620,14 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
              <div className="flex justify-between items-center mb-6 sm:mb-10">
                 <div>
                    <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{currentEditingUtil.name}</h3>
-                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-1">বিল ভাগ করার পদ্ধতি</p>
+                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mt-1">{t.billSplitMethod}</p>
                 </div>
                 <button onClick={() => setEditingModeUtilId(null)} className="text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-white p-2 bg-gray-100 dark:bg-gray-800 rounded-lg"><X size={18}/></button>
              </div>
              <div className="grid grid-cols-3 gap-2 sm:gap-4 mb-6 sm:mb-10">
                 {[CalcMode.EQUAL, CalcMode.MULTIPLIER, CalcMode.FIXED].map(mode => (
                   <button key={mode} onClick={() => setUtilMode(currentEditingUtil.id, mode, currentEditingUtil.isLocal)} className={`p-3 sm:p-5 rounded-xl sm:rounded-3xl border text-[9px] sm:text-[11px] font-black uppercase tracking-wider transition-all shadow-lg ${currentEditingUtil.mode === mode ? 'bg-blue-600 border-blue-500 text-white shadow-blue-500/20' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400 dark:text-gray-500'}`}>
-                    {mode === CalcMode.EQUAL ? 'সমান' : mode === CalcMode.MULTIPLIER ? 'গুণিতক' : 'ফিক্সড'}
+                    {mode === CalcMode.EQUAL ? t.equal : mode === CalcMode.MULTIPLIER ? t.multiplier : t.fixed}
                   </button>
                 ))}
              </div>
@@ -651,7 +651,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
                   );
                 })}
              </div>
-             <button onClick={() => setEditingModeUtilId(null)} className="w-full py-4 sm:py-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl sm:rounded-[2rem] font-black uppercase text-[10px] sm:text-xs transition-all active:scale-95">বন্ধ করুন</button>
+             <button onClick={() => setEditingModeUtilId(null)} className="w-full py-4 sm:py-5 bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 text-gray-900 dark:text-white rounded-xl sm:rounded-[2rem] font-black uppercase text-[10px] sm:text-xs transition-all active:scale-95">{t.close}</button>
           </div>
         </div>
       )}

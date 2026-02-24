@@ -54,20 +54,12 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
   const prevMonth = getPreviousMonthStr(month);
   const prevMonthName = useMemo(() => {
     const [year, m] = prevMonth.split('-');
-    const monthNames = [
-      'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 
-      'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-    ];
-    return `${monthNames[parseInt(m) - 1]} ${year}`;
-  }, [prevMonth]);
+    return `${t.months[parseInt(m) - 1]} ${year}`;
+  }, [prevMonth, t.months]);
 
   const selectedYear = parseInt(month.split('-')[0]);
   const yearlyData = useMemo(() => {
     const data = [];
-    const monthNames = [
-      'জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 
-      'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
-    ];
 
     for (let i = 0; i < 12; i++) {
       const mStr = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
@@ -77,7 +69,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
       if (uStat) {
         data.push({
           month: mStr,
-          monthName: monthNames[i],
+          monthName: t.months[i],
           meals: uStat.totalMeals,
           bazar: db.bazars.filter(b => b.userId === user.id && b.date.startsWith(mStr)).reduce((s, b) => s + b.amount, 0),
           mealCost: uStat.mealCost
@@ -85,7 +77,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
       }
     }
     return data;
-  }, [db, selectedYear, user.id]);
+  }, [db, selectedYear, user.id, t.months]);
 
   if (!userStat) return null;
 
@@ -93,6 +85,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
   const foodExpense = userStat.mealCost;
   const foodBalance = userBazarTotal - foodExpense;
   const remainingBalance = userStat.payments - userStat.netRequired;
+  const overallBalance = remainingBalance + foodBalance;
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-10 animate-in fade-in duration-500 overflow-x-hidden px-2 sm:px-0">
@@ -103,7 +96,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
             <CircleDollarSign className="text-blue-500" />
             {t.personalAccount}
           </h2>
-          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1">আপনার মাসিক খরচের বিস্তারিত বিবরণ</p>
+          <p className="text-gray-500 font-bold text-[10px] uppercase tracking-widest mt-1">{t.monthlyExpenseDetail}</p>
         </div>
         <div className="bg-white dark:bg-gray-800/50 px-4 py-2 rounded-xl border border-gray-200 dark:border-gray-700 flex items-center gap-2 shadow-sm">
           <Calendar size={14} className="text-blue-500" />
@@ -130,6 +123,18 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
           </div>
         </button>
 
+        {/* Meal Cost */}
+        <div className="bg-white dark:bg-gray-900 p-5 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-xl relative overflow-hidden group">
+          <div className="absolute -right-4 -bottom-4 opacity-5 dark:opacity-10 text-orange-500 group-hover:scale-110 transition-transform">
+            <TrendingUp size={100} />
+          </div>
+          <div className="relative z-10">
+            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.foodExpense}</p>
+            <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">৳{foodExpense.toFixed(2)}</p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{t.rateLabel}{stats.mealRate.toFixed(2)}</p>
+          </div>
+        </div>
+
         {/* Personal Bazar */}
         <button 
           onClick={() => setShowBazarDetails(true)}
@@ -147,29 +152,17 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
           </div>
         </button>
 
-        {/* Meal Cost */}
-        <div className="bg-white dark:bg-gray-900 p-5 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-xl relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 opacity-5 dark:opacity-10 text-orange-500 group-hover:scale-110 transition-transform">
-            <TrendingUp size={100} />
-          </div>
-          <div className="relative z-10">
-            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.cost || 'খাবার খরচ'}</p>
-            <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">৳{foodExpense.toFixed(2)}</p>
-            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">রেট: ৳{stats.mealRate.toFixed(2)}</p>
-          </div>
-        </div>
-
         {/* Food Balance */}
         <div className="bg-white dark:bg-gray-900 p-5 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-xl relative overflow-hidden group">
           <div className={`absolute -right-4 -bottom-4 opacity-5 dark:opacity-10 ${foodBalance >= 0 ? 'text-emerald-500' : 'text-rose-500'} group-hover:scale-110 transition-transform`}>
             {foodBalance >= 0 ? <ArrowUpRight size={100} /> : <ArrowDownRight size={100} />}
           </div>
           <div className="relative z-10">
-            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">খাবার ব্যালেন্স</p>
-            <p className={`text-xl sm:text-2xl font-black ${foodBalance >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.foodArrearsRefund}</p>
+            <p className={`text-xl sm:text-2xl font-black ${foodBalance >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-400'}`}>
               ৳{Math.abs(foodBalance).toFixed(2)}
             </p>
-            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{foodBalance >= 0 ? 'ফেরত পাবেন' : 'বকেয়া আছে'}</p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{foodBalance >= 0 ? t.willGetRefundThisMonth : t.arrearsThisMonth}</p>
           </div>
         </div>
 
@@ -179,7 +172,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
             <Home size={100} />
           </div>
           <div className="relative z-10">
-            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.fixedCost || 'স্থির খরচ (রুম ও ইউটিলিটি)'}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.fixedCostRoomUtil}</p>
             <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">৳{(userStat.roomRent + userStat.utilityShare).toFixed(2)}</p>
             <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{t.room}: {userStat.roomRent.toFixed(0)} | {t.utility}: {userStat.utilityShare.toFixed(0)}</p>
           </div>
@@ -191,11 +184,11 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
             <History size={100} />
           </div>
           <div className="relative z-10">
-            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.prevAdjustment || 'গত মাসের বকেয়া/ফেরত'}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.prevMonthArrearsRefund}</p>
             <p className={`text-xl sm:text-2xl font-black ${userStat.prevAdjustment >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
               ৳{Math.abs(userStat.prevAdjustment).toFixed(2)}
             </p>
-            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{prevMonthName} {userStat.prevAdjustment >= 0 ? (t.refund || 'ফেরত') : (t.arrears || 'বকেয়া')}</p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{prevMonthName} {userStat.prevAdjustment >= 0 ? t.refund : t.arrears}</p>
           </div>
         </div>
       </div>
@@ -204,25 +197,44 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
       <div className="bg-white dark:bg-gray-900 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 sm:p-8 shadow-2xl">
         <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3 mb-6">
           <Zap className="text-blue-500" />
-          {t.paymentAndBalance || 'জমা টাকা ও চূড়ান্ত হিসাব'}
+          {t.paymentAndFinalCalculation}
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-gray-50 dark:bg-gray-800/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.deposited || 'জমা টাকা (Payment)'}</p>
+            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.depositedPayment}</p>
             <p className="text-2xl font-black text-gray-900 dark:text-white">৳{userStat.payments.toFixed(2)}</p>
           </div>
           <div className="bg-gray-50 dark:bg-gray-800/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.netRequired || 'সর্বমোট প্রদেয় (৳)'}</p>
-            <p className="text-2xl font-black text-blue-600 dark:text-blue-500">৳{userStat.netRequired.toFixed(2)}</p>
+            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.totalCostThisMonth}</p>
+            <p className="text-2xl font-black text-blue-600 dark:text-blue-500">৳{userStat.currentMonthCost.toFixed(2)}</p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{t.foodRoomUtility}</p>
           </div>
           <div className={`p-5 rounded-2xl border ${remainingBalance >= 0 ? 'bg-green-600/10 dark:bg-green-900/10 border-green-500/20' : 'bg-red-600/10 dark:bg-red-900/10 border-red-500/20'}`}>
             <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${remainingBalance >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-              {remainingBalance >= 0 ? (t.remainingRefund || 'অবশিষ্ট ফেরত পাবেন') : (t.remainingArrears || 'অবশিষ্ট বকেয়া')}
+              {t.fixedCostAdjustment}
             </p>
             <p className={`text-2xl font-black ${remainingBalance >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
               ৳{Math.abs(remainingBalance).toFixed(2)}
             </p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{remainingBalance >= 0 ? t.willGetRefund : t.arrearsExist}</p>
           </div>
+          <div className={`p-5 rounded-2xl border ${overallBalance >= 0 ? 'bg-emerald-600/10 dark:bg-emerald-900/10 border-emerald-500/20' : 'bg-rose-600/10 dark:bg-rose-900/10 border-rose-500/20'}`}>
+            <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${overallBalance >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
+              {t.finalBalanceAll}
+            </p>
+            <p className={`text-2xl font-black ${overallBalance >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
+              ৳{Math.abs(overallBalance).toFixed(2)}
+            </p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{overallBalance >= 0 ? t.totalWillGetRefund : t.totalArrearsExist}</p>
+          </div>
+        </div>
+        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-2xl flex items-start gap-3">
+          <Info className="text-blue-500 shrink-0 mt-0.5" size={16} />
+          <p className="text-[10px] font-medium text-blue-700 dark:text-blue-300 leading-relaxed">
+            <span className="font-black uppercase tracking-widest block mb-1">{t.calculationGuide}</span>
+            {t.finalBalanceFormula} 
+            {t.foodAdjustmentNote}
+          </p>
         </div>
       </div>
 
@@ -233,7 +245,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
           className="flex items-center gap-3 px-8 py-4 bg-blue-600 text-white rounded-2xl font-black uppercase text-xs tracking-widest shadow-xl shadow-blue-500/20 active:scale-95 transition-all"
         >
           <BarChart3 size={18} />
-          {t.viewYearlyAnalytics || 'বার্ষিক এনালিটিক্স দেখুন'}
+          {t.viewYearlyAnalytics}
         </button>
       </div>
 
@@ -244,7 +256,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
           <div className="relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 w-full max-w-lg rounded-[2rem] overflow-hidden shadow-2xl animate-in zoom-in duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
               <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3">
-                <Utensils className="text-green-500" /> {t.mealDetails || 'মিলের বিস্তারিত'}
+                <Utensils className="text-green-500" /> {t.mealDetails}
               </h3>
               <button onClick={() => setShowMealDetails(false)} className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-white transition-colors">
                 <X size={20} />
@@ -268,7 +280,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10 text-gray-500 font-bold">{t.noDataFound || 'কোন মিল এন্ট্রি পাওয়া যায়নি'}</div>
+                <div className="text-center py-10 text-gray-500 font-bold">{t.noMealEntryFound}</div>
               )}
             </div>
           </div>
@@ -282,7 +294,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
           <div className="relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 w-full max-w-lg rounded-[2rem] overflow-hidden shadow-2xl animate-in zoom-in duration-300">
             <div className="p-6 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
               <h3 className="text-lg font-black text-gray-900 dark:text-white flex items-center gap-3">
-                <Wallet className="text-blue-500" /> বাজারের বিস্তারিত
+                <Wallet className="text-blue-500" /> {t.bazarDetails}
               </h3>
               <button onClick={() => setShowBazarDetails(false)} className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-white transition-colors">
                 <X size={20} />
@@ -306,7 +318,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
                   ))}
                 </div>
               ) : (
-                <div className="text-center py-10 text-gray-500 font-bold">কোন বাজার এন্ট্রি পাওয়া যায়নি</div>
+                <div className="text-center py-10 text-gray-500 font-bold">{t.noBazarEntryFound}</div>
               )}
             </div>
           </div>
@@ -320,7 +332,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
           <div className="relative bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 w-full max-w-4xl rounded-[2.5rem] overflow-hidden shadow-2xl animate-in zoom-in duration-300 flex flex-col max-h-[90vh]">
             <div className="p-6 sm:p-8 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between">
               <h3 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-3">
-                <BarChart3 className="text-purple-500" /> বার্ষিক এনালিটিক্স ({selectedYear})
+                <BarChart3 className="text-purple-500" /> {t.yearlyAnalytics} ({selectedYear})
               </h3>
               <button onClick={() => setShowYearlyDetails(false)} className="p-2 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-white transition-colors">
                 <X size={24} />
@@ -332,9 +344,9 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
                 <table className="w-full text-left text-xs">
                   <thead>
                     <tr className="bg-gray-100 dark:bg-gray-800/40 text-[9px] uppercase font-black text-gray-500">
-                      <th className="px-4 py-4">মাস</th>
-                      <th className="px-4 py-4 text-center">মোট মিল</th>
-                      <th className="px-4 py-4 text-right">বাজার খরচ</th>
+                      <th className="px-4 py-4">{t.month}</th>
+                      <th className="px-4 py-4 text-center">{t.totalMeals}</th>
+                      <th className="px-4 py-4 text-right">{t.bazarCost}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -352,7 +364,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
               {/* Meal Expense Chart */}
               <div className="space-y-4">
                 <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-                  <TrendingUp size={16} className="text-blue-500" /> খাবার খরচ ট্রেন্ড (৳)
+                  <TrendingUp size={16} className="text-blue-500" /> {t.foodExpenseTrend}
                 </h4>
                 <div className="h-64 sm:h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -364,7 +376,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
                         contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`, borderRadius: '12px' }}
                         itemStyle={{ color: '#3b82f6', fontWeight: 'bold' }}
                       />
-                      <Bar dataKey="mealCost" name="খাবার খরচ" radius={[4, 4, 0, 0]}>
+                      <Bar dataKey="mealCost" name={t.foodExpense} radius={[4, 4, 0, 0]}>
                         {yearlyData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#3b82f6' : '#60a5fa'} />
                         ))}
@@ -377,7 +389,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
               {/* Meal Count Chart */}
               <div className="space-y-4">
                 <h4 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-widest flex items-center gap-2">
-                  <Utensils size={16} className="text-green-500" /> মাসিক মিল সংখ্যা
+                  <Utensils size={16} className="text-green-500" /> {t.monthlyMealCount}
                 </h4>
                 <div className="h-64 sm:h-80 w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -389,7 +401,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
                         contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`, borderRadius: '12px' }}
                         itemStyle={{ color: '#10b981', fontWeight: 'bold' }}
                       />
-                      <Bar dataKey="meals" name="মিল সংখ্যা" radius={[4, 4, 0, 0]}>
+                      <Bar dataKey="meals" name={t.mealCount} radius={[4, 4, 0, 0]}>
                         {yearlyData.map((entry, index) => (
                           <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#10b981' : '#34d399'} />
                         ))}

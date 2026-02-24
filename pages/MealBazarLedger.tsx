@@ -49,7 +49,7 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month, t, theme }
           <div className="flex items-center gap-2 mt-1">
              <span className="text-[9px] sm:text-[10px] font-black bg-blue-600/10 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-3 py-1 rounded-full uppercase tracking-widest">{month}</span>
              <span className="text-[9px] sm:text-[10px] font-black bg-gray-100 dark:bg-gray-800/50 text-gray-500 px-3 py-1 rounded-full uppercase tracking-widest border border-gray-200 dark:border-gray-700 flex items-center gap-1">
-               <Eye size={10}/> রিড-অনলি ভিউ
+               <Eye size={10}/> {t.readOnlyView}
              </span>
           </div>
         </div>
@@ -66,8 +66,8 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month, t, theme }
       <div className="bg-blue-900/10 border border-blue-500/20 p-5 rounded-2xl sm:rounded-3xl flex items-start gap-4">
          <Info className="text-blue-400 shrink-0 mt-0.5" size={18} />
          <div className="text-[11px] sm:text-xs font-medium text-blue-300/80 leading-relaxed">
-           <p className="font-black text-blue-400 uppercase tracking-widest mb-1">স্বচ্ছতা বিজ্ঞপ্তি</p>
-           মিল এন্ট্রি এবং বাজার খরচের ডাটা থেকে এটি অটোমেটিক জেনারেট হয়। এখানে বাজার কলামে ওই মেম্বারের করা মোট বাজারের হিসাব দেখানো হয়েছে।
+           <p className="font-black text-blue-400 uppercase tracking-widest mb-1">{t.transparencyNotice}</p>
+           {t.transparencyNoticeDesc}
          </div>
       </div>
 
@@ -96,20 +96,20 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month, t, theme }
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-2">
-                <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
-                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">মিল</p>
-                  <p className="text-xs font-black text-gray-900 dark:text-white">{u.totalMeals.toFixed(1)}</p>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.meal}</p>
+                    <p className="text-xs font-black text-gray-900 dark:text-white">{u.totalMeals.toFixed(1)}</p>
+                  </div>
+                  <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.cost}</p>
+                    <p className="text-xs font-black text-gray-400">৳{foodExpense.toFixed(0)}</p>
+                  </div>
+                  <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
+                    <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.bazar}</p>
+                    <p className="text-xs font-black text-green-500">৳{userBazar.toFixed(0)}</p>
+                  </div>
                 </div>
-                <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
-                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">খরচ</p>
-                  <p className="text-xs font-black text-gray-400">৳{foodExpense.toFixed(0)}</p>
-                </div>
-                <div className="text-center bg-gray-800/50 p-2 rounded-xl border border-gray-800">
-                  <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest mb-1">বাজার</p>
-                  <p className="text-xs font-black text-green-500">৳{userBazar.toFixed(0)}</p>
-                </div>
-              </div>
             </div>
           );
         })}
@@ -121,7 +121,7 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month, t, theme }
           <table className="w-full text-left min-w-[650px] sm:min-w-0">
             <thead>
               <tr className="bg-gray-50 dark:bg-gray-800/40 text-[9px] sm:text-[10px] uppercase font-black text-gray-500 border-b border-gray-100 dark:border-gray-800">
-                <th className="px-6 sm:px-8 py-5 sm:py-6">নং</th>
+                <th className="px-6 sm:px-8 py-5 sm:py-6">{t.slNo}</th>
                 <th className="px-4 sm:px-6 py-5 sm:py-6">{t.members}</th>
                 <th className="px-4 sm:px-6 py-5 sm:py-6 text-center">{t.meals}</th>
                 <th className="px-4 sm:px-6 py-5 sm:py-6 text-right">{t.cost} (৳)</th>

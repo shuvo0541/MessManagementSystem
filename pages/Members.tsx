@@ -48,7 +48,7 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
   const updateMemberDates = (userId: string, field: 'joiningMonth' | 'leavingMonth', value: string | null) => {
     if (!canManageCritical) return;
     if (userId === messAdminId && field === 'leavingMonth') {
-      alert("মেস এডমিন নিজেকে আন-অ্যাক্টিভ করতে পারবেন না।");
+      alert(t.adminAdminMsg);
       return;
     }
     updateDB({
@@ -63,19 +63,19 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
   };
 
   const getUserStatusLabel = (u: User) => {
-    if (u.id === messAdminId) return <span className="text-purple-400 font-black flex items-center gap-1"><Crown size={10}/> মেস এডমিন</span>;
+    if (u.id === messAdminId) return <span className="text-purple-400 font-black flex items-center gap-1"><Crown size={10}/> {t.messAdmin}</span>;
     
     const isFutureJoin = u.joiningMonth && u.joiningMonth > month;
     const isAlreadyLeft = u.leavingMonth && u.leavingMonth < month;
     const isLeavingNow = u.leavingMonth === month;
 
-    if (isFutureJoin) return <span className="text-gray-500 italic">আগামীতে যুক্ত হবে</span>;
-    if (isAlreadyLeft) return <span className="text-red-700 font-black line-through">ছেড়ে গেছে</span>;
-    if (isLeavingNow) return <span className="text-amber-500 font-black px-2 py-0.5 bg-amber-500/10 rounded-lg">বিদায়ী মাস</span>;
+    if (isFutureJoin) return <span className="text-gray-500 italic">{t.futureJoin}</span>;
+    if (isAlreadyLeft) return <span className="text-red-700 font-black line-through">{t.alreadyLeft}</span>;
+    if (isLeavingNow) return <span className="text-amber-500 font-black px-2 py-0.5 bg-amber-500/10 rounded-lg">{t.leavingMonthLabel}</span>;
     
-    if (u.isPermanentlyOff || (u.monthlyOff || []).includes(month)) return <span className="text-amber-400 font-bold uppercase text-[9px]">অফ আছে</span>;
+    if (u.isPermanentlyOff || (u.monthlyOff || []).includes(month)) return <span className="text-amber-400 font-bold uppercase text-[9px]">{t.offNow}</span>;
     
-    return <span className="text-green-500 font-bold">অ্যাক্টিভ</span>;
+    return <span className="text-green-500 font-bold">{t.active}</span>;
   };
 
   return (
@@ -83,9 +83,9 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6">
         <div>
           <h2 className="text-xl sm:text-3xl font-black text-gray-900 dark:text-white flex items-center gap-3">
-            <Shield className="text-blue-500" /> সদস্য তালিকা
+            <Shield className="text-blue-500" /> {t.memberList}
           </h2>
-          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] mt-1 tracking-widest">প্রোফাইল ও টাইমলাইন ম্যানেজমেন্ট</p>
+          <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] mt-1 tracking-widest">{t.profileTimelineMgmt}</p>
         </div>
 
         <div className="flex bg-white dark:bg-gray-900 p-1 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-800 self-start sm:self-auto shadow-sm">
@@ -148,17 +148,17 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
                       </td>
                       <td className="px-4 py-6">
                         {u.id === messAdminId ? (
-                          <span className="text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase bg-purple-50 dark:bg-purple-900/10 px-2 py-1.5 rounded-lg border border-purple-200 dark:border-purple-500/10">এডমিন</span>
+                          <span className="text-[9px] font-black text-purple-600 dark:text-purple-400 uppercase bg-purple-50 dark:bg-purple-900/10 px-2 py-1.5 rounded-lg border border-purple-200 dark:border-purple-500/10">{t.admin}</span>
                         ) : (
                           <select disabled={!canManageCritical} className="bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2 text-gray-900 dark:text-white font-bold outline-none focus:ring-1 focus:ring-blue-500" value={db.monthlyRoles.find(r => r.userId === u.id && r.month === month)?.role || Role.MEMBER} onChange={(e) => setRole(u.id, e.target.value as Role)}>
-                            <option value={Role.MEMBER} className="bg-white dark:bg-gray-900">মেম্বার</option>
-                            <option value={Role.MANAGER} className="bg-white dark:bg-gray-900">ম্যানেজার</option>
+                            <option value={Role.MEMBER} className="bg-white dark:bg-gray-900">{t.member}</option>
+                            <option value={Role.MANAGER} className="bg-white dark:bg-gray-900">{t.manager}</option>
                           </select>
                         )}
                       </td>
                       <td className="px-8 py-6 text-right">
                         {canManageCritical && u.id !== messAdminId ? (
-                          <button onClick={() => { if(window.confirm("মুছে ফেলতে চান?")) updateDB({ users: db.users.filter(x => x.id !== u.id) }); }} className="p-2 text-red-500/30 hover:text-red-500 transition-colors">
+                          <button onClick={() => { if(window.confirm(t.confirmDelete)) updateDB({ users: db.users.filter(x => x.id !== u.id) }); }} className="p-2 text-red-500/30 hover:text-red-500 transition-colors">
                             <Trash2 size={16}/>
                           </button>
                         ) : <Lock size={12} className="text-gray-700 ml-auto"/>}
@@ -183,29 +183,29 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
                           </div>
                        </div>
                        {canManageCritical && u.id !== messAdminId && (
-                         <button onClick={() => { if(window.confirm("মুছে ফেলতে চান?")) updateDB({ users: db.users.filter(x => x.id !== u.id) }); }} className="p-2 text-red-500/40"><Trash2 size={16}/></button>
+                         <button onClick={() => { if(window.confirm(t.confirmDelete)) updateDB({ users: db.users.filter(x => x.id !== u.id) }); }} className="p-2 text-red-500/40"><Trash2 size={16}/></button>
                        )}
                     </div>
                     
                     <div className="space-y-4">
                        <div className="grid grid-cols-2 gap-3">
                           <div className="space-y-1.5">
-                             <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">যোগদান</p>
+                             <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">{t.joining}</p>
                              <input type="month" disabled={!canManageGeneral || u.id === messAdminId} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2.5 text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-blue-500" value={u.joiningMonth || ''} onChange={(e) => updateMemberDates(u.id, 'joiningMonth', e.target.value)} />
                           </div>
                           <div className="space-y-1.5">
-                             <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">বিদায়</p>
+                             <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">{t.leaving}</p>
                              <input type="month" disabled={!canManageCritical || u.id === messAdminId} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2.5 text-gray-900 dark:text-white outline-none focus:ring-1 focus:ring-red-500" value={u.leavingMonth || ''} onChange={(e) => updateMemberDates(u.id, 'leavingMonth', e.target.value || null)} />
                           </div>
                        </div>
                        <div className="space-y-1.5">
-                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">রোল ({month})</p>
+                          <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest ml-1">{t.role} ({month})</p>
                           {u.id === messAdminId ? (
-                             <div className="w-full bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-500/10 rounded-lg text-[10px] p-2.5 text-purple-600 dark:text-purple-400 font-black text-center uppercase">Admin</div>
+                             <div className="w-full bg-purple-50 dark:bg-purple-900/10 border border-purple-200 dark:border-purple-500/10 rounded-lg text-[10px] p-2.5 text-purple-600 dark:text-purple-400 font-black text-center uppercase">{t.admin}</div>
                           ) : (
                             <select disabled={!canManageCritical} className="w-full bg-gray-50 dark:bg-gray-900 border border-gray-200 dark:border-gray-700 rounded-lg text-[10px] p-2.5 text-gray-900 dark:text-white font-bold outline-none focus:ring-1 focus:ring-blue-500" value={db.monthlyRoles.find(r => r.userId === u.id && r.month === month)?.role || Role.MEMBER} onChange={(e) => setRole(u.id, e.target.value as Role)}>
-                               <option value={Role.MEMBER} className="bg-white dark:bg-gray-900">Member</option>
-                               <option value={Role.MANAGER} className="bg-white dark:bg-gray-900">Manager</option>
+                               <option value={Role.MEMBER} className="bg-white dark:bg-gray-900">{t.member}</option>
+                               <option value={Role.MANAGER} className="bg-white dark:bg-gray-900">{t.manager}</option>
                             </select>
                           )}
                        </div>
@@ -218,8 +218,8 @@ const Members: React.FC<MembersProps> = ({ month, isAdmin, role, messAdminId, db
           <div className="p-4 sm:p-8 space-y-4 sm:space-y-6">
              {filteredUsers.map(u => {
                const start = u.joiningMonth || 'N/A';
-               const end = u.leavingMonth || (t.active === 'সক্রিয়' ? 'চলছে' : 'Ongoing');
-               const isCurrent = start <= month && (end === 'চলছে' || end === 'Ongoing' || end >= month);
+               const end = u.leavingMonth || t.ongoing;
+               const isCurrent = start <= month && (end === t.ongoing || end >= month);
 
                return (
                  <div key={u.id} className={`p-4 sm:p-6 rounded-2xl sm:rounded-3xl border ${isCurrent ? 'bg-blue-600/5 border-blue-500/20 shadow-lg' : 'bg-white dark:bg-gray-800/20 border-gray-100 dark:border-gray-800 shadow-sm'} space-y-3 sm:space-y-4`}>

@@ -31,13 +31,13 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, onSwitchMess, isAdmin, role, hasActiveMess, t }) => {
   const menuItems = [
-    { id: 'profile', label: t.profile || 'প্রোফাইল', icon: UserIcon, show: true },
+    { id: 'profile', label: t.profile, icon: UserIcon, show: true },
     { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard, show: hasActiveMess },
-    { id: 'personal-account', label: t.personalAccount || 'ব্যক্তিগত হিসাব', icon: CircleDollarSign, show: hasActiveMess },
+    { id: 'personal-account', label: t.personalAccount, icon: CircleDollarSign, show: hasActiveMess },
     { id: 'members', label: t.members, icon: Users, show: hasActiveMess },
     { id: 'meals', label: t.meals, icon: UtensilsCrossed, show: hasActiveMess },
     { id: 'bazar', label: t.bazar, icon: ShoppingBag, show: hasActiveMess },
-    { id: 'utility', label: t.utility || 'রুম ও ইউটিলিটি', icon: Home, show: hasActiveMess },
+    { id: 'utility', label: t.roomAndUtility, icon: Home, show: hasActiveMess },
     { id: 'meal-bazar-ledger', label: t.mealBazarLedger, icon: TableProperties, show: hasActiveMess },
     { id: 'analytics', label: t.analytics, icon: LineChartIcon, show: hasActiveMess },
     { id: 'reports', label: t.reports, icon: FileBarChart, show: hasActiveMess },
@@ -82,7 +82,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
             className="w-full flex items-center gap-4 px-5 py-3.5 text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-2xl transition-all font-black text-xs uppercase tracking-wider"
           >
             <LayoutGrid size={20} />
-            {t.switchMess || 'সুইচ মেস'}
+            {t.switchMess}
           </button>
         )}
         <button
