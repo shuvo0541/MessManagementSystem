@@ -122,7 +122,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
                 <input 
                   type="tel" 
                   className="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-900 dark:text-white rounded-xl focus:ring-2 focus:ring-blue-600 outline-none font-bold transition-all"
-                  placeholder="যেমন: 017XXXXXXXX"
+                  placeholder={t.phonePlaceholder}
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
@@ -195,7 +195,7 @@ const Settings: React.FC<SettingsProps> = ({ user, onUpdateUser, onLanguageChang
                 onChange={(e) => onLanguageChange(e.target.value as 'bn' | 'en')}
                 className="bg-transparent border-none text-[10px] font-black uppercase text-gray-900 dark:text-white rounded-lg focus:ring-0"
               >
-                <option value="bn" className="bg-white dark:bg-gray-900">বাংলা</option>
+                <option value="bn" className="bg-white dark:bg-gray-900">Bengali (বাংলা)</option>
                 <option value="en" className="bg-white dark:bg-gray-900">English</option>
               </select>
             </div>

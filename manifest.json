@@ -1,8 +1,8 @@
 
 {
-  "name": "মেস ম্যানেজমেন্ট সিস্টেম",
-  "short_name": "মেস ম্যানেজমেন্ট",
-  "description": "একটি আধুনিক এবং সহজ মেস ম্যানেজমেন্ট সিস্টেম।",
+  "name": "Mess Management System",
+  "short_name": "Mess Management",
+  "description": "A modern and simple mess management system.",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#030712",

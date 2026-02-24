@@ -150,7 +150,7 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
                 </div>
                 <div className="text-right">
                    <p className="text-lg font-black text-green-500">৳{b.amount.toFixed(2)}</p>
-                   <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">ভেরিফাইড</p>
+                   <p className="text-[8px] font-black text-gray-500 uppercase tracking-widest">{t.verified}</p>
                 </div>
               </div>
               {b.note && (

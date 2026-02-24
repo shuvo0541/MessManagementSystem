@@ -259,7 +259,7 @@ const Profile: React.FC<ProfileProps> = ({
                        <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
                           <div className="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center shrink-0"><Clock size={16} className="text-blue-400 animate-pulse"/></div>
                           <div className="overflow-hidden">
-                             <p className="font-bold text-white text-xs sm:text-sm truncate">{req.messes?.mess_name || 'মেস আইডি: ' + req.mess_id.slice(0,6)}</p>
+                             <p className="font-bold text-white text-xs sm:text-sm truncate">{req.messes?.mess_name || t.messIdLabel + ': ' + req.mess_id.slice(0,6)}</p>
                              <p className="text-[8px] sm:text-[9px] font-black text-gray-500 uppercase">{t.pending}</p>
                           </div>
                        </div>
@@ -353,7 +353,7 @@ const Profile: React.FC<ProfileProps> = ({
 
       {/* Footer Info & Logout */}
       <div className="pt-10 border-t border-gray-900 flex flex-col items-center gap-4">
-        <p className="text-[8px] sm:text-[9px] font-black text-gray-700 uppercase tracking-[0.3em]">মেস ম্যানেজমেন্ট সিস্টেম v1.0.0</p>
+        <p className="text-[8px] sm:text-[9px] font-black text-gray-700 uppercase tracking-[0.3em]">{t.appName} v1.0.0</p>
         <button onClick={onLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-500 font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all p-2">
           <LogOut size={14}/> {t.logoutBtn}
         </button>

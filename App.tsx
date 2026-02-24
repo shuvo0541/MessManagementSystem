@@ -46,7 +46,8 @@ const App: React.FC = () => {
 
   useEffect(() => {
     localStorage.setItem('lang', lang);
-  }, [lang]);
+    document.title = T.appName;
+  }, [lang, T.appName]);
 
   // Internal helper to ensure ID compliance
   const generateUserIdFromRules = (name: string) => {
@@ -189,7 +190,7 @@ const App: React.FC = () => {
           const userId = session.user.id;
           
           const metadata = session.user.user_metadata;
-          const metaName = metadata?.full_name || metadata?.name || "ইউজার";
+          const metaName = metadata?.full_name || metadata?.name || T.user;
           const metaUsername = metadata?.username || "user_" + userId.slice(0, 5);
           
           // ID REPAIR LOGIC: If missing or generic, generate properly and update metadata
@@ -229,7 +230,7 @@ const App: React.FC = () => {
           }
         }
       } catch (err: any) {
-        setInitError(err.message || "অ্যাপ লোড করতে সমস্যা হচ্ছে।");
+        setInitError(err.message || T.appLoadError);
       } finally {
         setLoading(false);
       }
@@ -289,7 +290,7 @@ const App: React.FC = () => {
     return (
       <div className="h-screen bg-white dark:bg-gray-950 flex flex-col items-center justify-center gap-4">
         <Loader2 className="animate-spin text-blue-500" size={48} />
-        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs animate-pulse">লোড হচ্ছে...</p>
+        <p className="text-gray-400 font-bold uppercase tracking-widest text-xs animate-pulse">{T.loading}</p>
       </div>
     );
   }
@@ -300,10 +301,10 @@ const App: React.FC = () => {
         <div className="w-20 h-20 bg-red-100 dark:bg-red-900/20 text-red-600 dark:text-red-500 rounded-full flex items-center justify-center mb-6 border border-red-200 dark:border-red-500/20">
           <AlertTriangle size={40} />
         </div>
-        <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-2">সংযোগ বিচ্ছিন্ন!</h1>
+        <h1 className="text-2xl font-black text-gray-900 dark:text-white mb-2">{T.connectionLost}</h1>
         <p className="text-gray-500 max-w-xs mb-8 font-bold">{initError}</p>
         <button onClick={() => window.location.reload()} className="flex items-center gap-2 bg-blue-600 text-white px-8 py-4 rounded-2xl font-black uppercase text-sm shadow-xl shadow-blue-500/20">
-          <RefreshCcw size={18} /> রিফ্রেশ করুন
+          <RefreshCcw size={18} /> {T.refresh}
         </button>
       </div>
     );
@@ -319,16 +320,16 @@ const App: React.FC = () => {
         <div className="w-24 h-24 bg-blue-600 rounded-[2.5rem] flex items-center justify-center text-white shadow-2xl shadow-blue-500/20 mb-8 animate-bounce">
           <Clock size={48} />
         </div>
-        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">অনুমোদনের জন্য অপেক্ষা করুন</h2>
+        <h2 className="text-3xl font-black text-gray-900 dark:text-white mb-3">{T.waitForApproval}</h2>
         <p className="text-gray-500 max-sm mx-auto font-bold mb-10 leading-relaxed">
-          আপনার যোগদানের অনুরোধ মেস এডমিনের কাছে পাঠানো হয়েছে। এডমিন অনুমতি দিলে আপনি স্বয়ংক্রিয়ভাবে ড্যাশবোর্ড দেখতে পাবেন।
+          {T.approvalDesc}
         </p>
         <div className="flex flex-col gap-4">
            <button onClick={() => window.location.reload()} className="flex items-center justify-center gap-2 bg-gray-800 hover:bg-gray-700 text-white px-8 py-4 rounded-2xl font-black uppercase text-xs transition-all">
-             <RefreshCcw size={16} /> স্ট্যাটাস চেক করুন
+             <RefreshCcw size={16} /> {T.checkStatus}
            </button>
            <button onClick={() => setIsPending(false)} className="flex items-center justify-center gap-2 text-blue-500 font-black uppercase text-[10px] tracking-widest hover:text-blue-400 transition-all">
-             প্রোফাইলে ফিরে যান
+             {T.backToProfile}
            </button>
         </div>
       </div>
@@ -445,6 +446,7 @@ const App: React.FC = () => {
             onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} 
             onViewChange={(v) => { setView(v); setIsSidebarOpen(false); }}
             hasActiveMess={!!messId}
+            t={T}
           />
         </div>
         <main className="flex-1 overflow-y-auto p-4 md:p-8">

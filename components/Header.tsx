@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { T } from '../translations';
 import { User, Role } from '../types';
 import { Calendar, Menu, User as UserIcon, ChevronDown } from 'lucide-react';
 
@@ -14,10 +13,11 @@ interface HeaderProps {
   onMenuToggle: () => void;
   onViewChange: (view: string) => void;
   hasActiveMess: boolean;
+  t: any;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  user, role, messName, messId, selectedMonth, onMonthChange, onMenuToggle, onViewChange, hasActiveMess
+  user, role, messName, messId, selectedMonth, onMonthChange, onMenuToggle, onViewChange, hasActiveMess, t
 }) => {
   const currentYear = new Date().getFullYear();
   
@@ -40,15 +40,15 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   const getRoleBadge = () => {
-    if (user.isAdmin && hasActiveMess) return <span className="px-1.5 sm:px-2 py-0.5 bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 text-[8px] sm:text-[10px] rounded-full font-black uppercase tracking-tight shrink-0 border border-purple-200 dark:border-purple-500/30">{T.admin}</span>;
+    if (user.isAdmin && hasActiveMess) return <span className="px-1.5 sm:px-2 py-0.5 bg-purple-50 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 text-[8px] sm:text-[10px] rounded-full font-black uppercase tracking-tight shrink-0 border border-purple-200 dark:border-purple-500/30">{t.admin}</span>;
     
     if (hasActiveMess) {
       switch (role) {
-        case Role.MANAGER: return <span className="px-1.5 sm:px-2 py-0.5 bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400 text-[8px] sm:text-[10px] rounded-full font-black uppercase tracking-tight shrink-0 border border-green-200 dark:border-green-500/30">{T.manager}</span>;
-        default: return <span className="px-1.5 sm:px-2 py-0.5 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-[8px] sm:text-[10px] rounded-full font-black uppercase tracking-tight shrink-0 border border-blue-200 dark:border-blue-500/30">{T.member}</span>;
+        case Role.MANAGER: return <span className="px-1.5 sm:px-2 py-0.5 bg-green-50 dark:bg-green-900/40 text-green-600 dark:text-green-400 text-[8px] sm:text-[10px] rounded-full font-black uppercase tracking-tight shrink-0 border border-green-200 dark:border-green-500/30">{t.manager}</span>;
+        default: return <span className="px-1.5 sm:px-2 py-0.5 bg-blue-50 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 text-[8px] sm:text-[10px] rounded-full font-black uppercase tracking-tight shrink-0 border border-blue-200 dark:border-blue-500/30">{t.member}</span>;
       }
     }
-    return <span className="px-1.5 sm:px-2 py-0.5 bg-gray-50 dark:bg-gray-900/40 text-gray-600 dark:text-gray-400 text-[8px] sm:text-[10px] rounded-full font-black uppercase tracking-tight shrink-0 border border-gray-200 dark:border-gray-500/30">{T.user}</span>;
+    return <span className="px-1.5 sm:px-2 py-0.5 bg-gray-50 dark:bg-gray-900/40 text-gray-600 dark:text-gray-400 text-[8px] sm:text-[10px] rounded-full font-black uppercase tracking-tight shrink-0 border border-gray-200 dark:border-gray-500/30">{t.user}</span>;
   };
 
   return (
@@ -97,7 +97,7 @@ const Header: React.FC<HeaderProps> = ({
                   onChange={(e) => handleMonthChange(e.target.value)}
                   className="appearance-none bg-transparent border-none outline-none text-[9px] sm:text-xs font-black focus:ring-0 cursor-pointer text-gray-900 dark:text-gray-100 pl-2 pr-5 sm:pr-6 py-1 sm:py-1.5"
                 >
-                  {T.months.map((m: string, i: number) => (
+                  {t.months.map((m: string, i: number) => (
                     <option key={i} value={i + 1} className="bg-white dark:bg-gray-900 text-gray-900 dark:text-white">{m}</option>
                   ))}
                 </select>
@@ -126,7 +126,7 @@ const Header: React.FC<HeaderProps> = ({
         <div className="flex-1 flex justify-end">
            <div className="flex items-center gap-2 text-blue-400 font-black text-[9px] sm:text-[10px] uppercase tracking-widest bg-blue-900/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-blue-500/20">
               <UserIcon size={12} className="sm:w-3.5 sm:h-3.5" /> 
-              <span className="whitespace-nowrap">{T.messSelection}</span>
+              <span className="whitespace-nowrap">{t.messSelection}</span>
            </div>
         </div>
       )}

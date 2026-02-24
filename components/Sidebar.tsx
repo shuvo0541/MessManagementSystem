@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { T } from '../translations';
 import { Role } from '../types';
 import { 
   LayoutDashboard, 

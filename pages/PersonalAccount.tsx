@@ -144,7 +144,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
             <Wallet size={100} />
           </div>
           <div className="relative z-10">
-            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.personalBazar || 'ব্যক্তিগত বাজার'}</p>
+            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.personalBazar}</p>
             <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">৳{userBazarTotal.toFixed(2)}</p>
             <div className="mt-2 flex items-center gap-1 text-[8px] font-black text-blue-600 dark:text-blue-500 uppercase">
               {t.viewDetails} <ChevronRight size={10} />
