@@ -252,14 +252,14 @@ const Profile: React.FC<ProfileProps> = ({
           {/* Pending Requests Section */}
           {sentRequests.length > 0 && (
             <div className="space-y-6 px-4 sm:px-0">
-               <h3 className="text-lg sm:text-xl font-black text-white flex items-center gap-3"><SendHorizontal className="text-blue-500" /> {t.sentRequests}</h3>
+               <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-3"><SendHorizontal className="text-blue-500" /> {t.sentRequests}</h3>
                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
                   {sentRequests.map(req => (
-                    <div key={req.id} className="bg-gray-900 border border-blue-500/20 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] flex items-center justify-between">
+                    <div key={req.id} className="bg-white dark:bg-gray-900 border border-gray-100 dark:border-blue-500/20 p-4 sm:p-6 rounded-2xl sm:rounded-[2rem] flex items-center justify-between shadow-sm">
                        <div className="flex items-center gap-3 sm:gap-4 overflow-hidden">
-                          <div className="w-10 h-10 bg-gray-800 rounded-xl flex items-center justify-center shrink-0"><Clock size={16} className="text-blue-400 animate-pulse"/></div>
+                          <div className="w-10 h-10 bg-gray-50 dark:bg-gray-800 rounded-xl flex items-center justify-center shrink-0"><Clock size={16} className="text-blue-500 dark:text-blue-400 animate-pulse"/></div>
                           <div className="overflow-hidden">
-                             <p className="font-bold text-white text-xs sm:text-sm truncate">{req.messes?.mess_name || t.messIdLabel + ': ' + req.mess_id.slice(0,6)}</p>
+                             <p className="font-bold text-gray-900 dark:text-white text-xs sm:text-sm truncate">{req.messes?.mess_name || t.messIdLabel + ': ' + req.mess_id.slice(0,6)}</p>
                              <p className="text-[8px] sm:text-[9px] font-black text-gray-500 uppercase">{t.pending}</p>
                           </div>
                        </div>
@@ -272,17 +272,17 @@ const Profile: React.FC<ProfileProps> = ({
         </div>
       )}
 
-      {view === 'create' && (
+       {view === 'create' && (
         <div className="max-w-md mx-auto w-full px-4 sm:px-0">
-          <div className="bg-gray-900 p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] border border-gray-800 shadow-2xl space-y-6 sm:space-y-8 animate-in zoom-in-95">
+          <div className="bg-white dark:bg-gray-900 p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-2xl space-y-6 sm:space-y-8 animate-in zoom-in-95">
             <div className="flex items-center gap-4">
-              <button onClick={() => setView('info')} className="p-2 sm:p-3 bg-gray-800 rounded-xl sm:rounded-2xl text-gray-400 hover:text-white transition-colors"><ChevronRight className="rotate-180" size={18}/></button>
-              <h3 className="text-xl sm:text-2xl font-black text-white">{t.createNewMess}</h3>
+              <button onClick={() => setView('info')} className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-xl sm:rounded-2xl text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"><ChevronRight className="rotate-180" size={18}/></button>
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{t.createNewMess}</h3>
             </div>
             <div className="space-y-6">
               <div className="space-y-1.5">
                 <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.messNameLabel}</label>
-                <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-xl sm:rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all" placeholder={t.messNamePlaceholder} value={messName} onChange={e => setMessName(e.target.value)} />
+                <input type="text" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-blue-600 transition-all" placeholder={t.messNamePlaceholder} value={messName} onChange={e => setMessName(e.target.value)} />
               </div>
               <button onClick={handleCreateMess} disabled={loading || !messName} className="w-full py-4 sm:py-5 bg-blue-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-blue-500/10">
                 {loading ? <Loader2 size={18} className="animate-spin"/> : <PlusCircle size={18}/>} {t.createMessBtn}
@@ -292,16 +292,16 @@ const Profile: React.FC<ProfileProps> = ({
         </div>
       )}
 
-      {view === 'join' && (
+       {view === 'join' && (
         <div className="max-w-md mx-auto w-full px-4 sm:px-0">
-          <div className="bg-gray-900 p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] border border-gray-800 shadow-2xl space-y-6 sm:space-y-8 animate-in zoom-in-95">
+          <div className="bg-white dark:bg-gray-900 p-8 sm:p-10 rounded-[2.5rem] sm:rounded-[3rem] border border-gray-100 dark:border-gray-800 shadow-2xl space-y-6 sm:space-y-8 animate-in zoom-in-95">
             <div className="flex items-center gap-4">
-              <button onClick={() => { setIsScanning(false); setView('info'); }} className="p-2 sm:p-3 bg-gray-800 rounded-xl sm:rounded-2xl text-gray-400 hover:text-white transition-colors"><ChevronRight className="rotate-180" size={18}/></button>
-              <h3 className="text-xl sm:text-2xl font-black text-white">{t.joinMess}</h3>
+              <button onClick={() => { setIsScanning(false); setView('info'); }} className="p-2 sm:p-3 bg-gray-50 dark:bg-gray-800 rounded-xl sm:rounded-2xl text-gray-400 hover:text-gray-900 dark:hover:text-white transition-colors"><ChevronRight className="rotate-180" size={18}/></button>
+              <h3 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{t.joinMess}</h3>
             </div>
             <div className="space-y-6">
               {!isScanning ? (
-                <button onClick={() => setIsScanning(true)} className="w-full flex items-center justify-center gap-3 bg-blue-600/10 border border-blue-500/20 text-blue-400 p-5 sm:p-6 rounded-2xl sm:rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg">
+                <button onClick={() => setIsScanning(true)} className="w-full flex items-center justify-center gap-3 bg-blue-600/5 dark:bg-blue-600/10 border border-blue-500/20 text-blue-600 dark:text-blue-400 p-5 sm:p-6 rounded-2xl sm:rounded-3xl font-black uppercase text-[10px] sm:text-xs tracking-widest hover:bg-blue-600 hover:text-white transition-all shadow-lg">
                   <Camera size={24} className="hidden xs:block"/> {t.scanQRCode}
                 </button>
               ) : (
@@ -315,11 +315,11 @@ const Profile: React.FC<ProfileProps> = ({
               <div className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.messIdLabel}</label>
-                  <input type="text" className="w-full bg-gray-800 border border-gray-700 rounded-xl sm:rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600 transition-all" placeholder={t.messIdPlaceholder} value={messCode} onChange={e => setMessCode(e.target.value)} />
+                  <input type="text" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-green-600 transition-all" placeholder={t.messIdPlaceholder} value={messCode} onChange={e => setMessCode(e.target.value)} />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1 mb-1 block">{t.messPasswordLabel}</label>
-                  <input type="password" className="w-full bg-gray-800 border border-gray-700 rounded-xl sm:rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-white font-bold outline-none focus:ring-2 focus:ring-green-600 transition-all" placeholder="••••••" value={messPasswordInput} onChange={e => setMessPasswordInput(e.target.value)} />
+                  <input type="password" className="w-full bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl px-5 sm:px-6 py-4 sm:py-5 text-gray-900 dark:text-white font-bold outline-none focus:ring-2 focus:ring-green-600 transition-all" placeholder="••••••" value={messPasswordInput} onChange={e => setMessPasswordInput(e.target.value)} />
                 </div>
               </div>
               <button onClick={handleJoinMess} disabled={loading} className="w-full py-4 sm:py-5 bg-green-600 text-white rounded-xl sm:rounded-[1.5rem] font-black uppercase text-[10px] sm:text-xs flex items-center justify-center gap-3 transition-all active:scale-95 shadow-xl shadow-green-500/10">
@@ -330,20 +330,20 @@ const Profile: React.FC<ProfileProps> = ({
         </div>
       )}
 
-      {view === 'success' && createdInfo && (
+       {view === 'success' && createdInfo && (
         <div className="max-w-lg mx-auto w-full px-4 sm:px-0 animate-in zoom-in-95">
-          <div className="bg-gray-900 p-10 sm:p-12 rounded-[3rem] sm:rounded-[4rem] border border-blue-500/30 text-center space-y-8 sm:space-y-10 shadow-2xl">
+          <div className="bg-white dark:bg-gray-900 p-10 sm:p-12 rounded-[3rem] sm:rounded-[4rem] border border-gray-100 dark:border-blue-500/30 text-center space-y-8 sm:space-y-10 shadow-2xl">
              <div className="w-20 h-20 sm:w-24 sm:h-24 bg-green-600 rounded-full flex items-center justify-center text-white mx-auto shadow-2xl">
                 <CheckCircle2 size={40} className="sm:w-12 sm:h-12"/>
              </div>
-             <div className="bg-gray-800/50 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-700 space-y-5 sm:space-y-6">
+             <div className="bg-gray-50 dark:bg-gray-800/50 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-700 space-y-5 sm:space-y-6">
                 <div className="text-left">
                    <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase mb-2 ml-1">{t.messIdLabel}</p>
-                   <code className="text-blue-400 font-black text-xs sm:text-sm break-all bg-black/30 p-3 rounded-xl block">{createdInfo.id}</code>
+                   <code className="text-blue-600 dark:text-blue-400 font-black text-xs sm:text-sm break-all bg-gray-100 dark:bg-black/30 p-3 rounded-xl block">{createdInfo.id}</code>
                 </div>
                 <div className="text-left">
                    <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase mb-2 ml-1">{t.messPasswordLabel}</p>
-                   <code className="text-green-500 font-black text-2xl sm:text-3xl block bg-black/30 p-3 rounded-xl text-center tracking-widest">{createdInfo.pass}</code>
+                   <code className="text-green-600 dark:text-green-500 font-black text-2xl sm:text-3xl block bg-gray-100 dark:bg-black/30 p-3 rounded-xl text-center tracking-widest">{createdInfo.pass}</code>
                 </div>
              </div>
              <button onClick={() => window.location.reload()} className="w-full py-5 sm:py-6 bg-blue-600 text-white rounded-2xl sm:rounded-[2rem] font-black uppercase text-xs sm:text-sm shadow-xl shadow-blue-500/20 active:scale-95 transition-all">{t.enterDashboard}</button>
@@ -352,9 +352,9 @@ const Profile: React.FC<ProfileProps> = ({
       )}
 
       {/* Footer Info & Logout */}
-      <div className="pt-10 border-t border-gray-900 flex flex-col items-center gap-4">
-        <p className="text-[8px] sm:text-[9px] font-black text-gray-700 uppercase tracking-[0.3em]">{t.appName} v1.0.0</p>
-        <button onClick={onLogout} className="flex items-center gap-2 text-gray-600 hover:text-red-500 font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all p-2">
+      <div className="pt-10 border-t border-gray-100 dark:border-gray-900 flex flex-col items-center gap-4">
+        <p className="text-[8px] sm:text-[9px] font-black text-gray-400 dark:text-gray-700 uppercase tracking-[0.3em]">{t.appName} v1.0.0</p>
+        <button onClick={onLogout} className="flex items-center gap-2 text-gray-500 dark:text-gray-600 hover:text-red-500 font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all p-2">
           <LogOut size={14}/> {t.logoutBtn}
         </button>
       </div>

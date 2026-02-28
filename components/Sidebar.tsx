@@ -40,6 +40,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
     { id: 'meal-bazar-ledger', label: t.mealBazarLedger, icon: TableProperties, show: hasActiveMess },
     { id: 'analytics', label: t.analytics, icon: LineChartIcon, show: hasActiveMess },
     { id: 'reports', label: t.reports, icon: FileBarChart, show: hasActiveMess },
+    { id: 'mess-settings', label: t.messSettings, icon: SettingsIcon, show: hasActiveMess },
   ];
 
   return (

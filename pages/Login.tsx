@@ -59,19 +59,19 @@ const Login: React.FC<LoginProps> = ({ onLogin, t }) => {
     let letters = "";
 
     if (words.length >= 3) {
-      // ৩ শব্দ হলে: প্রতিটি শব্দের প্রথম অক্ষর
+      // If 3 words: first letter of each word
       letters = (words[0][0] || '') + (words[1][0] || '') + (words[2][0] || '');
     } else if (words.length === 2) {
-      // ২ শব্দ হলে: ১ম শব্দের ১ম অক্ষর + ২য় শব্দের ১ম অক্ষর + ১ম শব্দের পরের অক্ষর (২য় অক্ষর)
+      // If 2 words: 1st letter of 1st word + 1st letter of 2nd word + 2nd letter of 1st word
       letters = (words[0][0] || '') + (words[1][0] || '') + (words[0][1] || words[1][1] || 'x');
     } else if (words.length === 1) {
-      // ১ শব্দ হলে: প্রথম ৩ অক্ষর
+      // If 1 word: first 3 letters
       letters = (words[0] + 'xxx').substring(0, 3);
     } else {
       letters = "usr";
     }
 
-    // ৫টি র‍্যান্ডম ডিজিট
+    // 5 random digits
     const digits = Math.floor(10000 + Math.random() * 90000);
     return `@${letters.substring(0, 3).toLowerCase()}${digits}`;
   };

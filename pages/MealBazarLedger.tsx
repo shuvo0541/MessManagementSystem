@@ -115,7 +115,7 @@ const MealBazarLedger: React.FC<MealBazarLedgerProps> = ({ db, month, t, theme }
         })}
       </div>
 
-      {/* ডেক্সটপ ভিউ (Detailed Ledger Table) */}
+      {/* Desktop View (Detailed Ledger Table) */}
       <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-2xl">
         <div className="overflow-x-auto no-scrollbar">
           <table className="w-full text-left min-w-[650px] sm:min-w-0">

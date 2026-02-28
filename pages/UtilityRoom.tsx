@@ -250,7 +250,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
           </div>
         )}
 
-        {/* মোবাইল ভিউ (Card Layout) */}
+        {/* Mobile View (Card Layout) */}
         <div className="sm:hidden space-y-4">
           {stats.userStats.filter((u:any) => u.isActive).map((u: any) => {
             const userUtilitiesTotal = utilityBreakdown.reduce((s: number, util: any) => s + (Number(util.shares[u.userId]) || 0), 0);
@@ -293,7 +293,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
           })}
         </div>
 
-        {/* ডেক্সটপ ভিউ (Table Layout) */}
+        {/* Desktop View (Table Layout) */}
         <div className="hidden sm:block bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 overflow-hidden shadow-2xl relative">
           <div className="overflow-x-auto no-scrollbar">
             <table className="w-full text-left min-w-[700px] sm:min-w-0">
@@ -353,7 +353,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 sm:gap-10">
-            {/* রুম সেটিংস */}
+            {/* Room Settings */}
             <div className="space-y-4 sm:space-y-6">
               <div className="flex items-center justify-between px-2 sm:px-4">
                 <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><Home className="text-blue-500" size={18}/> {t.roomSettings}</h3>
@@ -420,7 +420,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
               </div>
             </div>
 
-            {/* ইউটিলিটি বিল */}
+            {/* Utility Bills */}
             <div className="space-y-4 sm:space-y-6">
               <div className="flex items-center justify-between px-2 sm:px-4">
                 <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><Zap className="text-yellow-500" size={18}/> {t.utilityBill}</h3>
@@ -486,7 +486,7 @@ const UtilityRoom: React.FC<UtilityRoomProps> = ({ db, updateDB, month, user, me
             </div>
           </div>
 
-          {/* মেম্বার রুম বরাদ্দ */}
+          {/* Member Room Allocation */}
           <div className="space-y-4 sm:space-y-6">
             <div className="px-2 sm:px-4">
                <h3 className="text-lg sm:text-xl font-black text-gray-900 dark:text-white flex items-center gap-2 sm:gap-3"><UserCheck className="text-green-500" size={18}/> {t.memberRoomAssignment}</h3>

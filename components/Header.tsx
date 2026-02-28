@@ -21,7 +21,7 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const currentYear = new Date().getFullYear();
   
-  // সাল সিলেক্টরের জন্য অপশন তৈরি (২০২০ থেকে বর্তমান সাল পর্যন্ত)
+  // Generate options for year selector (from 2020 to current year + 2)
   const years = [];
   for (let y = currentYear + 2; y >= 2020; y--) {
     years.push(y);
@@ -90,7 +90,7 @@ const Header: React.FC<HeaderProps> = ({
           {/* Right Section: Month/Year Selector */}
           <div className="flex items-center gap-1 sm:gap-2 shrink-0">
             <div className="flex items-center bg-gray-50 dark:bg-gray-800/80 rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-700 p-0.5 sm:p-1">
-              {/* মাস সিলেক্টর */}
+              {/* Month Selector */}
               <div className="relative flex items-center">
                 <select 
                   value={selectedMonthIdx}
@@ -106,7 +106,7 @@ const Header: React.FC<HeaderProps> = ({
 
               <div className="h-3 sm:h-4 w-px bg-gray-200 dark:bg-gray-700 mx-0.5 sm:mx-1"></div>
 
-              {/* সাল সিলেক্টর */}
+              {/* Year Selector */}
               <div className="relative flex items-center">
                 <select 
                   value={selectedYear}

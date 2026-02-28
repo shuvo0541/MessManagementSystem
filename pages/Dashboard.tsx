@@ -5,25 +5,15 @@ import { getCalculations, getLocalDateStr, getCurrentMonthStr } from '../db';
 import { MessSystemDB, User, Role } from '../types';
 import { supabase } from '../supabase';
 import { 
-  TrendingUp, 
-  Utensils, 
-  Wallet, 
-  Zap,
-  PieChart as PieChartIcon,
-  Lock,
+  Lock, 
   Unlock,
-  RefreshCcw,
-  Key,
-  Hash,
-  Copy,
-  QrCode,
-  X,
   UserCheck,
   Inbox,
-  AtSign,
-  User as UserIcon,
-  Trash2,
-  Shield,
+  TrendingUp,
+  Utensils,
+  Wallet,
+  Zap,
+  PieChart as PieChartIcon,
   CircleDollarSign
 } from 'lucide-react';
 import { 
@@ -51,7 +41,6 @@ interface DashboardProps {
 const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId, messAdminId, onViewChange, t, theme }) => {
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const [loadingRequests, setLoadingRequests] = useState(false);
-  const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
     if (!user.isAdmin || !messId) return;
@@ -103,39 +92,6 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
     }
   };
 
-  const handleDeleteMess = async () => {
-    const confirmDelete = window.confirm(t.deleteMessConfirm);
-    
-    if (confirmDelete) {
-      setLoadingRequests(true);
-      try {
-        const { error: reqError } = await supabase.from('join_requests').delete().eq('mess_id', messId);
-        if (reqError) console.warn("Requests deletion error:", reqError);
-        
-        try {
-          await supabase.from('invitations').delete().eq('mess_id', messId);
-        } catch (e) {}
-
-        const { error: messError } = await supabase.from('messes').delete().eq('id', messId);
-        if (messError) {
-          if (messError.message.includes("policy")) {
-            throw new Error(t.deletePermissionError);
-          }
-          throw messError;
-        }
-        
-        localStorage.removeItem('ACTIVE_MESS_ID');
-        alert(t.deleteMessSuccess);
-        window.location.reload();
-      } catch (err: any) {
-        console.error("Delete Fail:", err);
-        alert(`${t.deleteMessFail}: ${err.message || "Unknown Database Error"}`);
-      } finally {
-        setLoadingRequests(false);
-      }
-    }
-  };
-
   const stats = useMemo(() => getCalculations(db, month), [db, month]);
   const todayExpense = useMemo(() => {
     const today = getLocalDateStr();
@@ -144,15 +100,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
   const chartData = useMemo(() => stats.userStats.map((u: any) => ({ name: u.name, meals: u.totalMeals })), [stats.userStats]);
   
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
-    alert(`${label} ${t.copied}`);
-  };
-
-  const qrData = `${messId}|${db.messPassword || ''}`;
-  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qrData)}`;
-
-  // বড় নামগুলোকে ২-৩ লাইনে ভাঙার জন্য কাস্টম টিক ফাংশন
+  // Custom tick function to break long names into 2-3 lines
   const renderCustomAxisTick = ({ x, y, payload }: any) => {
     const name = payload.value;
     const words = name.split(' ');
@@ -215,18 +163,8 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
            >
              <CircleDollarSign size={14}/> {t.personalAccount}
            </button>
-           {user.id === messAdminId && (
-              <button 
-                onClick={handleDeleteMess}
-                disabled={loadingRequests}
-                className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3.5 bg-red-600/10 text-red-500 border border-red-500/20 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-red-600 hover:text-white transition-all disabled:opacity-50"
-              >
-                {loadingRequests ? <RefreshCcw className="animate-spin" size={14}/> : <Trash2 size={14}/>} {t.deleteMess}
-              </button>
-           )}
            {user.isAdmin && (
               <>
-                 <button onClick={() => setShowQRModal(true)} className="flex items-center gap-2 px-4 sm:px-5 py-2.5 sm:py-3.5 bg-blue-600/10 text-blue-400 border border-blue-500/20 rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest hover:bg-blue-600 transition-all"><QrCode size={14} className="sm:w-4 sm:h-4"/> QR</button>
                  <button onClick={() => { if(window.confirm(isMonthLocked ? t.unlockMonth + "?" : t.closeMonth + "?")) updateDB({ lockedMonths: isMonthLocked ? db.lockedMonths?.filter(m => m !== month) : [...(db.lockedMonths || []), month] }); }} className={`flex items-center gap-2 sm:gap-3 px-5 sm:px-6 py-2.5 sm:py-3.5 ${isMonthLocked ? 'bg-amber-600/10 text-amber-500 border-amber-500/20' : 'bg-red-600/10 text-red-500 border-red-500/20'} rounded-xl sm:rounded-2xl font-black uppercase text-[9px] sm:text-[10px] tracking-widest transition-all`}>
                     {isMonthLocked ? <Unlock size={14}/> : <Lock size={14}/>} {isMonthLocked ? t.unlockMonth : t.closeMonth}
                  </button>
@@ -295,55 +233,8 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
                </div>
             </div>
           )}
-
-          <div className="bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 space-y-6 shadow-xl">
-             <h3 className="text-base font-black text-gray-900 dark:text-white flex items-center gap-3">
-               <Shield size={18} className="text-purple-500" />
-               {t.messAccess}
-             </h3>
-             <div className="space-y-4">
-                <div className="space-y-1">
-                   <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">{t.messIdLabel}</p>
-                   <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700">
-                      <code className="text-[10px] font-black text-blue-600 dark:text-blue-400 truncate pr-2">{messId}</code>
-                      <button onClick={() => copyToClipboard(messId || '', t.messIdLabel)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
-                         <Copy size={14} />
-                      </button>
-                   </div>
-                </div>
-                {user.isAdmin && (
-                  <div className="space-y-1">
-                    <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest ml-1">{t.messPasswordLabel}</p>
-                    <div className="flex items-center justify-between bg-gray-50 dark:bg-gray-800 p-3.5 rounded-xl border border-gray-200 dark:border-gray-700">
-                       <code className="text-lg font-black text-green-600 dark:text-green-500 tracking-widest">{db.messPassword}</code>
-                       <button onClick={() => copyToClipboard(db.messPassword || '', t.messPasswordLabel)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white transition-colors">
-                          <Copy size={14} />
-                       </button>
-                    </div>
-                  </div>
-                )}
-             </div>
-          </div>
         </div>
       </div>
-
-      {showQRModal && (
-        <div className="fixed inset-0 bg-black/90 backdrop-blur-xl z-[100] flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 w-full max-w-sm rounded-[3rem] border border-gray-100 dark:border-gray-800 p-10 text-center space-y-8 animate-in zoom-in-95 duration-300">
-            <div className="flex justify-between items-center mb-4">
-               <h3 className="text-xl font-black text-gray-900 dark:text-white">{t.messQRCode}</h3>
-               <button onClick={() => setShowQRModal(false)} className="text-gray-500 hover:text-gray-900 dark:hover:text-white bg-gray-100 dark:bg-gray-800 p-2 rounded-xl"><X size={20}/></button>
-            </div>
-            <div className="bg-white p-6 rounded-[2.5rem] shadow-2xl inline-block mx-auto">
-               <img src={qrUrl} alt="Mess QR Code" className="w-48 h-48 sm:w-56 sm:h-56" />
-            </div>
-            <div className="space-y-2">
-               <p className="text-[10px] text-gray-500 font-bold leading-relaxed">{t.qrCodeDesc}</p>
-            </div>
-            <button onClick={() => setShowQRModal(false)} className="w-full py-4 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black uppercase text-xs">{t.close}</button>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

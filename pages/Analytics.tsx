@@ -16,10 +16,10 @@ interface AnalyticsProps {
 }
 
 const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
-  // হেডারে সিলেক্ট করা মাস থেকে বছরটি নেওয়া হচ্ছে
+  // Get year from the month selected in header
   const selectedYear = parseInt(month.split('-')[0]);
 
-  // ১. সিলেক্ট করা বছরের ডাটা সংগ্রহ (জানুয়ারি থেকে ডিসেম্বর)
+  // 1. Collect data for the selected year (January to December)
   const yearlyData = useMemo(() => {
     const months = [];
     const monthNames = t.months;
@@ -27,7 +27,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
     for (let i = 0; i < 12; i++) {
       const mStr = `${selectedYear}-${String(i + 1).padStart(2, '0')}`;
       
-      // মেম্বারদের জন্য শুধুমাত্র তাদের অ্যাক্টিভ মাসগুলোর ডাটা প্রসেস করা
+      // Process data only for active months for members
       if (!user.isAdmin) {
         if (user.joiningMonth && mStr < user.joiningMonth) continue;
         if (user.leavingMonth && mStr > user.leavingMonth) continue;
@@ -46,7 +46,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
     return months;
   }, [db, selectedYear, user]);
 
-  // ২. বার্ষিক বাজার কন্ট্রিবিউশন (সিলেক্ট করা বছরে)
+  // 2. Yearly Bazar Contribution (in selected year)
   const userYearlyContribution = useMemo(() => {
     const residents = db.users; 
     return residents.map(u => {
@@ -59,7 +59,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
     }).filter(u => u.amount > 0).sort((a, b) => b.amount - a.amount);
   }, [db, selectedYear]);
 
-  // ৩. ইউটিলিটি ব্রেকডাউন
+  // 3. Utility Breakdown
   const utilityBreakdown = useMemo(() => {
     return db.utilities.map(u => ({
       name: u.name,
@@ -67,7 +67,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
     }));
   }, [db.utilities]);
 
-  // ৪. প্রকৃত শীর্ষ ৫ মিল গ্রহণকারী বের করা (সিলেক্ট করা বছরের মিল যোগ করে)
+  // 4. Find top 5 meal consumers (summing meals for the selected year)
   const top5Eaters = useMemo(() => {
     const userMealSums: Record<string, { id: string, name: string, total: number }> = {};
     
@@ -86,7 +86,7 @@ const Analytics: React.FC<AnalyticsProps> = ({ db, user, month, t, theme }) => {
       .slice(0, 5);
   }, [db.users, db.meals, selectedYear]);
 
-  // ৫. মাসিক মিল ট্রেন্ড ডাটা প্রসেসিং (শীর্ষ ৫ জনের জন্য)
+  // 5. Monthly Meal Trend Data Processing (for top 5)
   const mealConsumptionTrend = useMemo(() => {
     return yearlyData.map(d => {
       const entry: any = { month: d.month, monthName: d.monthName };

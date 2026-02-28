@@ -59,19 +59,19 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
 
   const reportData = useMemo(() => {
     return currentStats.userStats.map((u: any) => {
-      // স্থির খরচ (রুম ভাড়া + ইউটিলিটি)
+      // Fixed Cost (Room Rent + Utility)
       const fixedCost = u.roomRent + u.utilityShare;
       
-      // মিল সমন্বয় (গত মাসের বাজার - গত মাসের খাবার খরচ) - এটি সরাসরি db.ts থেকে আসছে
+      // Meal Adjustment (Last month's bazar - Last month's food cost) - coming from db.ts
       const mealAdjustment = u.prevAdjustment;
 
-      // নিট প্রদেয় (স্থির খরচ - মিল সমন্বয়)
+      // Net Payable (Fixed Cost - Meal Adjustment)
       const netRequired = fixedCost - mealAdjustment;
       
-      // জমা টাকা
+      // Deposited amount
       const deposited = u.payments;
 
-      // চূড়ান্ত অবস্থা (জমা - নিট প্রদেয়)
+      // Final Status (Deposited - Net Payable)
       const finalStatus = deposited - netRequired;
 
       return {
@@ -224,7 +224,7 @@ const Reports: React.FC<ReportsProps> = ({ month, db, updateDB, isAdmin, role, t
                 <th className="px-4 py-6 text-right">{t.fixedCost}</th>
                 <th className="px-4 py-6 text-center">{t.mealAdjustment}</th>
                 <th className="px-4 py-6 text-center bg-gray-50 dark:bg-gray-800/20 print:bg-transparent">{t.deposited} (৳)</th>
-                <th className="px-4 py-6 text-right text-blue-600 dark:text-blue-400">{t.total} (৳)</th>
+                <th className="px-4 py-6 text-right text-blue-600 dark:text-blue-400">{t.grandTotal} (৳)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100 dark:divide-gray-800 print:divide-gray-100">

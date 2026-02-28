@@ -84,8 +84,6 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
   const userBazarTotal = userBazars.reduce((s, b) => s + b.amount, 0);
   const foodExpense = userStat.mealCost;
   const foodBalance = userBazarTotal - foodExpense;
-  const remainingBalance = userStat.payments - userStat.netRequired;
-  const overallBalance = remainingBalance + foodBalance;
 
   return (
     <div className="space-y-6 sm:space-y-8 pb-10 animate-in fade-in duration-500 overflow-x-hidden px-2 sm:px-0">
@@ -105,7 +103,7 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 sm:gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 sm:gap-6">
         {/* Total Meals */}
         <button 
           onClick={() => setShowMealDetails(true)}
@@ -129,7 +127,8 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
             <TrendingUp size={100} />
           </div>
           <div className="relative z-10">
-            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.foodExpense}</p>
+            <h4 className="text-sm font-black text-orange-500 uppercase tracking-widest mb-2">{t.foodExpense}</h4>
+            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.totalCost}</p>
             <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">৳{foodExpense.toFixed(2)}</p>
             <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{t.rateLabel}{stats.mealRate.toFixed(2)}</p>
           </div>
@@ -174,23 +173,10 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
           <div className="relative z-10">
             <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.fixedCostRoomUtil}</p>
             <p className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">৳{(userStat.roomRent + userStat.utilityShare).toFixed(2)}</p>
-            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{t.room}: {userStat.roomRent.toFixed(0)} | {t.utility}: {userStat.utilityShare.toFixed(0)}</p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{t.room}: {userStat.roomRent.toFixed(0)} | {t.utilityOnly} {userStat.utilityShare.toFixed(0)}</p>
           </div>
         </div>
 
-        {/* Arrears Summary */}
-        <div className="bg-white dark:bg-gray-900 p-5 sm:p-6 rounded-2xl sm:rounded-[2rem] border border-gray-100 dark:border-gray-800 shadow-xl relative overflow-hidden group">
-          <div className="absolute -right-4 -bottom-4 opacity-5 dark:opacity-10 text-amber-500 group-hover:scale-110 transition-transform">
-            <History size={100} />
-          </div>
-          <div className="relative z-10">
-            <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.prevMonthArrearsRefund}</p>
-            <p className={`text-xl sm:text-2xl font-black ${userStat.prevAdjustment >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-              ৳{Math.abs(userStat.prevAdjustment).toFixed(2)}
-            </p>
-            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{prevMonthName} {userStat.prevAdjustment >= 0 ? t.refund : t.arrears}</p>
-          </div>
-        </div>
       </div>
 
       {/* Payment & Balance Section */}
@@ -201,38 +187,47 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
           <div className="bg-gray-50 dark:bg-gray-800/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
+            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-3">{t.fixedCost}</p>
+            <div className="space-y-2">
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500 font-bold">{t.room}:</span>
+                <span className="font-black text-gray-900 dark:text-white">৳{userStat.roomRent.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs">
+                <span className="text-gray-500 font-bold">{t.utilityOnly}</span>
+                <span className="font-black text-gray-900 dark:text-white">৳{userStat.utilityShare.toFixed(2)}</span>
+              </div>
+              <div className="pt-2 border-t border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <span className="text-[10px] font-black text-blue-600 uppercase">{t.total}:</span>
+                <span className="text-lg font-black text-blue-600">৳{(userStat.roomRent + userStat.utilityShare).toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-800/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
+            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.mealAdjustment}</p>
+            <p className={`text-2xl font-black ${userStat.prevAdjustment >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
+              ৳{Math.abs(userStat.prevAdjustment).toFixed(2)}
+            </p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{userStat.prevAdjustment >= 0 ? t.receive : t.arrears}</p>
+          </div>
+          <div className={`p-5 rounded-2xl border flex flex-col justify-center ${userStat.balance >= 0 ? 'bg-emerald-600/10 dark:bg-emerald-900/10 border-emerald-500/20' : 'bg-rose-600/10 dark:bg-rose-900/10 border-rose-500/20'}`}>
+            <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${userStat.balance >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
+              {t.grandTotal}
+            </p>
+            <p className={`text-2xl font-black ${userStat.balance >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
+              ৳{Math.abs(userStat.balance).toFixed(2)}
+            </p>
+            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{userStat.balance >= 0 ? t.willReceive : t.arrearsExist}</p>
+          </div>
+          <div className="bg-gray-50 dark:bg-gray-800/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-800 flex flex-col justify-center">
             <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.depositedPayment}</p>
             <p className="text-2xl font-black text-gray-900 dark:text-white">৳{userStat.payments.toFixed(2)}</p>
-          </div>
-          <div className="bg-gray-50 dark:bg-gray-800/30 p-5 rounded-2xl border border-gray-100 dark:border-gray-800">
-            <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{t.totalCostThisMonth}</p>
-            <p className="text-2xl font-black text-blue-600 dark:text-blue-500">৳{userStat.currentMonthCost.toFixed(2)}</p>
-            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{t.foodRoomUtility}</p>
-          </div>
-          <div className={`p-5 rounded-2xl border ${remainingBalance >= 0 ? 'bg-green-600/10 dark:bg-green-900/10 border-green-500/20' : 'bg-red-600/10 dark:bg-red-900/10 border-red-500/20'}`}>
-            <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${remainingBalance >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-              {t.fixedCostAdjustment}
-            </p>
-            <p className={`text-2xl font-black ${remainingBalance >= 0 ? 'text-green-600 dark:text-green-500' : 'text-red-600 dark:text-red-500'}`}>
-              ৳{Math.abs(remainingBalance).toFixed(2)}
-            </p>
-            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{remainingBalance >= 0 ? t.willGetRefund : t.arrearsExist}</p>
-          </div>
-          <div className={`p-5 rounded-2xl border ${overallBalance >= 0 ? 'bg-emerald-600/10 dark:bg-emerald-900/10 border-emerald-500/20' : 'bg-rose-600/10 dark:bg-rose-900/10 border-rose-500/20'}`}>
-            <p className={`text-[9px] font-black uppercase tracking-widest mb-1 ${overallBalance >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
-              {t.finalBalanceAll}
-            </p>
-            <p className={`text-2xl font-black ${overallBalance >= 0 ? 'text-emerald-600 dark:text-emerald-500' : 'text-rose-600 dark:text-rose-500'}`}>
-              ৳{Math.abs(overallBalance).toFixed(2)}
-            </p>
-            <p className="text-[8px] font-black text-gray-500 mt-1 uppercase">{overallBalance >= 0 ? t.totalWillGetRefund : t.totalArrearsExist}</p>
           </div>
         </div>
         <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/10 border border-blue-100 dark:border-blue-800 rounded-2xl flex items-start gap-3">
           <Info className="text-blue-500 shrink-0 mt-0.5" size={16} />
           <p className="text-[10px] font-medium text-blue-700 dark:text-blue-300 leading-relaxed">
             <span className="font-black uppercase tracking-widest block mb-1">{t.calculationGuide}</span>
-            {t.finalBalanceFormula} 
             {t.foodAdjustmentNote}
           </p>
         </div>
@@ -370,7 +365,16 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={yearlyData}>
                       <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? "#374151" : "#e5e7eb"} vertical={false} />
-                      <XAxis dataKey="monthName" stroke={theme === 'dark' ? "#9ca3af" : "#4b5563"} fontSize={10} fontWeight="bold" />
+                      <XAxis 
+                        dataKey="monthName" 
+                        stroke={theme === 'dark' ? "#9ca3af" : "#4b5563"} 
+                        fontSize={10} 
+                        fontWeight="bold" 
+                        interval={0}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
                       <YAxis stroke={theme === 'dark' ? "#9ca3af" : "#4b5563"} fontSize={10} fontWeight="bold" />
                       <Tooltip 
                         contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`, borderRadius: '12px' }}
@@ -395,7 +399,16 @@ const PersonalAccount: React.FC<PersonalAccountProps> = ({ db, user, month, t, t
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={yearlyData}>
                       <CartesianGrid strokeDasharray="3 3" stroke={theme === 'dark' ? "#374151" : "#e5e7eb"} vertical={false} />
-                      <XAxis dataKey="monthName" stroke={theme === 'dark' ? "#9ca3af" : "#4b5563"} fontSize={10} fontWeight="bold" />
+                      <XAxis 
+                        dataKey="monthName" 
+                        stroke={theme === 'dark' ? "#9ca3af" : "#4b5563"} 
+                        fontSize={10} 
+                        fontWeight="bold" 
+                        interval={0}
+                        angle={-45}
+                        textAnchor="end"
+                        height={60}
+                      />
                       <YAxis stroke={theme === 'dark' ? "#9ca3af" : "#4b5563"} fontSize={10} fontWeight="bold" />
                       <Tooltip 
                         contentStyle={{ backgroundColor: theme === 'dark' ? '#111827' : '#ffffff', border: `1px solid ${theme === 'dark' ? '#374151' : '#e5e7eb'}`, borderRadius: '12px' }}

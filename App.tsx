@@ -14,6 +14,7 @@ import MealBazarLedger from './pages/MealBazarLedger';
 import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
+import MessSettings from './pages/MessSettings';
 import PersonalAccount from './pages/PersonalAccount';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
@@ -34,7 +35,7 @@ const App: React.FC = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isPending, setIsPending] = useState(false);
   const [userMesses, setUserMesses] = useState<any[]>([]);
-  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('lang') as Language) || 'bn');
+  const [lang, setLang] = useState<Language>(() => (localStorage.getItem('lang') as Language) || 'en');
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark');
 
   const T = translations[lang];
@@ -338,6 +339,12 @@ const App: React.FC = () => {
 
   const commonProps = { db, updateDB, month: selectedMonth, user: user!, messId, messAdminId, onViewChange: (v: string) => setView(v), t: T, theme };
 
+  const handleMessNameChange = (newName: string) => {
+    setMessName(newName);
+    // Also update userMesses state if needed, though enterMess handles it on reload/switch
+    setUserMesses(prev => prev.map(m => m.id === messId ? { ...m, mess_name: newName } : m));
+  };
+
   const handleUpdateUser = async (updates: Partial<User>) => {
     if (!user) return;
     
@@ -409,6 +416,13 @@ const App: React.FC = () => {
           theme={theme}
           onThemeChange={setTheme}
           t={T}
+        />
+      );
+      case 'mess-settings': return (
+        <MessSettings 
+          {...commonProps} 
+          messName={messName} 
+          onMessNameChange={handleMessNameChange} 
         />
       );
       default: return <Dashboard {...commonProps} />;
