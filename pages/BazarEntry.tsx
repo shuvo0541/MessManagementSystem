@@ -18,18 +18,20 @@ import {
   CheckCircle2,
   Clock
 } from 'lucide-react';
+import { sendSystemBazarAlert } from '../utils/chatService';
 
 interface BazarEntryProps {
   month: string;
   userId: string;
   isAdmin: boolean;
+  messId?: string | null;
   db: MessSystemDB;
   updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
   t: any;
   theme: string;
 }
 
-const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, updateDB, t, theme }) => {
+const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, messId, db, updateDB, t, theme }) => {
   const [showModal, setShowModal] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastSavedEntry, setLastSavedEntry] = useState<any>(null);
@@ -84,6 +86,17 @@ const BazarEntry: React.FC<BazarEntryProps> = ({ month, userId, isAdmin, db, upd
     
     updateDB((prev: MessSystemDB) => ({ ...prev, bazars: [...prev.bazars, entry] }));
     
+    // Send automated system notification in mess chat
+    if (messId) {
+      sendSystemBazarAlert(
+        messId,
+        selectedUser?.name || t.unknown,
+        entry.amount,
+        entry.note,
+        entry.date
+      ).catch(() => {});
+    }
+
     setLastSavedEntry({
       ...entry,
       userName: selectedUser?.name || t.unknown

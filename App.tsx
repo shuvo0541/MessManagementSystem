@@ -15,9 +15,11 @@ import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import MessSettings from './pages/MessSettings';
+import MessChat from './pages/MessChat';
 import PersonalAccount from './pages/PersonalAccount';
 import Sidebar from './components/Sidebar';
 import Header from './components/Header';
+import FloatingChatWidget from './components/FloatingChatWidget';
 import { supabase } from './supabase';
 import { Loader2, AlertTriangle, RefreshCcw, Clock, ShieldAlert, Lock } from 'lucide-react';
 
@@ -387,6 +389,7 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'dashboard': return <Dashboard {...commonProps} />;
+      case 'mess-chat': return <MessChat {...commonProps} messId={messId!} messName={messName} />;
       case 'personal-account': return <PersonalAccount {...commonProps} />;
       case 'members': return <Members {...commonProps} role={userRole} isAdmin={user?.isAdmin || false} messAdminId={messAdminId} messId={messId!} messName={messName} user={user!} />;
       case 'utility': return <UtilityRoom {...commonProps} />;
@@ -469,6 +472,19 @@ const App: React.FC = () => {
           </div>
         </main>
       </div>
+
+      {/* Floating Chat Popup Widget (Accessible on all pages of the mess) */}
+      {messId && user && (
+        <FloatingChatWidget
+          messId={messId}
+          messName={messName}
+          user={user}
+          currentView={view}
+          onOpenFullChat={() => setView('mess-chat')}
+          t={T}
+          theme={theme}
+        />
+      )}
     </div>
   );
 };

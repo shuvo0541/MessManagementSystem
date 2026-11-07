@@ -14,7 +14,8 @@ import {
   LayoutGrid,
   User as UserIcon,
   CircleDollarSign,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  MessagesSquare
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -32,6 +33,7 @@ const Sidebar: React.FC<SidebarProps> = ({ currentView, onViewChange, onLogout, 
   const menuItems = [
     { id: 'profile', label: t.profile, icon: UserIcon, show: true },
     { id: 'dashboard', label: t.dashboard, icon: LayoutDashboard, show: hasActiveMess },
+    { id: 'mess-chat', label: t.messChat, icon: MessagesSquare, show: hasActiveMess },
     { id: 'personal-account', label: t.personalAccount, icon: CircleDollarSign, show: hasActiveMess },
     { id: 'members', label: t.members, icon: Users, show: hasActiveMess },
     { id: 'meals', label: t.meals, icon: UtensilsCrossed, show: hasActiveMess },

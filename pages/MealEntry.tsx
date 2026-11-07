@@ -3,24 +3,27 @@ import React, { useState, useMemo } from 'react';
 import { T } from '../translations';
 import { getLocalDateStr, getUserRoleInMonth, getActiveResidentsInMonth } from '../db';
 import { Role, Meal, MessSystemDB } from '../types';
-import { Utensils, Calendar as CalendarIcon, Sigma, User as UserIcon } from 'lucide-react';
+import { Utensils, Calendar as CalendarIcon, Sigma, User as UserIcon, MessagesSquare, Check } from 'lucide-react';
+import { sendSystemMealAlert } from '../utils/chatService';
 
 interface MealEntryProps {
   month: string;
   role: Role;
   userId: string;
   isAdmin: boolean;
+  messId?: string | null;
   db: MessSystemDB;
   updateDB: (updates: Partial<MessSystemDB> | ((prev: MessSystemDB) => MessSystemDB)) => void;
   t: any;
   theme: string;
 }
 
-const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updateDB, t, theme }) => {
+const MealEntry: React.FC<MealEntryProps> = ({ month, role, userId, isAdmin, messId, db, updateDB, t, theme }) => {
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = getLocalDateStr();
     return today.startsWith(month) ? today : `${month}-01`;
   });
+  const [sharedToast, setSharedToast] = useState(false);
 
   const isMonthLocked = (db.lockedMonths || []).includes(month);
 
@@ -92,6 +95,19 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
     });
   };
 
+  const handleShareMealStatus = () => {
+    if (!messId) return;
+    const currentUser = db.users.find(u => u.id === userId);
+    sendSystemMealAlert(
+      messId,
+      currentUser?.name || t.unknown,
+      selectedDate,
+      `মোট মিল ${globalTotalMeals.toFixed(1)} টি`
+    );
+    setSharedToast(true);
+    setTimeout(() => setSharedToast(false), 2500);
+  };
+
   return (
     <div className="space-y-6 pb-10 animate-in fade-in duration-500 overflow-x-hidden px-1 sm:px-0">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -103,14 +119,26 @@ const MealEntry: React.FC<MealEntryProps> = ({ month, userId, isAdmin, db, updat
           <p className="text-gray-500 font-bold uppercase text-[9px] sm:text-[10px] tracking-widest mt-1">{t.mealInputDesc}</p>
         </div>
         
-        <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm self-start sm:self-auto w-full sm:w-auto">
-           <CalendarIcon size={16} className="text-blue-500 ml-2" />
-           <input 
-              type="date" 
-              className="bg-transparent border-none text-[13px] sm:text-sm font-black text-gray-900 dark:text-white outline-none cursor-pointer p-1 flex-1"
-              value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
-            />
+        <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 bg-white dark:bg-gray-900 p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm self-start sm:self-auto w-full sm:w-auto">
+             <CalendarIcon size={16} className="text-blue-500 ml-2" />
+             <input 
+                type="date" 
+                className="bg-transparent border-none text-[13px] sm:text-sm font-black text-gray-900 dark:text-white outline-none cursor-pointer p-1 flex-1"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+              />
+          </div>
+          {messId && (
+            <button
+              onClick={handleShareMealStatus}
+              title="চ্যাটে আজকের মিলের হিসাব জানান"
+              className="flex items-center gap-1.5 px-3.5 py-3 bg-emerald-600/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 rounded-xl sm:rounded-2xl font-black text-xs hover:bg-emerald-600 hover:text-white transition-all shadow-sm active:scale-95 shrink-0"
+            >
+              {sharedToast ? <Check size={15} className="text-emerald-500" /> : <MessagesSquare size={15} />}
+              <span>{sharedToast ? 'চ্যাটে শেয়ার হয়েছে!' : 'চ্যাটে জানান'}</span>
+            </button>
+          )}
         </div>
       </div>
 

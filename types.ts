@@ -104,6 +104,25 @@ export interface Payment {
   month: string;
 }
 
+export interface ChatMessage {
+  id: string;
+  mess_id: string;
+  user_id: string;
+  user_name: string;
+  user_role?: string;
+  message_type: 'text' | 'announcement' | 'system';
+  content: string;
+  metadata?: {
+    amount?: number;
+    category?: 'bazar' | 'meal' | 'general';
+    title?: string;
+    date?: string;
+    [key: string]: any;
+  };
+  is_pinned?: boolean;
+  created_at: string;
+}
+
 export interface MessSystemDB {
   users: User[];
   rooms: Room[];
