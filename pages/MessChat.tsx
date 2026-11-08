@@ -9,8 +9,7 @@ import {
   OnlineUser,
   playNotificationChime,
   showDesktopNotification,
-  requestNotificationPermission,
-  MESS_CHAT_SQL
+  requestNotificationPermission
 } from '../utils/chatService';
 import { setLastReadTime } from '../utils/notificationService';
 import { 
@@ -28,7 +27,6 @@ import {
   ShoppingBag, 
   UtensilsCrossed, 
   AlertCircle,
-  Database,
   CheckCheck,
   ChevronDown,
   Info,
@@ -62,8 +60,6 @@ const MessChat: React.FC<MessChatProps> = ({
   const [isSending, setIsSending] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [showAnnouncementModal, setShowAnnouncementModal] = useState(false);
-  const [showSqlModal, setShowSqlModal] = useState(false);
-  const [sqlCopied, setSqlCopied] = useState(false);
   const [isLocalFallback, setIsLocalFallback] = useState(false);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
@@ -219,12 +215,6 @@ const MessChat: React.FC<MessChatProps> = ({
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  // Copy SQL script
-  const handleCopySql = () => {
-    navigator.clipboard.writeText(MESS_CHAT_SQL);
-    setSqlCopied(true);
-    setTimeout(() => setSqlCopied(false), 2500);
-  };
 
   // Format time (e.g. 10:45 AM or localized)
   const formatTime = (isoString: string) => {
@@ -336,13 +326,6 @@ const MessChat: React.FC<MessChatProps> = ({
             </button>
           )}
 
-          <button
-            onClick={() => setShowSqlModal(true)}
-            title={t?.viewSqlNotice || 'SQL সেটআপ'}
-            className="p-2.5 text-gray-400 hover:text-blue-500 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors"
-          >
-            <Database size={17} />
-          </button>
         </div>
       </div>
 
@@ -735,55 +718,7 @@ const MessChat: React.FC<MessChatProps> = ({
         </div>
       )}
 
-      {/* SQL Setup Modal */}
-      {showSqlModal && (
-        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="p-2.5 bg-blue-500 text-white rounded-2xl shadow-md">
-                  <Database size={20} />
-                </div>
-                <div>
-                  <h3 className="text-lg font-black text-gray-900 dark:text-white">{t?.sqlSetupTitle || 'Supabase SQL সেটআপ'}</h3>
-                  <p className="text-[10px] text-gray-500 font-bold">Supabase Realtime সক্রিয় করতে SQL স্ক্রিপ্ট</p>
-                </div>
-              </div>
-              <button
-                onClick={() => setShowSqlModal(false)}
-                className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-xl"
-              >
-                <X size={20} />
-              </button>
-            </div>
 
-            <div className="p-4 bg-blue-50/70 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-2xl text-xs text-blue-800 dark:text-blue-300 leading-relaxed font-medium">
-              💡 <strong>টিপস:</strong> আপনি যদি Supabase-এ রিয়েলটাইম চ্যাট সিঙ্ক চালু করতে চান, নিচের কোডটি কপি করে আপনার Supabase প্রোজেক্টের <strong>SQL Editor</strong>-এ গিয়ে রান করুন। অ্যাপটি ইতিমধ্যেই ব্যাকআপ মোডে কাজ করছে।
-            </div>
-
-            <div className="relative">
-              <pre className="bg-gray-900 text-gray-100 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-60 border border-gray-800">
-                {MESS_CHAT_SQL}
-              </pre>
-              <button
-                onClick={handleCopySql}
-                className="absolute top-3 right-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
-              >
-                {sqlCopied ? (t?.sqlCopied || 'কপি হয়েছে!') : (t?.copySql || 'কপি করুন')}
-              </button>
-            </div>
-
-            <div className="flex justify-end">
-              <button
-                onClick={() => setShowSqlModal(false)}
-                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-              >
-                {t?.closeModal || 'বন্ধ করুন'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
