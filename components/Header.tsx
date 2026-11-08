@@ -56,7 +56,7 @@ const Header: React.FC<HeaderProps> = ({
   };
 
   return (
-    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-30 w-full overflow-hidden transition-colors duration-300">
+    <header className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl border-b border-gray-100 dark:border-gray-800 px-3 sm:px-6 py-3 sm:py-4 flex items-center justify-between sticky top-0 z-40 w-full overflow-visible transition-colors duration-300">
       {/* Left Section: User Info & Menu */}
       <div 
         onClick={() => onViewChange('profile')}

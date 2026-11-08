@@ -99,9 +99,10 @@ export const markAllNotificationsAsRead = (userId: string, messIds: string[], no
 /**
  * Fetch and aggregate notifications across all messes that a user belongs to
  * Plus pending join requests for messes where the user is Admin
+ * Plus recent mess announcements and bazar activity from db_json
  */
 export const fetchAllMessesNotifications = async (
-  userMesses: Array<{ id: string; mess_name: string; admin_id?: string }>,
+  userMesses: Array<{ id: string; mess_name: string; admin_id?: string; db_json?: any }>,
   userId: string
 ): Promise<{
   notifications: MessNotificationItem[];
@@ -112,17 +113,18 @@ export const fetchAllMessesNotifications = async (
     return { notifications: [], unreadCountsByMess: {}, totalUnreadCount: 0 };
   }
 
-  const messIds = userMesses.map((m) => m.id);
-  const messNameMap = new Map(userMesses.map((m) => [m.id, m.mess_name]));
+  const safeMesses = Array.isArray(userMesses) ? userMesses : [];
+  const messIds = safeMesses.map((m) => m.id);
+  const messNameMap = new Map(safeMesses.map((m) => [m.id, m.mess_name]));
   const adminMessIds = new Set(
-    userMesses.filter((m) => m.admin_id === userId).map((m) => m.id)
+    safeMesses.filter((m) => m.admin_id === userId).map((m) => m.id)
   );
   const readSet = getReadNotificationIds(userId);
 
   try {
     let rawList: any[] = [];
 
-    // 1. Fetch recent messages from mess_messages
+    // 1. Fetch recent messages from mess_messages in Supabase
     if (messIds.length > 0) {
       try {
         const { data, error } = await supabase
@@ -132,30 +134,13 @@ export const fetchAllMessesNotifications = async (
           .order('created_at', { ascending: false })
           .limit(80);
 
-        if (!error && data) {
+        if (!error && data && data.length > 0) {
           rawList.push(...data);
         }
       } catch (err) {
         console.warn("Error querying mess_messages:", err);
       }
     }
-
-    // Also check local cache for each mess if list is short
-    messIds.forEach((mId) => {
-      try {
-        const raw = localStorage.getItem(`MESS_CHAT_${mId}`);
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed)) {
-            parsed.forEach((m) => {
-              if (!rawList.some((r) => r.id === m.id)) {
-                rawList.push(m);
-              }
-            });
-          }
-        }
-      } catch (e) {}
-    });
 
     // 2. Fetch pending join requests for messes where current user is Admin
     if (adminMessIds.size > 0) {
@@ -208,6 +193,96 @@ export const fetchAllMessesNotifications = async (
         }
       }
     } catch (e) {}
+
+    // 4. Check local chat cache for each mess
+    messIds.forEach((mId) => {
+      try {
+        const raw = localStorage.getItem(`MESS_CHAT_${mId}`);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed)) {
+            parsed.forEach((m) => {
+              if (!rawList.some((r) => r.id === m.id)) {
+                rawList.push(m);
+              }
+            });
+          }
+        }
+      } catch (e) {}
+    });
+
+    // 5. Check db_json for recent bazaar entries and mess announcements
+    safeMesses.forEach((m: any) => {
+      const db = m.db_json;
+      if (db) {
+        // Recent Bazars
+        if (Array.isArray(db.bazars) && db.bazars.length > 0) {
+          const recentBazars = [...db.bazars].slice(-3).reverse();
+          recentBazars.forEach((b: any) => {
+            const bUser = db.users?.find((u: any) => u.id === b.userId);
+            const userName = bUser ? bUser.name : 'মেস সদস্য';
+            const bazarId = `bazar-${m.id}-${b.id || b.date}`;
+            if (!rawList.some((r) => r.id === bazarId)) {
+              rawList.push({
+                id: bazarId,
+                mess_id: m.id,
+                mess_name: m.mess_name,
+                user_id: b.userId || 'system',
+                user_name: userName,
+                message_type: 'system',
+                content: `${userName} কর্তৃক ${Number(b.amount || 0).toLocaleString('bn-BD')} টাকার বাজার হিসাব এন্ট্রি করা হয়েছে (${b.note || 'দৈনিক বাজার'})।`,
+                metadata: {
+                  category: 'bazar',
+                  title: 'বাজার এন্ট্রি আপডেট',
+                  amount: b.amount,
+                  date: b.date
+                },
+                created_at: b.date ? new Date(b.date).toISOString() : new Date().toISOString()
+              });
+            }
+          });
+        }
+
+        // Welcome / General Mess Info Announcement
+        const welcomeId = `welcome-notice-${m.id}`;
+        if (!rawList.some((r) => r.id === welcomeId)) {
+          rawList.push({
+            id: welcomeId,
+            mess_id: m.id,
+            mess_name: m.mess_name,
+            user_id: m.admin_id || 'system',
+            user_name: 'মেস নোটিশ বোর্ড',
+            message_type: 'announcement',
+            content: `'${m.mess_name}'-এ স্বাগতম! মেসের মিল, বাজার ও সদস্যদের নোটিফিকেশন এই কেন্দ্রে তাৎক্ষণিকভাবে দেখতে পাবেন। চ্যাট অপশনে গিয়ে সবার সাথে সরাসরি যোগাযোগ করুন।`,
+            metadata: {
+              category: 'announcement',
+              title: `${m.mess_name} নোটিশ বোর্ড`
+            },
+            is_pinned: true,
+            created_at: new Date(Date.now() - 3600000).toISOString()
+          });
+        }
+      }
+    });
+
+    // 6. Global Welcome fallback if user has no mess or rawList is completely empty
+    if (rawList.length === 0) {
+      rawList.push({
+        id: `global-welcome-${userId}`,
+        mess_id: safeMesses[0]?.id || 'global',
+        mess_name: safeMesses[0]?.mess_name || 'মেস সিস্টেম',
+        user_id: 'system',
+        user_name: 'বিজ্ঞপ্তি কেন্দ্র',
+        message_type: 'announcement',
+        content: 'বিজ্ঞপ্তি কেন্দ্রে স্বাগতম! মেসের জরুরি নোটিশ, চ্যাট বার্তা, মেম্বার আবেদন এবং মিল ও বাজারের আপডেটগুলো তাৎক্ষণিকভাবে এখানে তালিকাভুক্ত হবে।',
+        metadata: {
+          category: 'announcement',
+          title: 'বিজ্ঞপ্তি সেন্টারে স্বাগতম'
+        },
+        is_pinned: true,
+        created_at: new Date().toISOString()
+      });
+    }
 
     // Sort by created_at descending
     rawList.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -268,6 +343,33 @@ export const fetchAllMessesNotifications = async (
     console.warn("fetchNotifications error:", err);
     return { notifications: [], unreadCountsByMess: {}, totalUnreadCount: 0 };
   }
+};
+
+/**
+ * Send a quick test notification to verify audio, badge counter, and realtime push
+ */
+export const sendTestNotification = async (
+  messId: string,
+  user: User,
+  messName: string
+) => {
+  const content = `🔔 টেস্ট নোটিফিকেশন: রিয়েলটাইম নোটিফিকেশন কেন্দ্র ও সাউন্ড অ্যালার্ট সফলভাবে কাজ করছে! সময়: ${new Date().toLocaleTimeString('bn-BD')}`;
+  
+  const sent = await sendMessMessage(
+    messId,
+    user,
+    content,
+    'announcement',
+    {
+      category: 'announcement',
+      title: 'টেস্ট নোটিফিকেশন সফল 🎉'
+    },
+    false
+  );
+
+  playNotificationChime();
+  showDesktopNotification('🔔 টেস্ট নোটিফিকেশন', 'রিয়েলটাইম নোটিফিকেশন ও সাউন্ড সফলভাবে সক্রিয় রয়েছে!');
+  return sent;
 };
 
 /**

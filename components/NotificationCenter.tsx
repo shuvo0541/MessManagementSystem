@@ -4,7 +4,8 @@ import {
   MessNotificationItem, 
   fetchAllMessesNotifications, 
   markNotificationAsRead, 
-  markAllNotificationsAsRead 
+  markAllNotificationsAsRead,
+  sendTestNotification
 } from '../utils/notificationService';
 import { 
   playNotificationChime, 
@@ -60,6 +61,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const [selectedNotif, setSelectedNotif] = useState<MessNotificationItem | null>(null);
   const [showSqlModal, setShowSqlModal] = useState(false);
   const [sqlCopied, setSqlCopied] = useState(false);
+  const [isTesting, setIsTesting] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
   );
@@ -70,13 +72,29 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     setTimeout(() => setSqlCopied(false), 2500);
   };
 
+  const handleTriggerTest = async () => {
+    if (!user?.id || isTesting) return;
+    setIsTesting(true);
+    try {
+      const targetMessId = currentMessId || userMesses[0]?.id || 'global';
+      const targetMess = userMesses.find(m => m.id === targetMessId);
+      const targetMessName = targetMess?.mess_name || 'মেস';
+      await sendTestNotification(targetMessId, user, targetMessName);
+      await loadNotifications(true);
+    } catch (e) {
+      console.warn("Test notification error:", e);
+    } finally {
+      setIsTesting(false);
+    }
+  };
+
   const panelRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef<number>(0);
 
   const loadNotifications = async (triggerSoundOnNew: boolean = false) => {
-    if (!user || userMesses.length === 0) return;
+    if (!user?.id) return;
     try {
-      const res = await fetchAllMessesNotifications(userMesses, user.id);
+      const res = await fetchAllMessesNotifications(userMesses || [], user.id);
       
       // If new unread notifications arrived and triggerSoundOnNew is requested
       if (triggerSoundOnNew && res.totalUnreadCount > prevCountRef.current) {
@@ -245,11 +263,18 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
     <div className="relative" ref={panelRef}>
       {/* Bell Trigger Button */}
       <button
-        onClick={() => {
-          setIsOpen(!isOpen);
-          if (!isOpen) loadNotifications();
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen((prev) => {
+            const next = !prev;
+            if (next) {
+              loadNotifications();
+            }
+            return next;
+          });
         }}
-        className={`relative p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border transition-all active:scale-95 ${
+        className={`relative p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border transition-all active:scale-95 cursor-pointer ${
           totalUnread > 0
             ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-300 dark:border-blue-700/60 shadow-md shadow-blue-500/10'
             : 'bg-gray-50 dark:bg-gray-800/80 hover:bg-gray-100 dark:hover:bg-gray-700/60 border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300'
@@ -266,63 +291,82 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
         )}
       </button>
 
-      {/* Notifications Dropdown Panel */}
+      {/* Notifications Dropdown Panel with Backdrop */}
       {isOpen && (
-        <div className="fixed sm:absolute top-16 sm:top-14 right-2 sm:right-0 z-50 w-[95vw] sm:w-[440px] max-h-[85vh] sm:max-h-[600px] bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
-          {/* Header */}
-          <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between shrink-0 bg-white dark:bg-gray-900">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20">
-                <Bell size={16} />
-              </div>
-              <div>
-                <h3 className="font-black text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
-                  বিজ্ঞপ্তি কেন্দ্র
-                </h3>
-                <p className="text-[10px] text-gray-400 font-bold">নোটিশ, চ্যাট ও মেম্বার আপডেট</p>
-              </div>
-              {totalUnread > 0 && (
-                <span className="ml-1 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-[10px] font-black border border-red-200 dark:border-red-900/50">
-                  {totalUnread} নতুন
-                </span>
-              )}
-            </div>
+        <>
+          {/* Backdrop overlay for reliable outside dismissal across devices */}
+          <div 
+            className="fixed inset-0 z-40 bg-black/25 backdrop-blur-[1px] animate-in fade-in duration-150"
+            onClick={() => setIsOpen(false)}
+          />
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => setShowSqlModal(true)}
-                title="Supabase Realtime SQL কোড দেখুন ও কপি করুন"
-                className="p-1.5 text-gray-400 hover:text-blue-500 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <Database size={15} />
-              </button>
+          <div className="fixed top-16 right-2 sm:right-6 md:right-8 z-50 w-[95vw] sm:w-[440px] max-h-[85vh] sm:max-h-[640px] bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-200 dark:border-gray-800 shadow-2xl flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Header */}
+            <div className="p-4 sm:p-5 border-b border-gray-100 dark:border-gray-800 flex items-center justify-between shrink-0 bg-white dark:bg-gray-900">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md shadow-blue-600/20">
+                  <Bell size={16} />
+                </div>
+                <div>
+                  <h3 className="font-black text-sm sm:text-base text-gray-900 dark:text-white leading-tight">
+                    বিজ্ঞপ্তি কেন্দ্র
+                  </h3>
+                  <p className="text-[10px] text-gray-400 font-bold">নোটিশ, চ্যাট ও মেম্বার আপডেট</p>
+                </div>
+                {totalUnread > 0 && (
+                  <span className="ml-1 px-2 py-0.5 rounded-full bg-red-100 dark:bg-red-950/40 text-red-600 dark:text-red-400 text-[10px] font-black border border-red-200 dark:border-red-900/50">
+                    {totalUnread} নতুন
+                  </span>
+                )}
+              </div>
 
-              {permission !== 'granted' && (
+              <div className="flex items-center gap-1.5 sm:gap-2">
+                {/* 1-Click Test Notification Trigger */}
                 <button
-                  onClick={handleRequestPermission}
-                  title="নোটিফিকেশন অনুমতি দিন"
-                  className="p-1.5 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl text-xs font-bold transition-all"
+                  type="button"
+                  onClick={handleTriggerTest}
+                  disabled={isTesting}
+                  title="টেস্ট নোটিফিকেশন পাঠিয়ে পরীক্ষা করুন"
+                  className="px-2 py-1 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-950/40 rounded-xl text-xs font-bold transition-all flex items-center gap-1 active:scale-95 border border-blue-200 dark:border-blue-900/50 disabled:opacity-50"
                 >
-                  <BellRing size={16} />
+                  <Sparkles size={13} className={isTesting ? 'animate-spin' : ''} />
+                  <span className="text-[10px] hidden xs:inline">{isTesting ? 'পাঠানো হচ্ছে...' : 'টেস্ট'}</span>
                 </button>
-              )}
-              {totalUnread > 0 && (
+
                 <button
-                  onClick={handleMarkAllRead}
-                  className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 active:scale-95"
+                  onClick={() => setShowSqlModal(true)}
+                  title="Supabase Realtime SQL কোড দেখুন ও কপি করুন"
+                  className="p-1.5 text-gray-400 hover:text-blue-500 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 >
-                  <CheckCheck size={13} />
-                  সব পড়া হয়েছে
+                  <Database size={15} />
                 </button>
-              )}
-              <button
-                onClick={() => setIsOpen(false)}
-                className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              >
-                <X size={16} />
-              </button>
+
+                {permission !== 'granted' && (
+                  <button
+                    onClick={handleRequestPermission}
+                    title="নোটিফিকেশন অনুমতি দিন"
+                    className="p-1.5 text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/40 rounded-xl text-xs font-bold transition-all"
+                  >
+                    <BellRing size={16} />
+                  </button>
+                )}
+                {totalUnread > 0 && (
+                  <button
+                    onClick={handleMarkAllRead}
+                    className="text-[10px] font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 active:scale-95"
+                  >
+                    <CheckCheck size={13} />
+                    সব পড়া হয়েছে
+                  </button>
+                )}
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="p-1.5 text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <X size={16} />
+                </button>
+              </div>
             </div>
-          </div>
 
           {/* Filter Tabs */}
           <div className="px-4 py-2.5 border-b border-gray-100 dark:border-gray-800 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 bg-gray-50/70 dark:bg-gray-900/70">
@@ -460,6 +504,7 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             )}
           </div>
         </div>
+      </>
       )}
 
       {/* Full Notification Detail Modal */}
