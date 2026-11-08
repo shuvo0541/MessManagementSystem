@@ -538,7 +538,7 @@ const App: React.FC = () => {
             onMonthChange={setSelectedMonth} 
             onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} 
             onViewChange={(v) => { setView(v); setIsSidebarOpen(false); }}
-            onNavigateToMessChat={async (targetMessId) => {
+            onNavigateToMessChat={async (targetMessId, targetView = 'mess-chat', targetTab) => {
               if (messId !== targetMessId) {
                 const targetMess = userMesses.find(m => m.id === targetMessId);
                 if (targetMess) {
@@ -553,7 +553,7 @@ const App: React.FC = () => {
                   );
                 }
               }
-              setView('mess-chat');
+              setView(targetView || 'mess-chat');
             }}
             hasActiveMess={!!messId}
             t={T}

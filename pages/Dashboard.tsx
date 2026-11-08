@@ -16,7 +16,7 @@ import {
   PieChart as PieChartIcon,
   CircleDollarSign
 } from 'lucide-react';
-import { sendSystemMemberJoinAlert } from '../utils/notificationService';
+import { sendSystemMemberJoinAlert, sendPersonalApprovalNotification } from '../utils/notificationService';
 import { 
   BarChart, 
   Bar, 
@@ -88,6 +88,7 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
 
       if (messId) {
         sendSystemMemberJoinAlert(messId, actualName, user.name).catch(() => {});
+        sendPersonalApprovalNotification(messId, 'মেস', req.user_id, actualName, user.name).catch(() => {});
       }
 
       alert(`${actualName} ${t.approveSuccess}`);

@@ -14,7 +14,7 @@ interface HeaderProps {
   onMonthChange: (month: string) => void;
   onMenuToggle: () => void;
   onViewChange: (view: string) => void;
-  onNavigateToMessChat?: (messId: string) => void;
+  onNavigateToMessChat?: (messId: string, targetView?: string, targetTab?: string) => void;
   hasActiveMess: boolean;
   t: any;
   theme?: string;

@@ -22,7 +22,7 @@ import {
   SendHorizontal,
   Mail
 } from 'lucide-react';
-import { fetchAllMessesNotifications } from '../utils/notificationService';
+import { fetchAllMessesNotifications, sendJoinRequestAlert } from '../utils/notificationService';
 
 interface ProfileProps {
   user: User;
@@ -143,7 +143,7 @@ const Profile: React.FC<ProfileProps> = ({
     setLoading(true);
     setStatusMsg(null);
     try {
-      const { data: mess, error: fetchErr } = await supabase.from('messes').select('id, db_json').eq('id', messCode.trim()).single();
+      const { data: mess, error: fetchErr } = await supabase.from('messes').select('id, admin_id, mess_name, db_json').eq('id', messCode.trim()).single();
       if (fetchErr || !mess) throw new Error(t.invalidMessId);
       const db = mess.db_json as MessSystemDB;
       if (db.messPassword !== messPasswordInput.trim()) throw new Error(t.wrongPassword);
@@ -161,6 +161,10 @@ const Profile: React.FC<ProfileProps> = ({
         if (reqError.code === '23505') throw new Error(t.requestAlreadySent);
         throw reqError;
       }
+
+      // Notify the mess admin immediately
+      sendJoinRequestAlert(mess.id, user, mess.mess_name || 'মেস', mess.admin_id).catch(() => {});
+
       fetchSentRequests();
       setView('info');
       onPending();
