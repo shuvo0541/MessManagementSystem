@@ -7,12 +7,13 @@ export interface OnlineUser {
   online_at: string;
 }
 
-export const MESS_CHAT_SQL = `-- Run this in your Supabase SQL Editor to enable Real-time Mess Chat:
+export const MESS_CHAT_SQL = `-- Run this in your Supabase SQL Editor to enable Real-time Mess Chat & Notifications:
 
+-- 1. Create or update mess_messages table (user_id as TEXT supports both Auth UUIDs and system alerts)
 CREATE TABLE IF NOT EXISTS public.mess_messages (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   mess_id UUID NOT NULL REFERENCES public.messes(id) ON DELETE CASCADE,
-  user_id UUID NOT NULL,
+  user_id TEXT NOT NULL,
   user_name TEXT NOT NULL,
   user_role TEXT DEFAULT 'member',
   message_type TEXT NOT NULL DEFAULT 'text', -- 'text' | 'announcement' | 'system'
@@ -22,30 +23,52 @@ CREATE TABLE IF NOT EXISTS public.mess_messages (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Supabase Realtime for instant messaging
-ALTER PUBLICATION supabase_realtime ADD TABLE public.mess_messages;
+-- In case table was previously created with user_id UUID, convert it to TEXT
+ALTER TABLE public.mess_messages ALTER COLUMN user_id TYPE TEXT;
 
--- Create index for fast retrieval
+-- 2. Create index for fast chat and notification retrieval
 CREATE INDEX IF NOT EXISTS idx_mess_messages_mess_time 
-ON public.mess_messages(mess_id, created_at ASC);
+ON public.mess_messages(mess_id, created_at DESC);
 
--- Row Level Security policies (allow authenticated mess members)
+-- 3. Enable Supabase Realtime publication
+DO $$
+BEGIN
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.mess_messages;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+  BEGIN
+    ALTER PUBLICATION supabase_realtime ADD TABLE public.join_requests;
+  EXCEPTION WHEN duplicate_object THEN
+    NULL;
+  END;
+END $$;
+
+-- 4. Enable Row Level Security (RLS) with full open policies for authenticated and anon users
 ALTER TABLE public.mess_messages ENABLE ROW LEVEL SECURITY;
 
-CREATE POLICY "Allow members to read messages"
-ON public.mess_messages FOR SELECT
-TO authenticated
-USING (true);
+DROP POLICY IF EXISTS "Allow members to read messages" ON public.mess_messages;
+DROP POLICY IF EXISTS "Allow members to insert messages" ON public.mess_messages;
+DROP POLICY IF EXISTS "Allow message creators or admins to delete" ON public.mess_messages;
+DROP POLICY IF EXISTS "Allow all mess_messages access" ON public.mess_messages;
 
-CREATE POLICY "Allow members to insert messages"
-ON public.mess_messages FOR INSERT
-TO authenticated
+CREATE POLICY "Allow all mess_messages access"
+ON public.mess_messages FOR ALL
+TO public, anon, authenticated
+USING (true)
 WITH CHECK (true);
 
-CREATE POLICY "Allow message creators or admins to delete"
-ON public.mess_messages FOR DELETE
-TO authenticated
-USING (true);
+-- Ensure join_requests table has full access policies
+ALTER TABLE public.join_requests ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Allow all join_requests access" ON public.join_requests;
+
+CREATE POLICY "Allow all join_requests access"
+ON public.join_requests FOR ALL
+TO public, anon, authenticated
+USING (true)
+WITH CHECK (true);
 `;
 
 const getDefaultMessages = (messId: string): ChatMessage[] => {
@@ -218,18 +241,24 @@ export const sendMessMessage = async (
     saveLocalMessages(messId, [...localList, newMsg]);
   }
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(newMsg.user_id);
+  const dbUserId = isUuid ? newMsg.user_id : '00000000-0000-0000-0000-000000000000';
+
   try {
     const { data, error } = await supabase
       .from('mess_messages')
       .insert([{
         id: newMsg.id,
         mess_id: newMsg.mess_id,
-        user_id: newMsg.user_id,
+        user_id: dbUserId,
         user_name: newMsg.user_name,
         user_role: newMsg.user_role,
         message_type: newMsg.message_type,
         content: newMsg.content,
-        metadata: newMsg.metadata,
+        metadata: {
+          ...newMsg.metadata,
+          original_user_id: newMsg.user_id
+        },
         is_pinned: newMsg.is_pinned,
         created_at: newMsg.created_at
       }])

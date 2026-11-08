@@ -9,7 +9,8 @@ import {
 import { 
   playNotificationChime, 
   showDesktopNotification, 
-  requestNotificationPermission 
+  requestNotificationPermission,
+  MESS_CHAT_SQL
 } from '../utils/chatService';
 import { supabase } from '../supabase';
 import { 
@@ -29,7 +30,10 @@ import {
   CheckCircle2,
   Calendar,
   Building2,
-  BellRing
+  BellRing,
+  Database,
+  Copy,
+  Check
 } from 'lucide-react';
 
 interface NotificationCenterProps {
@@ -54,9 +58,17 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
   const [totalUnread, setTotalUnread] = useState(0);
   const [activeFilter, setActiveFilter] = useState<'all' | 'announcement' | 'member' | 'chat' | 'activity'>('all');
   const [selectedNotif, setSelectedNotif] = useState<MessNotificationItem | null>(null);
+  const [showSqlModal, setShowSqlModal] = useState(false);
+  const [sqlCopied, setSqlCopied] = useState(false);
   const [permission, setPermission] = useState<NotificationPermission>(
     typeof window !== 'undefined' && 'Notification' in window ? Notification.permission : 'denied'
   );
+
+  const handleCopySql = () => {
+    navigator.clipboard.writeText(MESS_CHAT_SQL);
+    setSqlCopied(true);
+    setTimeout(() => setSqlCopied(false), 2500);
+  };
 
   const panelRef = useRef<HTMLDivElement>(null);
   const prevCountRef = useRef<number>(0);
@@ -277,6 +289,14 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
             </div>
 
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => setShowSqlModal(true)}
+                title="Supabase Realtime SQL কোড দেখুন ও কপি করুন"
+                className="p-1.5 text-gray-400 hover:text-blue-500 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              >
+                <Database size={15} />
+              </button>
+
               {permission !== 'granted' && (
                 <button
                   onClick={handleRequestPermission}
@@ -545,6 +565,57 @@ const NotificationCenter: React.FC<NotificationCenterProps> = ({
                     : 'চ্যাটে যান ও রিপ্লাই দিন'}
                 </span>
                 <ExternalLink size={13} />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* SQL Setup Modal */}
+      {showSqlModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] border border-gray-100 dark:border-gray-800 p-6 sm:p-8 max-w-2xl w-full space-y-6 shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-600 text-white rounded-2xl shadow-md">
+                  <Database size={20} />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white">Supabase SQL সেটআপ কোড</h3>
+                  <p className="text-[10px] text-gray-500 font-bold">নোটিফিকেশন ও রিয়েলটাইম চ্যাট সিঙ্ক সচল করতে এই কোড রান করুন</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowSqlModal(false)}
+                className="p-2 text-gray-400 hover:text-gray-900 dark:hover:text-white rounded-xl"
+              >
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="p-4 bg-blue-50/70 dark:bg-blue-900/15 border border-blue-200 dark:border-blue-800 rounded-2xl text-xs text-blue-800 dark:text-blue-300 leading-relaxed font-medium">
+              💡 <strong>কীভাবে রান করবেন:</strong> আপনার <strong>Supabase Dashboard</strong>-এ লগইন করে বাম পাশের মেনু থেকে <strong>SQL Editor</strong>-এ যান, <strong>New Query</strong>-তে ক্লিক করে নিচের কোডটি পেস্ট করুন এবং <strong>Run</strong> বাটনে চাপ দিন। এতে সব মেম্বার ও এডমিনের নোটিফিকেশন রিয়েলটাইমে কাজ করবে।
+            </div>
+
+            <div className="relative">
+              <pre className="bg-gray-950 text-gray-100 p-4 rounded-2xl text-[11px] font-mono overflow-x-auto max-h-60 border border-gray-800">
+                {MESS_CHAT_SQL}
+              </pre>
+              <button
+                onClick={handleCopySql}
+                className="absolute top-3 right-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
+              >
+                {sqlCopied ? <Check size={14} /> : <Copy size={14} />}
+                {sqlCopied ? 'কপি হয়েছে!' : 'SQL কোড কপি করুন'}
+              </button>
+            </div>
+
+            <div className="flex justify-end">
+              <button
+                onClick={() => setShowSqlModal(false)}
+                className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
+              >
+                বন্ধ করুন
               </button>
             </div>
           </div>
