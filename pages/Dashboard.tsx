@@ -16,6 +16,7 @@ import {
   PieChart as PieChartIcon,
   CircleDollarSign
 } from 'lucide-react';
+import { sendSystemMemberJoinAlert } from '../utils/notificationService';
 import { 
   BarChart, 
   Bar, 
@@ -84,6 +85,11 @@ const Dashboard: React.FC<DashboardProps> = ({ month, db, updateDB, user, messId
       await supabase.from('join_requests').delete().eq('id', req.id);
       updateDB({ users: updatedUsers });
       setPendingRequests(prev => prev.filter(r => r.id !== req.id));
+
+      if (messId) {
+        sendSystemMemberJoinAlert(messId, actualName, user.name).catch(() => {});
+      }
+
       alert(`${actualName} ${t.approveSuccess}`);
     } catch (err: any) {
       alert(`${t.approveFail}: ${err.message}`);

@@ -10,6 +10,7 @@ import {
   showDesktopNotification,
   requestNotificationPermission
 } from '../utils/chatService';
+import { setLastReadTime } from '../utils/notificationService';
 import { 
   MessagesSquare, 
   X, 
@@ -74,7 +75,7 @@ const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
 
   // Subscribe to real-time messages & presence
   useEffect(() => {
-    if (!messId || !user) return;
+    if (!messId || !user?.id || currentView === 'mess-chat') return;
 
     // Load initial messages
     fetchMessMessages(messId).then((res) => {
@@ -115,18 +116,20 @@ const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
       },
       (updatedPresences) => {
         setOnlineUsers(updatedPresences);
-      }
+      },
+      'floating'
     );
 
     return () => {
       unsubscribe();
     };
-  }, [messId, user]);
+  }, [messId, user?.id, currentView]);
 
   // Reset unread count when opened
   useEffect(() => {
     if (isOpen) {
       setUnreadCount(0);
+      setLastReadTime(user.id, messId);
       setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
     }
   }, [isOpen, messages.length]);
@@ -373,7 +376,7 @@ const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                   >
                     {!isMe && (
                       <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-black text-[9px] flex items-center justify-center shrink-0 mb-0.5 shadow-xs">
-                        {msg.user_name.slice(0, 1).toUpperCase()}
+                        {(msg.user_name || 'U').slice(0, 1).toUpperCase()}
                       </div>
                     )}
 
@@ -386,7 +389,7 @@ const FloatingChatWidget: React.FC<FloatingChatWidgetProps> = ({
                     >
                       {!isMe && (
                         <p className="text-[10px] font-black text-blue-600 dark:text-blue-400 mb-0.5">
-                          {msg.user_name}
+                          {msg.user_name || 'সদস্য'}
                         </p>
                       )}
                       <p className="text-xs font-medium leading-relaxed whitespace-pre-wrap break-words">

@@ -8,6 +8,32 @@
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3b82f6">
     
+    <!-- Fix for browser extensions attempting to overwrite window.fetch in iframe -->
+    <script>
+      (function() {
+        try {
+          var _origFetch = window.fetch;
+          Object.defineProperty(window, 'fetch', {
+            get: function() { return _origFetch; },
+            set: function(val) { _origFetch = val; },
+            configurable: true,
+            enumerable: true
+          });
+        } catch (e) {}
+
+        window.addEventListener('error', function(event) {
+          if (
+            (event.filename && (event.filename.indexOf('chrome-extension://') !== -1 || event.filename.indexOf('moz-extension://') !== -1)) ||
+            (event.message && event.message.indexOf('Cannot set property fetch of #<Window>') !== -1)
+          ) {
+            event.stopImmediatePropagation();
+            event.preventDefault();
+            return true;
+          }
+        }, true);
+      })();
+    </script>
+    
     <!-- নীল ফেভিকন (Favicon) -->
     <link rel="icon" type="image/png" href="https://img.icons8.com/ios-filled/512/3b82f6/restaurant.png">
     <link rel="apple-touch-icon" href="https://img.icons8.com/ios-filled/512/3b82f6/restaurant.png">

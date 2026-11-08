@@ -202,6 +202,7 @@ function calculateUtilityShares(amount: number, mode: CalcMode, values: any, act
 }
 
 export const getUserRoleInMonth = (db: MessSystemDB, userId: string, month: string): Role => {
+  if (!db || !Array.isArray(db.users) || !userId) return Role.MEMBER;
   const user = db.users.find(u => u.id === userId);
   if (!user) return Role.MEMBER;
   if (user.isAdmin) return Role.ADMIN;
@@ -211,6 +212,8 @@ export const getUserRoleInMonth = (db: MessSystemDB, userId: string, month: stri
   
   if (!isJoined || !isNotLeft) return Role.MEMBER; 
   
+  if (!Array.isArray(db.monthlyRoles)) return Role.MEMBER;
   const monthRole = db.monthlyRoles.find(r => r.userId === userId && r.month === month);
   return monthRole ? monthRole.role : Role.MEMBER;
 };
+

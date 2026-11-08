@@ -22,6 +22,7 @@ import {
   SendHorizontal,
   Mail
 } from 'lucide-react';
+import { fetchAllMessesNotifications } from '../utils/notificationService';
 
 interface ProfileProps {
   user: User;
@@ -52,6 +53,7 @@ const Profile: React.FC<ProfileProps> = ({
   const [statusMsg, setStatusMsg] = useState<{type: 'error' | 'success' | 'info', text: string} | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{id: string, pass: string} | null>(null);
   const [sentRequests, setSentRequests] = useState<any[]>([]);
+  const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   
   const [isScanning, setIsScanning] = useState(false);
   const isScanningRef = useRef(false);
@@ -62,8 +64,13 @@ const Profile: React.FC<ProfileProps> = ({
 
   useEffect(() => {
     fetchSentRequests();
+    if (userMesses.length > 0 && user?.id) {
+      fetchAllMessesNotifications(userMesses, user.id).then((res) => {
+        setUnreadCounts(res.unreadCountsByMess);
+      });
+    }
     return () => stopScanner(); 
-  }, [user.id]);
+  }, [user.id, userMesses.length]);
 
   useEffect(() => {
     if (isScanning) initCamera();
@@ -229,21 +236,41 @@ const Profile: React.FC<ProfileProps> = ({
 
           {/* Mess Cards Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-8 px-4 sm:px-0">
-            {userMesses.map(mess => (
-              <div key={mess.id} onClick={() => onSelectMess(mess)} className="group bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 hover:border-blue-500/50 hover:shadow-2xl transition-all cursor-pointer space-y-5 sm:space-y-6 shadow-sm">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-600/10 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-xl sm:text-2xl">{mess.mess_name[0].toUpperCase()}</div>
-                <div>
-                  <h4 className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white truncate">{mess.mess_name}</h4>
-                  <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1.5 sm:mt-2 flex items-center gap-2"><Hash size={12}/> ID: {mess.id.slice(0, 8)}...</p>
+            {userMesses.map(mess => {
+              const unreadCount = unreadCounts[mess.id] || 0;
+              return (
+                <div key={mess.id} onClick={() => onSelectMess(mess)} className="group bg-white dark:bg-gray-900 p-6 sm:p-8 rounded-[2rem] sm:rounded-[2.5rem] border border-gray-100 dark:border-gray-800 hover:border-blue-500/50 hover:shadow-2xl transition-all cursor-pointer space-y-5 sm:space-y-6 shadow-sm relative">
+                  <div className="flex items-center justify-between">
+                    <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-600/10 dark:bg-blue-900/20 text-blue-600 dark:text-blue-500 rounded-xl sm:rounded-2xl flex items-center justify-center font-black text-xl sm:text-2xl relative">
+                      {mess.mess_name[0].toUpperCase()}
+                      {unreadCount > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-red-500 text-white text-[10px] font-black flex items-center justify-center border-2 border-white dark:border-gray-900 shadow-md animate-pulse">
+                          {unreadCount > 99 ? '99+' : unreadCount}
+                        </span>
+                      )}
+                    </div>
+
+                    {unreadCount > 0 && (
+                      <span className="px-2.5 py-1 rounded-full text-[9px] font-black bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-900/40 flex items-center gap-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />
+                        {unreadCount} টি নতুন
+                      </span>
+                    )}
+                  </div>
+
+                  <div>
+                    <h4 className="text-lg sm:text-2xl font-black text-gray-900 dark:text-white truncate">{mess.mess_name}</h4>
+                    <p className="text-[9px] sm:text-[10px] font-black text-gray-500 uppercase tracking-widest mt-1.5 sm:mt-2 flex items-center gap-2"><Hash size={12}/> ID: {mess.id.slice(0, 8)}...</p>
+                  </div>
+                  <div className="flex items-center justify-between pt-1">
+                     <span className={`px-2.5 py-1 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${mess.admin_id === user.id ? 'bg-purple-600/10 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-500/20' : 'bg-blue-600/10 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-500/20'} border`}>
+                        {mess.admin_id === user.id ? 'Admin' : 'Member'}
+                     </span>
+                     <ArrowRight size={18} className="text-blue-500 group-hover:translate-x-2 transition-transform" />
+                  </div>
                 </div>
-                <div className="flex items-center justify-between pt-1">
-                   <span className={`px-2.5 py-1 rounded-lg text-[8px] sm:text-[9px] font-black uppercase tracking-widest ${mess.admin_id === user.id ? 'bg-purple-600/10 dark:bg-purple-900/30 text-purple-600 dark:text-purple-400 border-purple-500/20' : 'bg-blue-600/10 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 border-blue-500/20'} border`}>
-                      {mess.admin_id === user.id ? 'Admin' : 'Member'}
-                   </span>
-                   <ArrowRight size={18} className="text-blue-500 group-hover:translate-x-2 transition-transform" />
-                </div>
-              </div>
-            ))}
+              );
+            })}
             {userMesses.length === 0 && (
               <div className="col-span-full py-16 sm:py-20 text-center bg-white dark:bg-gray-900/50 rounded-[2rem] sm:rounded-[3rem] border border-gray-200 dark:border-gray-800 border-dashed text-gray-500 font-bold text-xs sm:text-sm px-6 shadow-inner">{t.noMessJoined}</div>
             )}

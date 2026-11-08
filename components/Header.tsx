@@ -2,22 +2,26 @@
 import React from 'react';
 import { User, Role } from '../types';
 import { Calendar, Menu, User as UserIcon, ChevronDown } from 'lucide-react';
+import NotificationCenter from './NotificationCenter';
 
 interface HeaderProps {
   user: User;
   role: Role;
   messName: string;
   messId: string | null;
+  userMesses?: Array<{ id: string; mess_name: string }>;
   selectedMonth: string;
   onMonthChange: (month: string) => void;
   onMenuToggle: () => void;
   onViewChange: (view: string) => void;
+  onNavigateToMessChat?: (messId: string) => void;
   hasActiveMess: boolean;
   t: any;
+  theme?: string;
 }
 
 const Header: React.FC<HeaderProps> = ({ 
-  user, role, messName, messId, selectedMonth, onMonthChange, onMenuToggle, onViewChange, hasActiveMess, t
+  user, role, messName, messId, userMesses = [], selectedMonth, onMonthChange, onMenuToggle, onViewChange, onNavigateToMessChat, hasActiveMess, t, theme = 'dark'
 }) => {
   const currentYear = new Date().getFullYear();
   
@@ -87,8 +91,17 @@ const Header: React.FC<HeaderProps> = ({
             </h1>
           </div>
 
-          {/* Right Section: Month/Year Selector */}
-          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+          {/* Right Section: Notification Bell & Month/Year Selector */}
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+            <NotificationCenter 
+              user={user}
+              userMesses={userMesses}
+              currentMessId={messId}
+              onNavigateToMessChat={onNavigateToMessChat || (() => onViewChange('mess-chat'))}
+              t={t}
+              theme={theme}
+            />
+
             <div className="flex items-center bg-gray-50 dark:bg-gray-800/80 rounded-lg sm:rounded-xl border border-gray-200 dark:border-gray-700 p-0.5 sm:p-1">
               {/* Month Selector */}
               <div className="relative flex items-center">
@@ -123,7 +136,15 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </>
       ) : (
-        <div className="flex-1 flex justify-end">
+        <div className="flex-1 flex items-center justify-end gap-2">
+           <NotificationCenter 
+              user={user}
+              userMesses={userMesses}
+              currentMessId={messId}
+              onNavigateToMessChat={onNavigateToMessChat || (() => onViewChange('mess-chat'))}
+              t={t}
+              theme={theme}
+           />
            <div className="flex items-center gap-2 text-blue-400 font-black text-[9px] sm:text-[10px] uppercase tracking-widest bg-blue-900/20 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg sm:rounded-xl border border-blue-500/20">
               <UserIcon size={12} className="sm:w-3.5 sm:h-3.5" /> 
               <span className="whitespace-nowrap">{t.messSelection}</span>

@@ -21,7 +21,60 @@ import Sidebar from './components/Sidebar';
 import Header from './components/Header';
 import FloatingChatWidget from './components/FloatingChatWidget';
 import { supabase } from './supabase';
-import { Loader2, AlertTriangle, RefreshCcw, Clock, ShieldAlert, Lock } from 'lucide-react';
+import { Loader2, AlertTriangle, RefreshCcw, Clock, ShieldAlert, Lock, MessagesSquare } from 'lucide-react';
+
+interface ErrorBoundaryProps {
+  children: React.ReactNode;
+  onReset?: () => void;
+}
+
+interface ErrorBoundaryState {
+  hasError: boolean;
+  error: Error | null;
+}
+
+class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundaryState> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="p-8 my-6 bg-white dark:bg-gray-900 rounded-[2.5rem] border border-red-200 dark:border-red-900/30 text-center space-y-4 shadow-xl">
+          <div className="w-16 h-16 bg-red-100 dark:bg-red-900/20 text-red-500 rounded-3xl flex items-center justify-center mx-auto">
+            <AlertTriangle size={32} />
+          </div>
+          <h3 className="text-lg font-black text-gray-900 dark:text-white">পেজটি লোড করতে সমস্যা হয়েছে</h3>
+          <p className="text-xs text-gray-500 max-w-sm mx-auto font-medium">
+            {this.state.error?.message || 'সাময়িক সমস্যার কারণে কনটেন্ট প্রদর্শিত হতে পারেনি।'}
+          </p>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            <button
+              onClick={() => {
+                this.setState({ hasError: false, error: null });
+                if (this.props.onReset) this.props.onReset();
+              }}
+              className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+            >
+              পুনরায় চেষ্টা করুন
+            </button>
+          </div>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 const App: React.FC = () => {
   const [db, setDb] = useState<MessSystemDB>(INITIAL_DB);
@@ -367,7 +420,8 @@ const App: React.FC = () => {
   };
 
   const renderContent = () => {
-    if (view !== 'profile' && !isMonthAllowed) {
+    const isGlobalView = view === 'profile' || view === 'mess-chat' || view === 'settings' || view === 'mess-settings';
+    if (!isGlobalView && !isMonthAllowed) {
        return (
          <div className="h-[60vh] flex flex-col items-center justify-center text-center p-8 animate-in zoom-in duration-500">
             <div className="w-24 h-24 bg-red-900/10 border border-red-500/20 text-red-500 rounded-[2.5rem] flex items-center justify-center mb-6">
@@ -389,7 +443,28 @@ const App: React.FC = () => {
 
     switch (view) {
       case 'dashboard': return <Dashboard {...commonProps} />;
-      case 'mess-chat': return <MessChat {...commonProps} messId={messId!} messName={messName} />;
+      case 'mess-chat': {
+        if (!messId || !user) {
+          return (
+            <div className="bg-white dark:bg-gray-900 rounded-[2.5rem] p-10 text-center border border-gray-100 dark:border-gray-800 shadow-xl space-y-4 max-w-lg mx-auto">
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 dark:bg-blue-900/20 text-blue-500 flex items-center justify-center mx-auto">
+                <MessagesSquare size={32} />
+              </div>
+              <h3 className="text-xl font-black text-gray-900 dark:text-white">মেস চ্যাট খুলতে একটি মেস নির্বাচন করুন</h3>
+              <p className="text-xs text-gray-500 max-w-sm mx-auto font-medium">
+                প্রোফাইল থেকে আপনার মেসে প্রবেশ করুন অথবা মেস তৈরি / যোগ দিন।
+              </p>
+              <button
+                onClick={() => setView('profile')}
+                className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl text-xs font-black uppercase tracking-wider shadow-lg shadow-blue-500/20 active:scale-95 transition-all"
+              >
+                প্রোফাইলে যান
+              </button>
+            </div>
+          );
+        }
+        return <MessChat {...commonProps} messId={messId} messName={messName} />;
+      }
       case 'personal-account': return <PersonalAccount {...commonProps} />;
       case 'members': return <Members {...commonProps} role={userRole} isAdmin={user?.isAdmin || false} messAdminId={messAdminId} messId={messId!} messName={messName} user={user!} />;
       case 'utility': return <UtilityRoom {...commonProps} />;
@@ -458,23 +533,44 @@ const App: React.FC = () => {
             role={userRole} 
             messName={messName}
             messId={messId}
+            userMesses={userMesses}
             selectedMonth={selectedMonth} 
             onMonthChange={setSelectedMonth} 
             onMenuToggle={() => setIsSidebarOpen(!isSidebarOpen)} 
             onViewChange={(v) => { setView(v); setIsSidebarOpen(false); }}
+            onNavigateToMessChat={async (targetMessId) => {
+              if (messId !== targetMessId) {
+                const targetMess = userMesses.find(m => m.id === targetMessId);
+                if (targetMess) {
+                  await enterMess(
+                    targetMess,
+                    user!.id,
+                    user!.name,
+                    user!.username,
+                    user!.userId || '',
+                    authEmail || '',
+                    user!.phone
+                  );
+                }
+              }
+              setView('mess-chat');
+            }}
             hasActiveMess={!!messId}
             t={T}
+            theme={theme}
           />
         </div>
         <main className="flex-1 overflow-y-auto p-4 md:p-8">
           <div className="max-w-6xl mx-auto">
-            {renderContent()}
+            <ErrorBoundary onReset={() => setView('dashboard')}>
+              {renderContent()}
+            </ErrorBoundary>
           </div>
         </main>
       </div>
 
-      {/* Floating Chat Popup Widget (Accessible on all pages of the mess) */}
-      {messId && user && (
+      {/* Floating Chat Popup Widget (Accessible on all pages of the mess except the full chat page) */}
+      {messId && user && view !== 'mess-chat' && (
         <FloatingChatWidget
           messId={messId}
           messName={messName}

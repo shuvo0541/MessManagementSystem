@@ -48,12 +48,51 @@ TO authenticated
 USING (true);
 `;
 
+const getDefaultMessages = (messId: string): ChatMessage[] => {
+  const now = new Date();
+  const past5Min = new Date(now.getTime() - 5 * 60000).toISOString();
+  const past10Min = new Date(now.getTime() - 10 * 60000).toISOString();
+  
+  return [
+    {
+      id: `default-announcement-${messId}`,
+      mess_id: messId,
+      user_id: 'admin-system',
+      user_name: 'মেস এডমিন',
+      user_role: 'admin',
+      message_type: 'announcement',
+      content: 'মেসের সকল সম্মানিত সদস্যদের জানানো যাচ্ছে যে, মেসের প্রতিদিনের মিল আপডেট রাত ১০টার মধ্যে নিশ্চিত করুন এবং জরুরি নোটিশ নিয়মিত খেয়াল রাখুন।',
+      metadata: { title: 'জরুরি মেস নিয়মাবলী ও মিল আপডেট' },
+      is_pinned: true,
+      created_at: past10Min
+    },
+    {
+      id: `default-welcome-${messId}`,
+      mess_id: messId,
+      user_id: 'system',
+      user_name: 'মেস অ্যাসিস্ট্যান্ট',
+      user_role: 'admin',
+      message_type: 'text',
+      content: 'মেস চ্যাট ও নোটিশ বোর্ডে স্বাগতম! এখানে মেসের সকল সদস্য মিল ও বাজার আপডেট শেয়ার করতে পারবেন।',
+      metadata: {},
+      is_pinned: false,
+      created_at: past5Min
+    }
+  ];
+};
+
 const getLocalMessages = (messId: string): ChatMessage[] => {
   try {
     const raw = localStorage.getItem(`MESS_CHAT_${messId}`);
-    return raw ? JSON.parse(raw) : [];
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+    const defaults = getDefaultMessages(messId);
+    localStorage.setItem(`MESS_CHAT_${messId}`, JSON.stringify(defaults));
+    return defaults;
   } catch (e) {
-    return [];
+    return getDefaultMessages(messId);
   }
 };
 
@@ -241,72 +280,85 @@ export const subscribeToMessChatAndPresence = (
   user: User,
   onInsert: (msg: ChatMessage) => void,
   onDelete: (id: string) => void,
-  onPresenceUpdate: (onlineUsers: OnlineUser[]) => void
+  onPresenceUpdate: (onlineUsers: OnlineUser[]) => void,
+  subscriberTag: string = 'main'
 ) => {
-  if (!messId) return () => {};
+  if (!messId || !user) return () => {};
 
-  const channel = supabase.channel(`mess-realtime-${messId}`, {
-    config: {
-      presence: { key: user.id }
-    }
-  });
-
-  channel
-    .on(
-      'postgres_changes',
-      {
-        event: 'INSERT',
-        schema: 'public',
-        table: 'mess_messages',
-        filter: `mess_id=eq.${messId}`
-      },
-      (payload) => {
-        if (payload.new) {
-          onInsert(payload.new as ChatMessage);
-        }
-      }
-    )
-    .on(
-      'postgres_changes',
-      {
-        event: 'DELETE',
-        schema: 'public',
-        table: 'mess_messages'
-      },
-      (payload) => {
-        if (payload.old?.id) {
-          onDelete(payload.old.id);
-        }
-      }
-    )
-    .on('presence', { event: 'sync' }, () => {
-      const state = channel.presenceState();
-      const uniqueMap = new Map<string, OnlineUser>();
-      Object.values(state).forEach((presences: any) => {
-        if (Array.isArray(presences)) {
-          presences.forEach((p: any) => {
-            if (p.user_id && !uniqueMap.has(p.user_id)) {
-              uniqueMap.set(p.user_id, p);
-            }
-          });
-        }
-      });
-      onPresenceUpdate(Array.from(uniqueMap.values()));
-    })
-    .subscribe(async (status) => {
-      if (status === 'SUBSCRIBED') {
-        await channel.track({
-          user_id: user.id,
-          user_name: user.name,
-          online_at: new Date().toISOString()
-        });
+  try {
+    const channelName = `mess-chat-${messId}-${subscriberTag}`;
+    const channel = supabase.channel(channelName, {
+      config: {
+        presence: { key: user.id }
       }
     });
 
-  return () => {
-    channel.untrack().catch(() => {});
-    supabase.removeChannel(channel);
-  };
+    channel
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'mess_messages',
+          filter: `mess_id=eq.${messId}`
+        },
+        (payload) => {
+          if (payload?.new) {
+            onInsert(payload.new as ChatMessage);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'mess_messages'
+        },
+        (payload) => {
+          if (payload?.old?.id) {
+            onDelete(payload.old.id);
+          }
+        }
+      )
+      .on('presence', { event: 'sync' }, () => {
+        try {
+          const state = channel.presenceState();
+          const uniqueMap = new Map<string, OnlineUser>();
+          Object.values(state).forEach((presences: any) => {
+            if (Array.isArray(presences)) {
+              presences.forEach((p: any) => {
+                if (p?.user_id && !uniqueMap.has(p.user_id)) {
+                  uniqueMap.set(p.user_id, p);
+                }
+              });
+            }
+          });
+          onPresenceUpdate(Array.from(uniqueMap.values()));
+        } catch (e) {}
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          try {
+            await channel.track({
+              user_id: user.id,
+              user_name: user.name || 'Member',
+              online_at: new Date().toISOString()
+            });
+          } catch (e) {}
+        }
+      });
+
+    return () => {
+      try {
+        channel.untrack().catch(() => {});
+        supabase.removeChannel(channel);
+      } catch (e) {}
+    };
+  } catch (err) {
+    console.warn("Realtime subscription fallback:", err);
+    return () => {};
+  }
 };
 
 /**

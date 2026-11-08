@@ -12,6 +12,7 @@ import {
   requestNotificationPermission,
   MESS_CHAT_SQL
 } from '../utils/chatService';
+import { setLastReadTime } from '../utils/notificationService';
 import { 
   MessagesSquare, 
   Send, 
@@ -78,13 +79,15 @@ const MessChat: React.FC<MessChatProps> = ({
 
   // Check if current user is admin or manager this month
   const userRole = useMemo(() => {
+    if (!db || !user?.id) return Role.MEMBER;
     return getUserRoleInMonth(db, user.id, month);
-  }, [db, user.id, month]);
+  }, [db, user?.id, month]);
 
-  const canPostAnnouncement = user.isAdmin || userRole === Role.MANAGER;
+  const canPostAnnouncement = (user?.isAdmin || false) || userRole === Role.MANAGER;
 
   // Load initial messages and presence
   useEffect(() => {
+    if (!messId || !user?.id) return;
     let isMounted = true;
 
     if (typeof window !== 'undefined' && 'Notification' in window) {
@@ -98,6 +101,7 @@ const MessChat: React.FC<MessChatProps> = ({
         setMessages(res.data);
         setIsLocalFallback(res.isLocalFallback);
         setLoading(false);
+        setLastReadTime(user.id, messId);
       }
     };
 
@@ -131,14 +135,15 @@ const MessChat: React.FC<MessChatProps> = ({
       },
       (presences) => {
         setOnlineUsers(presences);
-      }
+      },
+      'page'
     );
 
     return () => {
       isMounted = false;
       unsubscribe();
     };
-  }, [messId, user]);
+  }, [messId, user?.id]);
 
   const handleRequestNotification = async () => {
     const perm = await requestNotificationPermission();
@@ -243,9 +248,9 @@ const MessChat: React.FC<MessChatProps> = ({
 
   // Quick message options
   const quickPrompts = [
-    t.quickPrompt1 || "আজকে কার কার মিল লাগবে?",
-    t.quickPrompt2 || "আজকের বাজার সম্পন্ন হয়েছে।",
-    t.quickPrompt3 || "জরুরি নোটিশ চেক করুন।"
+    t?.quickPrompt1 || "আজকে কার কার মিল লাগবে?",
+    t?.quickPrompt2 || "আজকের বাজার সম্পন্ন হয়েছে।",
+    t?.quickPrompt3 || "জরুরি নোটিশ চেক করুন।"
   ];
 
   return (
@@ -258,7 +263,7 @@ const MessChat: React.FC<MessChatProps> = ({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{t.messChat}</h2>
+              <h2 className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white">{t?.messChat || 'মেস চ্যাট'}</h2>
               {isLocalFallback && (
                 <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
                   Local Mode
@@ -266,10 +271,10 @@ const MessChat: React.FC<MessChatProps> = ({
               )}
             </div>
             <div className="flex items-center gap-2 mt-0.5">
-              <p className="text-xs text-gray-500 font-bold">{messName} · {messages.length} মেসেজ</p>
+              <p className="text-xs text-gray-500 font-bold">{messName || 'মেস'} · {messages.length} মেসেজ</p>
               <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 text-[10px] font-bold">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                <span>{onlineUsers.length} {t.onlineMembers}</span>
+                <span>{onlineUsers.length} {t?.onlineMembers || 'অনলাইন সদস্য'}</span>
               </div>
             </div>
           </div>
@@ -286,7 +291,7 @@ const MessChat: React.FC<MessChatProps> = ({
                   : 'text-gray-500 hover:text-gray-900 dark:hover:text-white'
               }`}
             >
-              {t.generalChat}
+              {t?.generalChat || 'সাধারণ চ্যাট'}
             </button>
             <button
               onClick={() => setActiveTab('announcements')}
@@ -297,7 +302,7 @@ const MessChat: React.FC<MessChatProps> = ({
               }`}
             >
               <Bell size={13} className="text-amber-500" />
-              {t.announcements}
+              {t?.announcements || 'নোটিশ বোর্ড'}
               {announcements.length > 0 && (
                 <span className="ml-1 px-1.5 py-0.2 bg-amber-500 text-white rounded-full text-[9px] font-bold">
                   {announcements.length}
@@ -309,7 +314,7 @@ const MessChat: React.FC<MessChatProps> = ({
           {/* Browser notification button */}
           <button
             onClick={handleRequestNotification}
-            title={notificationPermission === 'granted' ? t.notificationsEnabled : t.allowNotifications}
+            title={notificationPermission === 'granted' ? (t?.notificationsEnabled || 'সক্রিয়') : (t?.allowNotifications || 'নোটিফিকেশন')}
             className={`p-2.5 rounded-xl border transition-colors flex items-center gap-1.5 text-xs font-bold ${
               notificationPermission === 'granted'
                 ? 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800'
@@ -326,14 +331,14 @@ const MessChat: React.FC<MessChatProps> = ({
               className="flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-xs shadow-md shadow-amber-500/20 active:scale-95 transition-all"
             >
               <PlusCircle size={15} />
-              <span className="hidden sm:inline">{t.postAnnouncement}</span>
+              <span className="hidden sm:inline">{t?.postAnnouncement || 'নোটিশ দিন'}</span>
               <span className="sm:hidden">নোটিশ</span>
             </button>
           )}
 
           <button
             onClick={() => setShowSqlModal(true)}
-            title={t.viewSqlNotice}
+            title={t?.viewSqlNotice || 'SQL সেটআপ'}
             className="p-2.5 text-gray-400 hover:text-blue-500 bg-gray-50 dark:bg-gray-800/60 rounded-xl border border-gray-200 dark:border-gray-700 transition-colors"
           >
             <Database size={17} />
@@ -472,7 +477,7 @@ const MessChat: React.FC<MessChatProps> = ({
                     {/* Other user avatar/initial */}
                     {!isMe && (
                       <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-500 to-indigo-600 text-white font-black text-[10px] flex items-center justify-center shrink-0 mb-1 shadow-sm">
-                        {msg.user_name.slice(0, 1).toUpperCase()}
+                        {(msg.user_name || 'U').slice(0, 1).toUpperCase()}
                       </div>
                     )}
 
@@ -487,7 +492,7 @@ const MessChat: React.FC<MessChatProps> = ({
                       {!isMe && (
                         <div className="flex items-center gap-1.5 mb-1">
                           <span className="text-[11px] font-black text-blue-600 dark:text-blue-400">
-                            {msg.user_name}
+                            {msg.user_name || 'সদস্য'}
                           </span>
                           {msg.user_role === 'admin' && (
                             <span className="px-1.5 py-0.2 bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 rounded text-[8px] font-black uppercase">
@@ -562,7 +567,7 @@ const MessChat: React.FC<MessChatProps> = ({
                   type="text"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
-                  placeholder={t.typeMessage || "মেসেজ লিখুন..."}
+                  placeholder={t?.typeMessage || "মেসেজ লিখুন..."}
                   className="w-full bg-gray-100 dark:bg-gray-800/80 border border-transparent focus:border-emerald-500 dark:focus:border-emerald-500 focus:bg-white dark:focus:bg-gray-900 text-gray-900 dark:text-white px-4 py-3 rounded-2xl text-xs sm:text-sm font-medium outline-none transition-all placeholder:text-gray-400"
                 />
               </div>
@@ -585,7 +590,7 @@ const MessChat: React.FC<MessChatProps> = ({
               <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-amber-900/20 text-amber-500 flex items-center justify-center mx-auto">
                 <Bell size={30} />
               </div>
-              <h3 className="text-base font-black text-gray-900 dark:text-white">{t.noAnnouncementsYet}</h3>
+              <h3 className="text-base font-black text-gray-900 dark:text-white">{t?.noAnnouncementsYet || 'এখনো কোনো নোটিশ পোস্ট করা হয়নি।'}</h3>
               <p className="text-xs text-gray-500 max-w-sm mx-auto">
                 এডমিন বা ম্যানেজার মেসের জরুরি নিয়মাবলী ও ঘোষণা এখানে পোস্ট করবেন।
               </p>
@@ -595,7 +600,7 @@ const MessChat: React.FC<MessChatProps> = ({
                   className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 text-white rounded-2xl font-black text-xs shadow-lg shadow-amber-500/20 inline-flex items-center gap-2"
                 >
                   <PlusCircle size={16} />
-                  {t.postAnnouncement}
+                  {t?.postAnnouncement || 'নোটিশ দিন'}
                 </button>
               )}
             </div>
@@ -614,7 +619,7 @@ const MessChat: React.FC<MessChatProps> = ({
                     <div className="space-y-1">
                       {item.is_pinned && (
                         <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 rounded-lg border border-amber-200 dark:border-amber-800">
-                          <Pin size={10} /> {t.pinned}
+                          <Pin size={10} /> {t?.pinned || 'পিন করা'}
                         </span>
                       )}
                       <h4 className="text-base font-black text-gray-900 dark:text-white">
@@ -622,7 +627,7 @@ const MessChat: React.FC<MessChatProps> = ({
                       </h4>
                     </div>
 
-                    {(user.isAdmin || item.user_id === user.id) && (
+                    {(user?.isAdmin || item.user_id === user?.id) && (
                       <button
                         onClick={() => handleDelete(item.id)}
                         className="text-gray-400 hover:text-red-500 p-1.5 rounded-xl hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -659,7 +664,7 @@ const MessChat: React.FC<MessChatProps> = ({
                   <Bell size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900 dark:text-white">{t.newAnnouncement}</h3>
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white">{t?.newAnnouncement || 'নতুন নোটিশ'}</h3>
                   <p className="text-[10px] text-gray-500 font-bold">মেসের সদস্যদের জন্য নোটিশ জারি করুন</p>
                 </div>
               </div>
@@ -673,7 +678,7 @@ const MessChat: React.FC<MessChatProps> = ({
 
             <form onSubmit={handleCreateAnnouncement} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300">{t.announcementTitle}</label>
+                <label className="text-xs font-black text-gray-700 dark:text-gray-300">{t?.announcementTitle || 'নোটিশের শিরোনাম'}</label>
                 <input
                   type="text"
                   required
@@ -685,7 +690,7 @@ const MessChat: React.FC<MessChatProps> = ({
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-black text-gray-700 dark:text-gray-300">{t.announcementDesc}</label>
+                <label className="text-xs font-black text-gray-700 dark:text-gray-300">{t?.announcementDesc || 'নোটিশের বিবরণ'}</label>
                 <textarea
                   required
                   rows={4}
@@ -705,7 +710,7 @@ const MessChat: React.FC<MessChatProps> = ({
                   className="w-4 h-4 text-amber-500 rounded border-gray-300 focus:ring-amber-500"
                 />
                 <label htmlFor="pinCheck" className="text-xs font-bold text-gray-700 dark:text-gray-300 cursor-pointer">
-                  {t.pinNotice}
+                  {t?.pinNotice || 'উপরে পিন করে রাখুন'}
                 </label>
               </div>
 
@@ -715,14 +720,14 @@ const MessChat: React.FC<MessChatProps> = ({
                   onClick={() => setShowAnnouncementModal(false)}
                   className="px-5 py-2.5 rounded-2xl text-xs font-black text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800"
                 >
-                  {t.closeModal}
+                  {t?.closeModal || 'বন্ধ করুন'}
                 </button>
                 <button
                   type="submit"
                   disabled={isSending}
                   className="px-6 py-2.5 bg-amber-500 hover:bg-amber-600 disabled:opacity-50 text-white rounded-2xl font-black text-xs shadow-lg shadow-amber-500/20"
                 >
-                  {isSending ? 'পোস্ট হচ্ছে...' : t.send}
+                  {isSending ? 'পোস্ট হচ্ছে...' : (t?.send || 'পাঠান')}
                 </button>
               </div>
             </form>
@@ -740,7 +745,7 @@ const MessChat: React.FC<MessChatProps> = ({
                   <Database size={20} />
                 </div>
                 <div>
-                  <h3 className="text-lg font-black text-gray-900 dark:text-white">{t.sqlSetupTitle}</h3>
+                  <h3 className="text-lg font-black text-gray-900 dark:text-white">{t?.sqlSetupTitle || 'Supabase SQL সেটআপ'}</h3>
                   <p className="text-[10px] text-gray-500 font-bold">Supabase Realtime সক্রিয় করতে SQL স্ক্রিপ্ট</p>
                 </div>
               </div>
@@ -764,8 +769,7 @@ const MessChat: React.FC<MessChatProps> = ({
                 onClick={handleCopySql}
                 className="absolute top-3 right-3 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md active:scale-95 transition-all"
               >
-                {sqlCopied ? <Check size={14} /> : <Copy size={14} />}
-                {sqlCopied ? t.sqlCopied : t.copySql}
+                {sqlCopied ? (t?.sqlCopied || 'কপি হয়েছে!') : (t?.copySql || 'কপি করুন')}
               </button>
             </div>
 
@@ -774,7 +778,7 @@ const MessChat: React.FC<MessChatProps> = ({
                 onClick={() => setShowSqlModal(false)}
                 className="px-6 py-2.5 bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white rounded-2xl font-black text-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
               >
-                {t.closeModal}
+                {t?.closeModal || 'বন্ধ করুন'}
               </button>
             </div>
           </div>
